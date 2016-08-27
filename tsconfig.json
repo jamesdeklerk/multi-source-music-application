@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "rootDir": "src/typescript/",
+        "noImplicitAny": true,
+        "removeComments": true,
+        "sourceMap": true,
+        "outFile": "script.js",
+        "target": "es5"
+    },
+    // not including "files": [] just includes all files
+    "exclude": [
+        ".git",
+        ".vscode",
+        "bower_components",
+        "build",
+        "node_modules",
+        "src/elements",
+        "src/images",
+        "src/scss"
+    ]
+}

@@ -11,10 +11,6 @@
 *.tar
 *.zip
 
-# compiled files #
-*.css
-*.js
-
 # Logs and databases #
 ######################
 *.log
