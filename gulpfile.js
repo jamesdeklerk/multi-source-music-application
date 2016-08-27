@@ -12,7 +12,7 @@ var gulp = require('gulp'),
     // Directories
     sourceDirectory = 'src/',
     buildDirectory = 'build/',
-    htmlDirectory = sourceDirectory,
+    htmlDirectory = '',
     cssDirectory = buildDirectory + 'css/',
     javascriptDirectory = buildDirectory + 'javascript/',
     scssDirectory = sourceDirectory + 'scss/',
@@ -61,7 +61,7 @@ gulp.task('recompile', ['recompile:scss', 'recompile:typescript']);
 gulp.task('browsersync', function () {
     browsersync({
         server: {
-            baseDir: "./" + sourceDirectory // setting the base directory
+            baseDir: "./" // setting the base directory
         }
     });
 });
@@ -94,7 +94,7 @@ gulp.task('reload:javascript', function () {
 gulp.task('reload:watch', function () {
     gulp.watch(htmlDirectory + '**/*.html', ['reload:html']);
     gulp.watch(cssDirectory + '**/*.css', ['reload:css']);
-    gulp.watch(javascriptDirectory + '**/*.javascript', ['reload:javascript']);
+    gulp.watch(javascriptDirectory + '**/*.js', ['reload:javascript']);
 });
 
 // Reload task - starts Browsersync & reloads all files
