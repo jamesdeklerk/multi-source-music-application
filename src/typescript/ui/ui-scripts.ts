@@ -1,10 +1,5 @@
-angular.module('music-app', ['ngRoute', 'firebase'])
- 
-.value('fbURL', 'https://ng-projects-list.firebaseio.com/')
-.service('fbRef', function(fbURL) {
-  return new Firebase(fbURL)
-})
- 
+angular.module('music-app', ['ngRoute'])
+
 .config(function($routeProvider) {
   var resolveProjects = {
     projects: function () {
