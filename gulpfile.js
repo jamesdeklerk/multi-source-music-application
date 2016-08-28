@@ -1,12 +1,13 @@
 // =======================================================
 // Required files & Directories
 // =======================================================
-var gulp = require('gulp'),
-    typescript = require('gulp-typescript'),
-    browsersync = require('browser-sync'),
+var browsersync = require('browser-sync'),
     reload = browsersync.reload,
+    gulp = require('gulp'),
     autoprefixer = require('gulp-autoprefixer'),
+    concat = require('gulp-concat'),
     sass = require('gulp-sass'),
+    typescript = require('gulp-typescript'),
     // Using tsconfig.json
     typescriptProject = typescript.createProject('tsconfig.json'),
     // Directories
@@ -30,6 +31,7 @@ gulp.task('recompile:scss', function () {
     return gulp.src(scssDirectory + '**/*.scss')
         .pipe(sass().on('error', sass.logError))
         .pipe(autoprefixer('last 2 versions'))
+        .pipe(concat('styles.css'))
         .pipe(gulp.dest(cssDirectory));
 });
 

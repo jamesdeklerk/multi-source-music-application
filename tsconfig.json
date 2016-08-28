@@ -4,7 +4,7 @@
         "noImplicitAny": true,
         "removeComments": true,
         "sourceMap": true,
-        "outFile": "script.js",
+        "outFile": "scripts.js",
         "target": "es5"
     },
     // not including "files": [] just includes all files
