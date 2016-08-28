@@ -7,7 +7,11 @@
         "outFile": "scripts.js",
         "target": "es5"
     },
-    // not including "files": [] just includes all files
+    // This specifies the files and order to compile the files in.
+    "files": [
+        "src/typescript/libraries/pub-sub.ts",
+        "src/typescript/classes/test-publisher.ts"
+    ],
     "exclude": [
         ".git",
         ".vscode",

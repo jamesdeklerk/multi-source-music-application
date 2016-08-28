@@ -10,7 +10,8 @@
     /*
      * Any rules specified here will override those from the base config we are extending
      */
-    "no-constructor-vars": true
+    "no-constructor-vars": true,
+    "no-consecutive-blank-lines": false
   },
   "rulesDirectory": [
     /*
