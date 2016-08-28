@@ -53,6 +53,8 @@ class Publisher {
     }
 
 
+    // The unsubscribe method uses method overloading.
+    // @see http://stackoverflow.com/questions/12688275/method-overloading
     /**
      * Deletes the event.
      * 
