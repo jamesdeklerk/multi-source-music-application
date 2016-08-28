@@ -9,8 +9,19 @@
     },
     // This specifies the files and order to compile the files in.
     "files": [
+        // Libraries
         "src/typescript/libraries/Publisher.ts",
-        "src/typescript/classes/test-publisher.ts"
+        // Interfaces
+        "src/typescript/interfaces/IAlbum.ts",
+        "src/typescript/interfaces/IArtist.ts",
+        "src/typescript/interfaces/IServerAdapter.ts",
+        "src/typescript/interfaces/IServiceDataAdapter.ts",
+        "src/typescript/interfaces/IServicePlayerAdapter.ts",
+        "src/typescript/interfaces/ITrack.ts",
+        // Classes
+        "src/typescript/classes/Player.ts",
+        // Main
+        "src/typescript/Main.ts"
     ],
     "exclude": [
         ".git",
