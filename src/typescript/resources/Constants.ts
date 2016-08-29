@@ -2,7 +2,9 @@
 let CONSTANTS = {
     PLAYER: {
         DEFAULTS: {
+            MUTED: false,
             REPEAT: `repeat-all`,
+            SHUFFLE: false,
             VOLUME: 1,
         },
         REPEAT: {

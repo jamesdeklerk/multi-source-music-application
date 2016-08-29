@@ -1,12 +1,11 @@
-// Make this into a class so you can verify
-// things like the volume being between 0 and 1.
+// These are settings from server.
+
+// tslint:disable-next-line
 let settings = {
     player: {
-
-    }
+        muted: CONSTANTS.PLAYER.DEFAULTS.MUTED,
+        repeat: CONSTANTS.PLAYER.DEFAULTS.REPEAT,
+        shuffle: CONSTANTS.PLAYER.DEFAULTS.SHUFFLE,
+        volume: CONSTANTS.PLAYER.DEFAULTS.VOLUME,
+    },
 };
-
-// Don't know how to do the whole objects in objects thing...
-class Settings {
-
-}
