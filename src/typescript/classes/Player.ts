@@ -48,8 +48,30 @@ class Player {
      * Queue multiple tracks.
      */
     public queue(tracks: Array<ITrack>): void
-    public queue(track?: any, tracks?: any): void {
+    public queue(trackOrTracks: ITrack | Array<ITrack>): void {
+        if (trackOrTracks instanceof Array) {
 
+        }
+    }
+
+    /**
+     * Increments the index given.
+     * The function cycles from 0 to length (i.e. never going out of bounds).
+     * 
+     * @param index The current index.
+     * @param increment The number to increment by (can be negative).
+     * @param length The length of the Array.
+     * @return The new index.
+     */
+    private incrementIndex(index: number, increment: number, length: number): number {
+        if (length <= 0) {
+            return -1;
+        }
+
+        let position = (index + increment) % length;
+        position = position >= 0 ? position : (length + position);
+
+        return Math.abs(position);
     }
 
     /**
@@ -59,6 +81,26 @@ class Player {
      */
     public getCurrentIndex(): number {
         return 0; // @NB
+    }
+
+    /**
+     * Go to the next track.
+     * If repeat === no repeat, don't cycle through queue.
+     * If repeat === repeat all, cycle through queue.
+     * If repeat === repeat one, restart current track.
+     */
+    public next() {
+        
+    }
+
+    /**
+     * Go to the previous track.
+     * If repeat === no repeat, don't cycle through queue.
+     * If repeat === repeat all, cycle through queue.
+     * If repeat === repeat one, restart current track.
+     */
+    public previous() {
+        
     }
 
     // -------------------------------------------------------

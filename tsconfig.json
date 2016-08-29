@@ -18,7 +18,10 @@
         "src/typescript/interfaces/IServiceDataAdapter.ts",
         "src/typescript/interfaces/IServicePlayerAdapter.ts",
         "src/typescript/interfaces/ITrack.ts",
+        // Resources
+        "src/typescript/resources/Constants.ts",
         // Classes
+        "src/typescript/classes/Settings.ts",
         "src/typescript/classes/Player.ts",
         // Main
         "src/typescript/Main.ts"
