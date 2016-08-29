@@ -8,21 +8,26 @@
 class Player {
 
     /**
-     * 
+     * The current music service player being used.
      */
     private currentPlayer: IServicePlayerAdapter;
-    /**
-     * 
-     */
-    private currentTrack: ITrack;
-    /**
-     * 
-     */
-    private currentTrackIndex: number = -1;
     /**
      * Queue of tracks.
      */
     private playerQueue: Array<ITrack> = [];
+    /**
+     * The index of the current track in the queue.
+     */
+    private currentTrackIndex: number = -1;
+    /**
+     * The paused state of the player.
+     */
+    private paused: boolean;
+    /**
+     * The amount of time after which this.previous()
+     * won't go to the previous track, but rather restart the current track.
+     */
+    private timeAfterWhichToRestartTrack: number;
     /**
      * Repeat can be:
      * - no repeat, don't cycle through queue.
@@ -44,16 +49,20 @@ class Player {
         repeat?: string, shuffle?: boolean, muted?: boolean, volume?: number) {
 
         if (!CONSTANTS.PLAYER) {
-            throw new Error("CONSTANTS.PLAYER is used throughout the Player class and needs to be defined.");
+            throw new Error(`CONSTANTS.PLAYER is used throughout the Player class and needs to be defined.`);
         }
 
         // Set the initial servicePlayerAdapter to be used
         this.currentPlayer = servicePlayerAdapter;
+
         // Set the player defaults
         this.repeat = repeat ? repeat : CONSTANTS.PLAYER.DEFAULTS.REPEAT;
         this.shuffle = shuffle ? shuffle : CONSTANTS.PLAYER.DEFAULTS.SHUFFLE;
         this.muted = muted ? muted : CONSTANTS.PLAYER.DEFAULTS.MUTED;
         this.volume = volume ? volume : CONSTANTS.PLAYER.DEFAULTS.VOLUME;
+
+        // More defaults
+        this.timeAfterWhichToRestartTrack = CONSTANTS.PLAYER.DEFAULTS.TIME_AFTER_WHICH_TO_RESTART_TRACK;
     }
 
     /**
@@ -72,10 +81,14 @@ class Player {
 
     /**
      * Queue track.
+     * 
+     * @param track The track to add to the queue.
      */
     public queue(track: ITrack): void
     /**
      * Queue multiple tracks.
+     * 
+     * @param tracks The tracks to add to the queue.
      */
     public queue(tracks: Array<ITrack>): void
     public queue(trackOrTracks: ITrack | Array<ITrack>): void {
@@ -95,10 +108,16 @@ class Player {
 
     /**
      * Dequeue track.
+     * Then, if the queue is empty, set the current track index to -1.
+     * 
+     * @param track The track to remove from the queue.
      */
     public dequeue(track: ITrack): void
     /**
      * Dequeue multiple tracks.
+     * Then, if the queue is empty, set the current track index to -1.
+     * 
+     * @param track The tracks to remove from the queue.
      */
     public dequeue(tracks: Array<ITrack>): void
     public dequeue(trackOrTracks: ITrack | Array<ITrack>): void {
@@ -117,6 +136,20 @@ class Player {
             indexOfTrack = this.playerQueue.indexOf(trackOrTracks);
             this.playerQueue.splice(indexOfTrack, 1);
         }
+
+        // If the queue is empty, set the current track index to -1.
+        if (this.playerQueue.length <= 0) {
+            this.currentTrackIndex = -1;
+        }
+    }
+
+    /**
+     * Dequeues all tracks from the queue.
+     * Then sets the current track index to -1 as there are no more tracks.
+     */
+    public dequeueAll() {
+        this.currentTrackIndex = -1;
+        this.playerQueue = [];
     }
 
     /**
@@ -156,7 +189,7 @@ class Player {
      * @return The index in the queue of the current track.
      */
     public getCurrentIndex(): number {
-        return 0; // @NB
+        return this.currentTrackIndex;
     }
 
     /**
@@ -176,21 +209,24 @@ class Player {
      */
     public setCurrentIndex(index: number) {
         if (this.isIndexInQueue(index)) {
-            // @NB if the currentTrackIndex isn't set in this.load, set it here.
-            // this.currentTrackIndex = index;
+            this.currentTrackIndex = index;
             this.load(this.playerQueue[index]);
         } else {
-            throw new Error("The index given is out of the queue bounds.");
+            throw new Error(`The index given is out of the queue bounds.`);
         }
     }
 
     /**
      * Gets the current track.
      * 
-     * @return The current track
+     * @return The current track in the queue, if there are no tracks, return undefined.
      */
     public getCurrentTrack(): ITrack {
-
+        if (this.isIndexInQueue(this.getCurrentIndex())) {
+            return this.playerQueue[this.getCurrentIndex()];
+        } else {
+            return undefined;
+        }
     }
 
     /**
@@ -200,13 +236,28 @@ class Player {
      * If repeat === repeat all, cycle through queue.
      */
     public next(): void {
-        if (settings.player.repeat === CONSTANTS.PLAYER.REPEAT.NO) {
-
-        } else if (settings.player.repeat === CONSTANTS.PLAYER.REPEAT.ONE) {
-
-        } else {
-
+        if (!this.isIndexInQueue(this.getCurrentIndex())) {
+            throw new Error(`Cannot get the next track in the queue if the current track isn't in the queue.`);
         }
+
+        if (settings.player.repeat === CONSTANTS.PLAYER.REPEAT.ONE) {
+            // Restart track.
+            this.seekTo(0);
+            return;
+        } else if (settings.player.repeat === CONSTANTS.PLAYER.REPEAT.NO) {
+            // If it's the last song
+            if (this.getCurrentIndex() >= (this.playerQueue.length - 1)) {
+                this.stop();
+                return;
+            } else {
+                this.setCurrentIndex(this.getCurrentIndex() + 1);
+            }
+        } else {
+            this.setCurrentIndex(this.incrementIndex(this.getCurrentIndex(), 1, this.playerQueue.length));
+        }
+
+        // Load the current song.
+        this.load(this.playerQueue[this.getCurrentIndex()]);
     }
 
     /**
@@ -216,7 +267,29 @@ class Player {
      * If repeat === repeat all, cycle through queue.
      */
     public previous(): void {
+        if (!this.isIndexInQueue(this.getCurrentIndex())) {
+            throw new Error(`Cannot get the previous track in the queue if the current track isn't in the queue.`);
+        }
 
+        if ((settings.player.repeat === CONSTANTS.PLAYER.REPEAT.ONE) ||
+            (this.getCurrentTime() > this.timeAfterWhichToRestartTrack) {
+            // Restart track.
+            this.seekTo(0);
+            return;
+        } else if (settings.player.repeat === CONSTANTS.PLAYER.REPEAT.NO) {
+            // If it's the first song
+            if (this.getCurrentIndex() === 0) {
+                this.stop();
+                return;
+            } else {
+                this.setCurrentIndex(this.getCurrentIndex() - 1);
+            }
+        } else {
+            this.setCurrentIndex(this.incrementIndex(this.getCurrentIndex(), -1, this.playerQueue.length));
+        }
+
+        // Load the current song.
+        this.load(this.playerQueue[this.getCurrentIndex()]);
     }
 
     // -------------------------------------------------------
@@ -227,7 +300,7 @@ class Player {
     // =======================================================
 
     /**
-     * Loads and plays the specified track.
+     * Loads the specified track, respecting the current paused state.
      * 
      * @param track The track to be played (@NB: this is set as the current track).
      */
@@ -247,6 +320,7 @@ class Player {
      * and loads the track.
      */
     public play(): void {
+        this.paused = false;
         this.currentPlayer.play();
     }
 
@@ -254,6 +328,7 @@ class Player {
      * Pauses the current track.
      */
     public pause(): void {
+        this.paused = true;
         this.currentPlayer.pause();
     }
 

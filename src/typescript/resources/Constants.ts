@@ -5,6 +5,7 @@ let CONSTANTS = {
             MUTED: false,
             REPEAT: `repeat-all`,
             SHUFFLE: false,
+            TIME_AFTER_WHICH_TO_RESTART_TRACK: 3000, // in milliseconds
             VOLUME: 1,
         },
         REPEAT: {
