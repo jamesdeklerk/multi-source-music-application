@@ -90,7 +90,7 @@ class Player {
      * If repeat === repeat one, restart current track.
      */
     public next() {
-        
+
     }
 
     /**
@@ -100,7 +100,7 @@ class Player {
      * If repeat === repeat one, restart current track.
      */
     public previous() {
-        
+
     }
 
     // -------------------------------------------------------
