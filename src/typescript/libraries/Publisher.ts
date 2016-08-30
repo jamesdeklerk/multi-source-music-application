@@ -3,6 +3,15 @@ interface IPublisherHandlers {
     handlers: Function[];
 }
 
+
+interface IRegisteredEvent {
+    /**
+     * The name of the event.
+     */
+    event: string;
+}
+
+
 /**
  * Publish–subscribe library
  * Uses the publish–subscribe pattern @see https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern
@@ -23,7 +32,35 @@ class Publisher {
      *     ]
      * }
      */
-    private events: any = {};
+    private events: {} = {};
+    /**
+     * 
+     */
+    private registeredEvents: IRegisteredEvent[] = [];
+
+
+    /**
+     * Registers an event and defines its handler parameters.
+     * 
+     * @param 
+     */
+    public register(event: string, parameters: any, description: string): void {
+        // Check if the event is already registered
+    }
+
+
+    /**
+     * Deregisters an event.
+     * 
+     * @param event The name of the event to deregister.
+     */
+    public deregister(event: string): void {
+        for (let registeredEvent of this.registeredEvents) {
+            if (registeredEvent.event === event) {
+                
+            }
+        }
+    }
 
 
     /**

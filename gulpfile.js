@@ -13,11 +13,11 @@ var browsersync = require('browser-sync'),
     // Directories
     sourceDirectory = 'src/',
     buildDirectory = 'build/',
+    scssDirectory = sourceDirectory + 'scss/',
+    typescriptDirectory = sourceDirectory + 'typescript/',
     htmlDirectory = '',
     cssDirectory = buildDirectory + 'css/',
-    javascriptDirectory = buildDirectory + 'javascript/',
-    scssDirectory = sourceDirectory + 'scss/',
-    typescriptDirectory = sourceDirectory + 'typescript/';
+    javascriptDirectory = buildDirectory + 'javascript/';
 // -------------------------------------------------------
 
 
