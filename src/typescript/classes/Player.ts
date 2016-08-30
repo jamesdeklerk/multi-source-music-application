@@ -12,9 +12,13 @@ class Player {
      */
     private currentPlayer: IServicePlayerAdapter;
     /**
-     * Queue of tracks.
+     * The queue of tracks in the order they were added.
      */
-    private playerQueue: Array<ITrack> = [];
+    private orderedQueue: ITrack[] = [];
+    /**
+     * The queue of tracks in the shuffled order.
+     */
+    private shuffledQueue: ITrack[] = [];
     /**
      * The index of the current track in the queue.
      */
@@ -46,7 +50,7 @@ class Player {
      * @param repeat The repeat setting @see CONSTANTS.PLAYER.REPEAT
      */
     constructor(servicePlayerAdapter: IServicePlayerAdapter,
-        repeat?: string, shuffle?: boolean, muted?: boolean, volume?: number) {
+                repeat?: string, shuffle?: boolean, muted?: boolean, volume?: number) {
 
         if (!CONSTANTS.PLAYER) {
             throw new Error(`CONSTANTS.PLAYER is used throughout the Player class and needs to be defined.`);
@@ -90,19 +94,19 @@ class Player {
      * 
      * @param tracks The tracks to add to the queue.
      */
-    public queue(tracks: Array<ITrack>): void
-    public queue(trackOrTracks: ITrack | Array<ITrack>): void {
+    public queue(tracks: ITrack[]): void
+    public queue(trackOrTracks: ITrack | ITrack[]): void {
 
         if (trackOrTracks instanceof Array) {
             // trackOrTracks is multiple tracks,
             // so push each track onto the queue.
             for (let track of trackOrTracks) {
-                this.playerQueue.push(track);
+                this.orderedQueue.push(track);
             }
         } else {
             // Else trackOrTracks is a single track, 
             // so just push it onto the queue.
-            this.playerQueue.push(trackOrTracks);
+            this.orderedQueue.push(trackOrTracks);
         }
     }
 
@@ -119,26 +123,26 @@ class Player {
      * 
      * @param track The tracks to remove from the queue.
      */
-    public dequeue(tracks: Array<ITrack>): void
-    public dequeue(trackOrTracks: ITrack | Array<ITrack>): void {
+    public dequeue(tracks: ITrack[]): void
+    public dequeue(trackOrTracks: ITrack | ITrack[]): void {
 
         let indexOfTrack: number;
         if (trackOrTracks instanceof Array) {
             // trackOrTracks is multiple tracks,
             // so dequeue each track onto the queue.
             for (let track of trackOrTracks) {
-                indexOfTrack = this.playerQueue.indexOf(track);
-                this.playerQueue.splice(indexOfTrack, 1);
+                indexOfTrack = this.orderedQueue.indexOf(track);
+                this.orderedQueue.splice(indexOfTrack, 1);
             }
         } else {
             // Else trackOrTracks is a single track, 
             // so just push it onto the queue.
-            indexOfTrack = this.playerQueue.indexOf(trackOrTracks);
-            this.playerQueue.splice(indexOfTrack, 1);
+            indexOfTrack = this.orderedQueue.indexOf(trackOrTracks);
+            this.orderedQueue.splice(indexOfTrack, 1);
         }
 
         // If the queue is empty, set the current track index to -1.
-        if (this.playerQueue.length <= 0) {
+        if (this.orderedQueue.length <= 0) {
             this.currentTrackIndex = -1;
         }
     }
@@ -149,7 +153,7 @@ class Player {
      */
     public dequeueAll() {
         this.currentTrackIndex = -1;
-        this.playerQueue = [];
+        this.orderedQueue = [];
     }
 
     /**
@@ -157,11 +161,13 @@ class Player {
      * 
      * @return The queue of tracks.
      */
-    public getQueue(): Array<ITrack> {
-        return this.playerQueue;
+    public getQueue(): ITrack[] {
+        if (this.shuffle) {
+            return this.shuffledQueue;
+        } else {
+            return this.orderedQueue;
+        }
     }
-
-
 
     /**
      * Increments the index given.
@@ -199,7 +205,7 @@ class Player {
      * @return True if the index is in the bounds.
      */
     private isIndexInQueue(index: number): boolean {
-        return (index >= 0) && (index <= this.playerQueue.length);
+        return (index >= 0) && (index <= this.orderedQueue.length);
     }
 
     /**
@@ -210,7 +216,7 @@ class Player {
     public setCurrentIndex(index: number) {
         if (this.isIndexInQueue(index)) {
             this.currentTrackIndex = index;
-            this.load(this.playerQueue[index]);
+            this.load(this.orderedQueue[index]);
         } else {
             throw new Error(`The index given is out of the queue bounds.`);
         }
@@ -223,7 +229,7 @@ class Player {
      */
     public getCurrentTrack(): ITrack {
         if (this.isIndexInQueue(this.getCurrentIndex())) {
-            return this.playerQueue[this.getCurrentIndex()];
+            return this.orderedQueue[this.getCurrentIndex()];
         } else {
             return undefined;
         }
@@ -246,18 +252,18 @@ class Player {
             return;
         } else if (settings.player.repeat === CONSTANTS.PLAYER.REPEAT.NO) {
             // If it's the last song
-            if (this.getCurrentIndex() >= (this.playerQueue.length - 1)) {
+            if (this.getCurrentIndex() >= (this.orderedQueue.length - 1)) {
                 this.stop();
                 return;
             } else {
                 this.setCurrentIndex(this.getCurrentIndex() + 1);
             }
         } else {
-            this.setCurrentIndex(this.incrementIndex(this.getCurrentIndex(), 1, this.playerQueue.length));
+            this.setCurrentIndex(this.incrementIndex(this.getCurrentIndex(), 1, this.orderedQueue.length));
         }
 
         // Load the current song.
-        this.load(this.playerQueue[this.getCurrentIndex()]);
+        this.load(this.orderedQueue[this.getCurrentIndex()]);
     }
 
     /**
@@ -272,7 +278,7 @@ class Player {
         }
 
         if ((settings.player.repeat === CONSTANTS.PLAYER.REPEAT.ONE) ||
-            (this.getCurrentTime() > this.timeAfterWhichToRestartTrack) {
+            (this.getCurrentTime() > this.timeAfterWhichToRestartTrack)) {
             // Restart track.
             this.seekTo(0);
             return;
@@ -285,11 +291,41 @@ class Player {
                 this.setCurrentIndex(this.getCurrentIndex() - 1);
             }
         } else {
-            this.setCurrentIndex(this.incrementIndex(this.getCurrentIndex(), -1, this.playerQueue.length));
+            this.setCurrentIndex(this.incrementIndex(this.getCurrentIndex(), -1, this.orderedQueue.length));
         }
 
         // Load the current song.
-        this.load(this.playerQueue[this.getCurrentIndex()]);
+        this.load(this.orderedQueue[this.getCurrentIndex()]);
+    }
+
+    /**
+     * Shuffles a given set of tracks.
+     * 
+     */
+    private shuffleTracks(tracks: ITrack[], currentIndex: number): { shuffledTracks: ITrack[], shuffledIndex: number }  {
+        return {
+
+        };
+    }
+
+    /**
+     * Sets the shuffle value.
+     * 
+     * @param shuffle If true, the queue is shuffled, if false the queue
+     */
+    public setShuffle(shuffle: boolean): void {
+
+        this.shuffle = shuffle;
+
+        // if shuffle === true
+        // tempQueue = cloned orderedQueue;
+        // this.shuffleTracks(tempQueue) (keep track of currentTrackIndex in tempQueue).
+        // shuffledQueue = tempQueue;
+
+        // if shuffle === false
+        // empty shuffledQueue
+        // find and set currentTrack in orderedQueue.
+
     }
 
     // -------------------------------------------------------

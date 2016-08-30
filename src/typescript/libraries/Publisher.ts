@@ -1,6 +1,6 @@
 interface IPublisherHandlers {
     // Specifies the function to run when the event occurs. 
-    handlers: Array<Function>;
+    handlers: Function[];
 }
 
 /**
@@ -124,7 +124,7 @@ class Publisher {
             return false;
         }
 
-        let eventHandlers: Array<Function> = this.events[event];
+        let eventHandlers: Function[] = this.events[event];
 
         // Execute each of the relevant event handlers
         // tslint:disable-next-line
