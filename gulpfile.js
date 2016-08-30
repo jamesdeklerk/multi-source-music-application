@@ -21,7 +21,6 @@ var browsersync = require('browser-sync'),
 // -------------------------------------------------------
 
 
-
 // =======================================================
 // Recompile tasks
 // =======================================================
@@ -49,10 +48,12 @@ gulp.task('recompile:watch', function () {
 });
 
 // Recompile task - recompiles all files
-gulp.task('recompile', ['recompile:scss', 'recompile:typescript']);
+gulp.task('recompile', [
+    'recompile:scss',
+    'recompile:typescript'
+]);
 
 // -------------------------------------------------------
-
 
 
 // =======================================================
@@ -100,14 +101,25 @@ gulp.task('reload:watch', function () {
 });
 
 // Reload task - starts Browsersync & reloads all files
-gulp.task('reload', ['browsersync', 'reload:html', 'reload:css', 'reload:javascript']);
+gulp.task('reload', [
+    'browsersync',
+    'reload:html',
+    'reload:css',
+    'reload:javascript'
+]);
 
 // -------------------------------------------------------
-
 
 
 // =======================================================
 // Default task - starts all others
 // =======================================================
-gulp.task('default', ['recompile', 'recompile:watch', 'reload', 'reload:watch']);
+
+gulp.task('default', [
+    'recompile',
+    'recompile:watch',
+    'reload',
+    'reload:watch'
+]);
+
 // -------------------------------------------------------
