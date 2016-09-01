@@ -200,6 +200,33 @@ class PublisherEvent {
 
 
     /**
+     * Checks for duplicate parameters.
+     * 
+     * @param parameters The ParameterDefinition array to check.
+     * @return The position of the duplicate parameter in parameters,
+     * if no duplicates are found return -1; 
+     */
+    private checkForDuplicateParameters(parameters: ParameterDefinition[]): number {
+        // Using a JavaScript object as a hashmap for duplicate checking.
+        let parametersAlreadyFound: any = {};
+
+        // tslint:disable-next-line
+        for (let i = 0, parameter: any; parameter = parameters[i]; i = i + 1) {
+            
+            // If the parameter has been found before, it's a duplicate.
+            if (parametersAlreadyFound[parameter.name]) {
+                return i;
+            }
+
+            // Add the parameter to the found list.
+            parametersAlreadyFound[parameter.name] = true;
+        }
+
+        return -1;
+    }
+
+
+    /**
      * Checks if parameters is a ParameterDefinition array.
      * 
      * @param parameters The ParameterDefinition array to check.
@@ -237,6 +264,12 @@ class PublisherEvent {
 
         // Don't need to check that parameters is a ParameterDefinition array.
         // This was done in the constructor.
+
+        // Check for duplicate parameters.
+        let duplicateParameterPosition = event.checkForDuplicateParameters(event.parameters);
+        if (duplicateParameterPosition > -1) {
+            throw new Error(`Parameter ${duplicateParameterPosition} of the event parameters is already defined.`);
+        }
 
         // Check the parameters are in a valid order.
         if (!this.validParameterOrder(event.parameters)) {
@@ -555,8 +588,21 @@ class Publisher {
             }
         }
         if (requiredParameterCount > handler.length) {
-            throw new Error(`The event handler for event ${eventName} does not cater for the required paramters. ` +
-            `At least ${requiredParameterCount} expected ${handler.length} found.`);
+            // Compile parameter string.
+            let parameterString = ``;
+            // tslint:disable-next-line
+            for (let i = 0, parameter: any; parameter = event.parameters[i]; i = i + 1) {
+                // if it's not the first parameter or the last parameter.
+                if (i > 0 && i < event.parameters.length) {
+                    parameterString = parameterString + `, `;
+                }
+                parameterString = parameterString +
+                    `${parameter.name + (parameter.optional ? `?` : ``)}: ${parameter.type}`;
+            }
+
+            throw new Error(`Expected (${parameterString}) parameters for the event ${eventName} handlers. ` +
+                `The event handler does not cater for the required paramters. ` +
+                `At least ${requiredParameterCount} expected, ${handler.length} found.`);
         }
 
         // If the event doesn't exist, create an array for the events
