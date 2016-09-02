@@ -11,6 +11,8 @@
     "files": [
         // Libraries
         "src/typescript/libraries/Publisher.ts",
+        // Definitions
+        "src/typescript/definitions/youtube.d.ts",
         // Interfaces
         "src/typescript/interfaces/IAlbum.ts",
         "src/typescript/interfaces/IArtist.ts",
