@@ -65,7 +65,7 @@ class Player {
         //    "deezer": Initialized DeezerAdapter,
         //    "youtube": Initialized YouTubeAdapter,
         //    "soundcloud": Initialized SoundCloudAdapter
-        //}
+        // }
 
         // Initialize all the music service player adapters for use.
 
@@ -602,6 +602,15 @@ class Player {
     }
 
     /**
+     * Gets pause state of the player.
+     * 
+     * @return True if the player is paused, else false.
+     */
+    public getPaused(): boolean {
+        return this.paused;
+    }
+
+    /**
      * Plays the current track.
      */
     public play(): void {
@@ -621,7 +630,7 @@ class Player {
      * Plays or pauses the current track depending on its paused state.
      */
     public playPause(): void {
-        this.currentPlayer.paused ? this.play() : this.pause();
+        this.getPaused() ? this.play() : this.pause();
     }
 
     /**
