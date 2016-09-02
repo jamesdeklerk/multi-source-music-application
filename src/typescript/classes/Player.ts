@@ -56,6 +56,11 @@ class Player {
             throw new Error(`CONSTANTS.PLAYER is used throughout the Player class and needs to be defined.`);
         }
 
+        if (!publisher) {
+            throw new Error(`The publish-subscribe library is used through the Player class ` +
+            `and should be instantiated before the Player class is instantiated.`);
+        }
+
         // Set the initial servicePlayerAdapter to be used
         this.currentPlayer = servicePlayerAdapter;
 
@@ -68,6 +73,42 @@ class Player {
         // More defaults
         this.timeAfterWhichToRestartTrack = CONSTANTS.PLAYER.DEFAULTS.TIME_AFTER_WHICH_TO_RESTART_TRACK;
     }
+
+
+    // =======================================================
+    // Registering events to be published by the player
+    // (i.e. an instance of this class).
+    // =======================================================
+
+    private registerPlayerEvents(): void {
+
+        // publisher.register(CONSTANTS.PLAYER.EVENTS)
+
+    }
+
+    // -------------------------------------------------------
+
+
+    // =======================================================
+    // Registering events for music service adapters
+    // to implement.
+    // =======================================================
+
+    /**
+     * Registers the events to be published by the music service adapters.
+     */
+    private registerServicePlayerAdapterEvents(): void {
+
+
+
+    }
+
+    // -------------------------------------------------------
+
+
+    // =======================================================
+    // Dealing with music service player adapters.
+    // =======================================================
 
     /**
      * Switches to a new music service.
@@ -89,6 +130,8 @@ class Player {
         // Load the current track.
         this.load(this.getCurrentTrack());
     }
+
+    // -------------------------------------------------------
 
 
     // =======================================================
@@ -530,6 +573,8 @@ class Player {
 
     /**
      * Loads the specified track, respecting the current paused state and seek position.
+     * If it fails to load, it switches to the next servicePlayerAdapter
+     * and loads the track.
      * 
      * @param track The track to be played (@NB: this is set as the current track).
      */
@@ -550,8 +595,6 @@ class Player {
 
     /**
      * Plays the current track.
-     * If it fails to play, it switches to the next servicePlayerAdapter
-     * and loads the track.
      */
     public play(): void {
         this.paused = false;
@@ -719,26 +762,6 @@ class Player {
     public getPercentageLoaded(): number {
         return this.currentPlayer.getPercentageLoaded();
     }
-
-    // -------------------------------------------------------
-
-
-    // =======================================================
-    // Registering events for music service adapters
-    // to implement.
-    // =======================================================
-
-
-
-    // -------------------------------------------------------
-
-
-    // =======================================================
-    // Registering events to be published by the player
-    // (i.e. an instance of this class).
-    // =======================================================
-
-
 
     // -------------------------------------------------------
 
