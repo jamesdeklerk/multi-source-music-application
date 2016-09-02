@@ -14,12 +14,14 @@
         // Interfaces
         "src/typescript/interfaces/IAlbum.ts",
         "src/typescript/interfaces/IArtist.ts",
+        "src/typescript/interfaces/IPlayerAdapter.ts",
         "src/typescript/interfaces/IServerAdapter.ts",
         "src/typescript/interfaces/IServiceDataAdapter.ts",
-        "src/typescript/interfaces/IServicePlayerAdapter.ts",
         "src/typescript/interfaces/ITrack.ts",
         // Resources
         "src/typescript/resources/Constants.ts",
+        // Player Adapters
+        "src/typescript/classes/player_adapters/YouTubeAdapter.ts",
         // Classes
         "src/typescript/classes/Settings.ts",
         "src/typescript/classes/Player.ts",

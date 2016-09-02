@@ -2,23 +2,16 @@
  * The interface music service player adapters must implement.
  * @see Player.ts
  */
-interface IServicePlayerAdapter {
+interface IPlayerAdapter {
 
     /**
-     * The name of the music service.
+     * This should initialize the player in the relevant way.
+     * This function is called immediately after the service adapter is created.
      */
-    name: string;
+    initialize(): void;
 
     /**
-     * Returns whether the audio/video is paused or not.
-     * Implement this using a getter.
-     */
-    paused: boolean;
-
-    new (): IServicePlayerAdapter;
-
-    /**
-     * Loads the specified track and starts playing the song from the beginning.
+     * Loads the specified track and starts playing the track from the beginning.
      * 
      * @param track The track to be played.
      */
@@ -70,14 +63,10 @@ interface IServicePlayerAdapter {
     getDuration(): number;
 
     /**
-     * Gets the percentage that the track has loaded
+     * Gets the percentage that the track has loaded.
      * 
-     * @return The percentage (0 to 1) that the track has loaded
+     * @return The percentage (0 to 1) that the track has loaded.
      */
     getPercentageLoaded(): number;
-
-}
-
-class YouTubeAdapter implements IServicePlayerAdapter {
 
 }

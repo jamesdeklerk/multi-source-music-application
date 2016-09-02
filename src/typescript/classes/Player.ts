@@ -10,7 +10,7 @@ class Player {
     /**
      * The current music service player being used.
      */
-    private currentPlayer: IServicePlayerAdapter;
+    private currentPlayer: IPlayerAdapter;
     /**
      * The queue of tracks in the order they were added.
      */
@@ -46,11 +46,9 @@ class Player {
     /**
      * Creates the music player.
      * 
-     * @param servicePlayerAdapter The adapter for the music service player one wants to start with.
      * @param repeat The repeat setting @see CONSTANTS.PLAYER.REPEAT
      */
-    constructor(servicePlayerAdapter: IServicePlayerAdapter,
-                repeat?: string, shuffle?: boolean, volume?: number, muted?: boolean) {
+    constructor(repeat?: string, shuffle?: boolean, volume?: number, muted?: boolean) {
 
         if (!CONSTANTS.PLAYER) {
             throw new Error(`CONSTANTS.PLAYER is used throughout the Player class and needs to be defined.`);
@@ -61,8 +59,18 @@ class Player {
             `and should be instantiated before the Player class is instantiated.`);
         }
 
-        // Set the initial servicePlayerAdapter to be used
-        this.currentPlayer = servicePlayerAdapter;
+        // Instantiate all the music service player adapters.
+        // for each registered music service player adapter... 
+        // playerAdapters = {
+        //    "deezer": Initialized DeezerAdapter,
+        //    "youtube": Initialized YouTubeAdapter,
+        //    "soundcloud": Initialized SoundCloudAdapter
+        //}
+
+        // Initialize all the music service player adapters for use.
+
+        // Set the initial playerAdapter to be used
+        // using this.switchPlayer();
 
         // Set the player defaults
         this.setRepeat(repeat ? repeat : CONSTANTS.PLAYER.DEFAULTS.REPEAT);
@@ -97,7 +105,7 @@ class Player {
     /**
      * Registers the events to be published by the music service adapters.
      */
-    private registerServicePlayerAdapterEvents(): void {
+    private registerPlayerAdapterEvents(): void {
 
 
 
@@ -113,14 +121,14 @@ class Player {
     /**
      * Switches to a new music service.
      * 
-     * @param servicePlayerAdapter The adapter for the music service player one wants to switch to.
+     * @param playerAdapter The adapter for the music service player one wants to switch to.
      */
-    public switchPlayer(servicePlayerAdapter: IServicePlayerAdapter): void {
+    public switchPlayer(playerAdapter: IPlayerAdapter): void {
 
         // @NB Unload old player
 
         // Switch to the new music service player.
-        this.currentPlayer = servicePlayerAdapter;
+        this.currentPlayer = playerAdapter;
 
         // Reset the current player volume and muted state since
         // the new music service player adapter might not have the latest values.
@@ -573,7 +581,7 @@ class Player {
 
     /**
      * Loads the specified track, respecting the current paused state and seek position.
-     * If it fails to load, it switches to the next servicePlayerAdapter
+     * If it fails to load, it switches to the next playerAdapter
      * and loads the track.
      * 
      * @param track The track to be played (@NB: this is set as the current track).
@@ -588,7 +596,7 @@ class Player {
         // update current track index.
         this.currentPlayer.load(track).then(
             // then once loaded, play track.
-            // actually no, the servicePlayerAdapter should play automatically.
+            // actually no, the playerAdapter should play automatically.
             // returning a promise
         );
     }
@@ -755,9 +763,9 @@ class Player {
     }
 
     /**
-     * Gets the percentage that the track has loaded
+     * Gets the percentage that the track has loaded.
      * 
-     * @return The percentage (0 to 1) that the track has loaded
+     * @return The percentage (0 to 1) that the track has loaded.
      */
     public getPercentageLoaded(): number {
         return this.currentPlayer.getPercentageLoaded();
