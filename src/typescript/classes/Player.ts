@@ -34,14 +34,14 @@ class Player {
     private timeAfterWhichToRestartTrack: number;
     /**
      * Repeat can be:
-     * - no repeat, don't cycle through queue.
+     * - repeat off, don't cycle through queue.
      * - repeat one, restart current track.
      * - repeat all, cycle through queue.
      */
     private repeat: string;
     private shuffle: boolean;
-    private muted: boolean;
     private volume: number;
+    private muted: boolean;
 
     /**
      * Creates the music player.
@@ -50,7 +50,7 @@ class Player {
      * @param repeat The repeat setting @see CONSTANTS.PLAYER.REPEAT
      */
     constructor(servicePlayerAdapter: IServicePlayerAdapter,
-                repeat?: string, shuffle?: boolean, muted?: boolean, volume?: number) {
+                repeat?: string, shuffle?: boolean, volume?: number, muted?: boolean) {
 
         if (!CONSTANTS.PLAYER) {
             throw new Error(`CONSTANTS.PLAYER is used throughout the Player class and needs to be defined.`);
@@ -60,10 +60,10 @@ class Player {
         this.currentPlayer = servicePlayerAdapter;
 
         // Set the player defaults
-        this.repeat = repeat ? repeat : CONSTANTS.PLAYER.DEFAULTS.REPEAT;
-        this.shuffle = shuffle ? shuffle : CONSTANTS.PLAYER.DEFAULTS.SHUFFLE;
-        this.muted = muted ? muted : CONSTANTS.PLAYER.DEFAULTS.MUTED;
-        this.volume = volume ? volume : CONSTANTS.PLAYER.DEFAULTS.VOLUME;
+        this.setRepeat(repeat ? repeat : CONSTANTS.PLAYER.DEFAULTS.REPEAT);
+        this.setShuffle(shuffle ? shuffle : CONSTANTS.PLAYER.DEFAULTS.SHUFFLE);
+        this.setMuted(muted ? muted : CONSTANTS.PLAYER.DEFAULTS.MUTED);
+        this.setVolume(volume ? volume : CONSTANTS.PLAYER.DEFAULTS.VOLUME);
 
         // More defaults
         this.timeAfterWhichToRestartTrack = CONSTANTS.PLAYER.DEFAULTS.TIME_AFTER_WHICH_TO_RESTART_TRACK;
@@ -82,6 +82,147 @@ class Player {
     // =======================================================
     // Queue functionality
     // =======================================================
+
+    /**
+     * Gets the players shuffle state.
+     * 
+     * @return The shuffle state. 
+     */
+    public getShuffle(): boolean {
+        return this.shuffle;
+    }
+
+    /**
+     * Shuffles a given set of tracks using the Fisher–Yates shuffle.
+     * It keeps the original set of tracks in order.
+     * @see http://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+     * @see https://github.com/coolaj86/knuth-shuffle
+     * 
+     * @param tracks The array of tracks to shuffle.
+     * @return An object containing the shuffled tracks and the shuffle index of the index given.
+     */
+    private shuffleTracks(tracks: ITrack[]): ITrack[] {
+
+        // Clone the array of tracks in order to not alter the original array.
+        // @see https://davidwalsh.name/javascript-clone-array
+        let shuffledTracks = tracks.slice(0);
+
+        let currentIndex = shuffledTracks.length;
+        let randomIndex: number;
+        let temporaryValue: ITrack;
+
+        // Shuffle the tracks.
+        while (0 !== currentIndex) {
+
+            // Pick a remaining element...
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex = currentIndex - 1;
+
+            // And swap it with the current element.
+            temporaryValue = shuffledTracks[currentIndex];
+            shuffledTracks[currentIndex] = shuffledTracks[randomIndex];
+            shuffledTracks[randomIndex] = temporaryValue;
+        }
+
+        return shuffledTracks;
+    }
+
+    /**
+     * Sets the shuffle value.
+     * 
+     * @param shuffle If true, the queue is shuffled, if false the queue
+     */
+    public setShuffle(shuffle: boolean): void {
+
+        // Get the current track before setting the shuffle value.
+        // If we don't do this before setting the shuffle value,
+        // we won't get the correct track 
+        // (because the currentTrackIndex will be for the wrong queue).
+        let currentTrack = this.getCurrentTrack();
+        let currentTrackIndex: number;
+
+        if (shuffle) {
+            this.shuffledQueue = this.shuffleTracks(this.orderedQueue);
+            // Get the index of the current track in the current (shuffled) queue.
+            currentTrackIndex = this.shuffledQueue.indexOf(currentTrack);
+        } else {
+            this.shuffledQueue = [];
+            // Get the index of the current track in the current (ordered) queue.
+            currentTrackIndex = this.orderedQueue.indexOf(currentTrack);
+        }
+
+        // Update the current track index to the index in the current queue.
+        // We don't use this.setCurrentIndex(currentTrackIndex);
+        // Because that would load the track when we just want to update the index.
+        // to be correct for the current queue.
+        this.currentTrackIndex = currentTrackIndex;
+
+        // Finally we can set the shuffled state
+        this.shuffle = shuffle;
+    }
+
+    /**
+     * Toggles the shuffle state.
+     * 
+     * @return The current shuffle state.
+     */
+    public toggleShuffle(): boolean {
+        let shuffle = !this.getShuffle();
+
+        this.setShuffle(shuffle);
+
+        return shuffle;
+    }
+
+    /**
+     * Gets the players repeat state.
+     * 
+     * @return The repeat state. 
+     */
+    public getRepeat(): string {
+        return this.repeat;
+    }
+
+    /**
+     * Sets the repeat value.
+     * If the value given is not a valid repeat value, it sets it to all by default.
+     * - repeat off, don't cycle through queue.
+     * - repeat one, restart current track.
+     * - repeat all, cycle through queue.
+     * 
+     * @param value The value to set repeat to.
+     */
+    public setRepeat(value: string): void {
+
+        if (value === CONSTANTS.PLAYER.REPEAT.OFF ||
+            value === CONSTANTS.PLAYER.REPEAT.ONE ||
+            value === CONSTANTS.PLAYER.REPEAT.ALL) {
+                this.repeat = value;
+        } else {
+            this.repeat = CONSTANTS.PLAYER.REPEAT.ALL;
+        }
+    }
+
+    /**
+     * Cycles through the repeat values.
+     * 
+     * @return The current repeat value.
+     */
+    public cycleRepeat(): string {
+        // Cycle order
+        let cycleOrder = [
+            CONSTANTS.PLAYER.REPEAT.OFF,
+            CONSTANTS.PLAYER.REPEAT.ALL,
+            CONSTANTS.PLAYER.REPEAT.ONE,
+        ];
+
+        let currentIndex = cycleOrder.indexOf(this.getRepeat());
+
+        // Set the new value.
+        this.setRepeat(cycleOrder[this.incrementIndex(currentIndex, 1, cycleOrder.length)]);
+
+        return this.getRepeat();
+    }
 
     /**
      * Queue track.
@@ -227,7 +368,7 @@ class Player {
     }
 
     /**
-     * Gets the index in the queue of the current track
+     * Gets the index of the current track in the queue.
      * 
      * @return The index in the queue of the current track.
      */
@@ -266,6 +407,28 @@ class Player {
     }
 
     /**
+     * Reorder the queue.
+     * 
+     * @param moves An array of moves { oldIndex: number, newIndex: number }.
+     */
+    public reorderQueue(moves: [{ oldIndex: number, newIndex: number }]): void {
+        // This is a pointer to the current queue.
+        // The reason that is important is when splice is called, it edits the array.
+        let currentQueue = this.getQueue();
+        let track: ITrack;
+
+        for (let move of moves) {
+            // Make sure the give indexes are in the current queue.
+            if (this.isIndexInQueue(move.oldIndex, currentQueue) && this.isIndexInQueue(move.newIndex, currentQueue)) {
+                // Remove the element from the array.
+                track = currentQueue.splice(move.oldIndex, 1)[0];
+                // Place it at the new index.
+                currentQueue.splice(move.newIndex, 0, track);
+            }
+        }
+    }
+
+    /**
      * Gets the current track.
      * 
      * @return The current track in the queue, if there are no tracks, return undefined.
@@ -283,23 +446,24 @@ class Player {
 
     /**
      * Go to the next track.
-     * If repeat === no repeat, don't cycle through queue.
+     * If repeat === repeat off, don't cycle through queue.
      * If repeat === repeat one, restart current track.
      * If repeat === repeat all, cycle through queue.
      */
     public next(): void {
         let currentQueue = this.getQueue();
         let currentIndex = this.getCurrentIndex();
+        let repeat = this.getRepeat();
 
         if (!this.isIndexInQueue(currentIndex, currentQueue)) {
             throw new Error(`Cannot get the next track in the queue if the current track isn't in the queue.`);
         }
 
-        if (settings.player.repeat === CONSTANTS.PLAYER.REPEAT.ONE) {
+        if (repeat === CONSTANTS.PLAYER.REPEAT.ONE) {
             // Restart track.
-            this.seekTo(0);
+            this.restart();
             return;
-        } else if (settings.player.repeat === CONSTANTS.PLAYER.REPEAT.NO) {
+        } else if (repeat === CONSTANTS.PLAYER.REPEAT.OFF) {
             // If it's the last track
             if (currentIndex >= (currentQueue.length - 1)) {
                 this.stop();
@@ -310,31 +474,29 @@ class Player {
         } else {
             currentIndex = this.setCurrentIndex(this.incrementIndex(currentIndex, 1, currentQueue.length));
         }
-
-        // Load the current track.
-        this.load(currentQueue[currentIndex]);
     }
 
     /**
      * Go to the previous track.
-     * If repeat === no repeat, don't cycle through queue.
+     * If repeat === repeat off, don't cycle through queue.
      * If repeat === repeat one, restart current track.
      * If repeat === repeat all, cycle through queue.
      */
     public previous(): void {
         let currentQueue = this.getQueue();
         let currentIndex = this.getCurrentIndex();
+        let repeat = this.getRepeat();
 
         if (!this.isIndexInQueue(currentIndex, currentQueue)) {
             throw new Error(`Cannot get the previous track in the queue if the current track isn't in the queue.`);
         }
 
-        if ((settings.player.repeat === CONSTANTS.PLAYER.REPEAT.ONE) ||
+        if ((repeat === CONSTANTS.PLAYER.REPEAT.ONE) ||
             (this.getCurrentTime() > this.timeAfterWhichToRestartTrack)) {
             // Restart track.
-            this.seekTo(0);
+            this.restart();
             return;
-        } else if (settings.player.repeat === CONSTANTS.PLAYER.REPEAT.NO) {
+        } else if (repeat === CONSTANTS.PLAYER.REPEAT.OFF) {
             // If it's the first track
             if (currentIndex === 0) {
                 this.stop();
@@ -345,49 +507,6 @@ class Player {
         } else {
             currentIndex = this.setCurrentIndex(this.incrementIndex(currentIndex, -1, currentQueue.length));
         }
-
-        // Load the current track.
-        this.load(currentQueue[currentIndex]);
-    }
-
-    /**
-     * Shuffles a given set of tracks.
-     * 
-     * @return An object containing the shuffled tracks and the shuffle index of the index given.
-     */
-    private shuffleTracks(tracks: ITrack[], currentIndex: number): { shuffledTracks: ITrack[], shuffledIndex: number }  {
-        return {
-
-        };
-    }
-
-    /**
-     * Sets the shuffle value.
-     * 
-     * @param shuffle If true, the queue is shuffled, if false the queue
-     */
-    public setShuffle(shuffle: boolean): void {
-
-        this.shuffle = shuffle;
-
-        // if shuffle === true
-        // tempQueue = cloned orderedQueue;
-        // this.shuffleTracks(tempQueue) (keep track of currentTrackIndex in tempQueue).
-        // shuffledQueue = tempQueue;
-
-        // if shuffle === false
-        // empty shuffledQueue
-        // find and set currentTrack in orderedQueue.
-
-    }
-
-    /**
-     * Gets the players shuffle state.
-     * 
-     * @return The shuffle state. 
-     */
-    public getShuffle(): boolean {
-        return this.shuffle;
     }
 
     // -------------------------------------------------------
@@ -445,6 +564,13 @@ class Player {
     }
 
     /**
+     * Restart the current track.
+     */
+    public restart(): void {
+        this.seekTo(0);
+    }
+
+    /**
      * Get the players volume percentage.
      * 
      * @return The percentage (0 to 1) volume.
@@ -462,23 +588,32 @@ class Player {
     public setVolume(volume: number): void {
         this.volume = volume;
 
-        this.currentPlayer.setVolume(this.volume);
+        this.currentPlayer.setVolume(volume);
+    }
+
+    /**
+     * Gets the muted state of the player.
+     * 
+     * @return The muted state of the player.
+     */
+    public getMuted(): boolean {
+        return this.muted;
     }
 
     /**
      * Sets the muted state.
      * 
-     * @param muted If true, the player will be muted.
+     * @param mute If true, the player will be muted.
      */
-    public setMute(muted: boolean): void {
-        this.muted = muted;
+    public setMuted(mute: boolean): void {
+        this.muted = mute;
 
         if (this.muted) {
             // Must use the currentPlayer.setVolume
-            // else it will override the player volume (i.e. this.volume)
+            // else it will override the player volume
             this.currentPlayer.setVolume(0);
         } else {
-            this.currentPlayer.setVolume(this.volume);
+            this.currentPlayer.setVolume(this.getVolume());
         }
     }
 
@@ -488,7 +623,11 @@ class Player {
      * @return The current muted state.
      */
     public toggleMuted(): boolean {
-        this.setMute(!this.muted);
+        let mute = !this.getMuted();
+
+        this.setMuted(mute);
+
+        return mute;
     }
 
     /**

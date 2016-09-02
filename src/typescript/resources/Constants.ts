@@ -8,6 +8,12 @@ let CONSTANTS = {
             TIME_AFTER_WHICH_TO_RESTART_TRACK: 3000, // in milliseconds
             VOLUME: 1,
         },
+        EVENTS: {
+            /**
+             * Published when the player is paused.
+             */
+            ON_PAUSE: `player-onPause`,
+        },
         REPEAT: {
             /**
              * Cycle through all the tracks in the queue.
@@ -17,18 +23,12 @@ let CONSTANTS = {
              * When the player gets to the end of the queue,
              * stop playing.
              */
-            NO: `no-repeat`,
+            OFF: `repeat-off`,
             /**
              * Keep repeating the current track.
              */
             ONE: `repeat-one`,
         },
-        EVENTS: {
-            /**
-             * Published when the player is paused.
-             */
-            ON_PAUSE: `player-onPause`,
-        }
     },
 };
 
