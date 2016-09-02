@@ -39,9 +39,9 @@ class Player {
      * - repeat all, cycle through queue.
      */
     private repeat: string;
-    private shuffle: boolean;
-    private volume: number;
-    private muted: boolean;
+    private shuffle: boolean = false;
+    private volume: number = 1;
+    private muted: boolean = false;
 
     /**
      * Creates the music player.
@@ -62,8 +62,8 @@ class Player {
         // Set the player defaults
         this.setRepeat(repeat ? repeat : CONSTANTS.PLAYER.DEFAULTS.REPEAT);
         this.setShuffle(shuffle ? shuffle : CONSTANTS.PLAYER.DEFAULTS.SHUFFLE);
-        this.setMuted(muted ? muted : CONSTANTS.PLAYER.DEFAULTS.MUTED);
         this.setVolume(volume ? volume : CONSTANTS.PLAYER.DEFAULTS.VOLUME);
+        this.setMuted(muted ? muted : CONSTANTS.PLAYER.DEFAULTS.MUTED);
 
         // More defaults
         this.timeAfterWhichToRestartTrack = CONSTANTS.PLAYER.DEFAULTS.TIME_AFTER_WHICH_TO_RESTART_TRACK;
@@ -74,8 +74,20 @@ class Player {
      * 
      * @param servicePlayerAdapter The adapter for the music service player one wants to switch to.
      */
-    public switchPlayer(servicePlayerAdapter: IServicePlayerAdapter) {
+    public switchPlayer(servicePlayerAdapter: IServicePlayerAdapter): void {
 
+        // @NB Unload old player
+
+        // Switch to the new music service player.
+        this.currentPlayer = servicePlayerAdapter;
+
+        // Reset the current player volume and muted state since
+        // the new music service player adapter might not have the latest values.
+        this.setVolume(this.getVolume());
+        this.setMuted(this.getMuted());
+
+        // Load the current track.
+        this.load(this.getCurrentTrack());
     }
 
 
@@ -328,7 +340,7 @@ class Player {
      * Dequeues all tracks from the queue.
      * Then sets the current track index to -1 as there are no more tracks.
      */
-    public dequeueAll() {
+    public dequeueAll(): void {
         this.currentTrackIndex = -1;
         this.orderedQueue = [];
         this.shuffledQueue = [];
@@ -517,11 +529,16 @@ class Player {
     // =======================================================
 
     /**
-     * Loads the specified track, respecting the current paused state.
+     * Loads the specified track, respecting the current paused state and seek position.
      * 
      * @param track The track to be played (@NB: this is set as the current track).
      */
     public load(track: ITrack): void {
+
+        // If track is undefined then don't try load it.
+
+        // Once the new track is loaded, remember to set the progress.
+
         // update current track.
         // update current track index.
         this.currentPlayer.load(track).then(
@@ -581,14 +598,29 @@ class Player {
 
     /**
      * Sets the players volume percentage.
-     * When the volume is set, the player is automatically unMuted
+     * If the player is muted, it is not automatically unmuted by default.
      * 
      * @param volume The percentage (0 to 1) volume to set the player to.
+     * @param unmute Determines whether or not to unmute the player when the volume is set.
      */
-    public setVolume(volume: number): void {
+    public setVolume(volume: number, unmute?: boolean): void {
+
+        // Get the current muted state of the player.
+        let muted = this.getMuted();
+
+        // Update the stored volume.
         this.volume = volume;
 
-        this.currentPlayer.setVolume(volume);
+        // If not currently muted, just set the volume.
+        if (!muted) {
+            this.currentPlayer.setVolume(volume);
+        } else
+        // If currently muted and unmute === true, unmute and set the volume.
+        if (muted && unmute) {
+            this.setMuted(false);
+            // this.currentPlayer.setVolume(volume); - don't need to call this as it is called in setMuted();
+        }
+
     }
 
     /**
@@ -687,6 +719,36 @@ class Player {
     public getPercentageLoaded(): number {
         return this.currentPlayer.getPercentageLoaded();
     }
+
+    // -------------------------------------------------------
+
+
+    // =======================================================
+    // Registering events for music service adapters
+    // to implement.
+    // =======================================================
+
+
+
+    // -------------------------------------------------------
+
+
+    // =======================================================
+    // Registering events to be published by the player
+    // (i.e. an instance of this class).
+    // =======================================================
+
+
+
+    // -------------------------------------------------------
+
+
+    // =======================================================
+    // Subscribing to events published by
+    // music service adapters.
+    // =======================================================
+
+
 
     // -------------------------------------------------------
 

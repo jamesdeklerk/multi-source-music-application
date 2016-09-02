@@ -14,6 +14,8 @@ interface IServicePlayerAdapter {
      * Implement this using a getter.
      */
     paused: boolean;
+
+    
 }
 
 class YouTubeAdapter implements IServicePlayerAdapter {
