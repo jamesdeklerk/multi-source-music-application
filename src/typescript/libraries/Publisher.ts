@@ -348,23 +348,23 @@ class Publisher {
      * A registry of all the events.
      */
     private registeredEvents: PublisherEvent[] = [];
-    private checkHandlerParametersOnPublish: boolean;
+    private checkEventAndArgumentsOnPublish: boolean;
 
 
     /**
      * Creates a new instance of Publisher.
      * 
-     * @param checkHandlerParametersOnPublish Specifies whether or not to check an event handlers 
-     * parameters when publishing an event.
+     * @param checkEventAndArgumentsOnPublish Specifies whether or not - when publishing an event - 
+     * to check that the event is registered and the associated arguments are valid.
      * Suggestion:
-     * checkHandlerParametersOnPublish = true for development.
-     * checkHandlerParametersOnPublish = false for production.
+     * checkEventAndArgumentsOnPublish = true for development.
+     * checkEventAndArgumentsOnPublish = false for production.
      */
-    constructor(checkHandlerParametersOnPublish?: boolean) {
-        if (checkHandlerParametersOnPublish) {
-            this.checkHandlerParametersOnPublish = true;
+    constructor(checkEventAndArgumentsOnPublish?: boolean) {
+        if (checkEventAndArgumentsOnPublish) {
+            this.checkEventAndArgumentsOnPublish = true;
         } else {
-            this.checkHandlerParametersOnPublish = false;
+            this.checkEventAndArgumentsOnPublish = false;
         }
     }
 
@@ -635,7 +635,7 @@ class Publisher {
      * 
      * @param eventName The name of the event.
      * @param handler The specific handler (i.e. function) to be removed from the event.
-     * @return True if successfully unsubscribed, false if not.
+     * @return True if successfully unsubscribed, false if not (i.e. there were no subscribers to that event).
      */
     public unsubscribe(eventName: string, handler: Function): boolean
     public unsubscribe(eventName: string, handler?: Function): boolean {
@@ -650,7 +650,7 @@ class Publisher {
                 `Cannot unsubscribe from an event that isn't registered.`);
         }
 
-        // If the event doesn't exist, return
+        // If the event has no subscribers, return false;
         if (!this.subscriptions.hasOwnProperty(eventName)) {
             return false;
         }
@@ -683,24 +683,18 @@ class Publisher {
      * 
      * @param eventName The name of the event.
      * @param args The arguments to be passed through to the events handler(s).
-     * @return True if successfully published, false if not.
      */
-    public publish(eventName: string, ...args: any[]): boolean {
+    public publish(eventName: string, ...args: any[]): void {
 
         if (!eventName) {
             throw new Error(`Expected an event name to publish.`);
         }
 
-        // If the event doesn't exist, return false
-        // The property wouldn't exist if the array was empty
-        if (!this.subscriptions.hasOwnProperty(eventName)) {
-            return false;
-        }
+        // Get an array of the event's handlers.
+        let eventHandlers: Function[] = this.subscriptions[eventName] || [];
 
-        let eventHandlers: Function[] = this.subscriptions[eventName];
-
-        // Determine if the handlers parameters should be checked
-        if (this.checkHandlerParametersOnPublish) {
+        // Determine if the handlers parameters should be checked.
+        if (this.checkEventAndArgumentsOnPublish) {
 
             // Get the event.
             let event = this.getEvent(eventName);
@@ -718,7 +712,6 @@ class Publisher {
             handler(...args);
         }
 
-        return true;
     }
 
 }
