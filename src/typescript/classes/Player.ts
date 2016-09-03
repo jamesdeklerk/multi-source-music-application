@@ -19,6 +19,23 @@ class Player {
         TIME_AFTER_WHICH_TO_RESTART_TRACK: CONSTANTS.PLAYER.DEFAULTS.TIME_AFTER_WHICH_TO_RESTART_TRACK,
         VOLUME: CONSTANTS.PLAYER.DEFAULTS.VOLUME,
     };
+    public EVENTS = {
+        ON_ERROR: `onError`, // Failed to load track, failed to change music service etc.
+        ON_MUSIC_SERVICE_CHANGE: `onMusicServiceChange`,
+        ON_MUTED_CHANGE: `onMutedChange`,
+        ON_NEXT: `onNext`,
+        ON_PAUSE: `onPause`,
+        ON_PLAY: `onPlay`,
+        ON_PREVIOUS: `onPrevious`,
+        ON_REPEAT_CHANGE: `onRepeatChange`,
+        ON_SEEK_CHANGE: `onSeekChange`,
+        ON_SHUFFLE_CHANGE: `onShuffleChange`,
+        ON_TIME_UPDATE: `onTimeUpdate`, // Published when the current playback position has changed.
+        ON_TRACK_DEQUEUED: `onTrackDequeued`,
+        ON_TRACK_LOADED: `onTrackLoaded`, // loaded track
+        ON_TRACK_QUEUED: `onTrackQueued`,
+        ON_VOLUME_CHANGE: `onVolumeChange`,
+    };
 
     // -------------------------------------------------------
 
@@ -156,7 +173,11 @@ class Player {
 
     private registerPlayerEvents(): void {
 
-        // publisher.register(CONSTANTS.PLAYER.EVENTS)
+        publisher.register(this.EVENTS.ON_ERROR, [{
+            name: `data`,
+            optional: true,
+            type: `object`,
+        }]);
 
     }
 

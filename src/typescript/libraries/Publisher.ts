@@ -1,3 +1,10 @@
+interface IParameterDefinition {
+    name: string;
+    type: string;
+    optional?: boolean;
+    description?: string;
+}
+
 class ParameterDefinition {
     /**
      * An array of the valid JavaScript data types.
@@ -123,15 +130,15 @@ class PublisherEvent {
      * @param description A description of the event.
      * @param registrant The object that registered the event.
      */
-    constructor(eventName: string, parameters?: any[], description?: string, registrant?: any) {
+    constructor(eventName: string, parameters?: IParameterDefinition[], description?: string, registrant?: any) {
 
         this.name = eventName;
         this.description = description || ``;
         this.registrant = registrant;
 
-        this.parameters = parameters || [];
+        this.parameters = <ParameterDefinition[]> (parameters || []);
         // If this.parameters is not a ParameterDefinition array, try convert it to one.
-        if (!this.validParameterDefinitionArray(parameters)) {
+        if (!this.validParameterDefinitionArray(this.parameters)) {
             this.parameters = this.convertToParameterDefinitionArray(this.parameters);
         }
 
@@ -500,7 +507,7 @@ class Publisher {
      * @param registrant The object that registered the event.
      */
     public register(eventName: string,
-                    parameters?: any[], description?: string, registrant?: any): void {
+                    parameters?: IParameterDefinition[], description?: string, registrant?: any): void {
         // Check the correct parameters were given.
         if (!eventName || eventName.length <= 0) {
             throw new Error(`Expected an event name with at least 1 character in order to register an event.`);
