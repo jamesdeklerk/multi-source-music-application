@@ -4,6 +4,12 @@
 class Main {
     constructor() {
 
+        // Create a new player object.
+        let player = new Player();
+
+        window.player = player;
+
+
     }
 }
 

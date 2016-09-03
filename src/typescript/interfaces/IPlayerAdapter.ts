@@ -1,6 +1,8 @@
 /**
  * The interface music service player adapters must implement.
  * @see Player.ts
+ * 
+ * Player adapters should not use any defined constants.
  */
 interface IPlayerAdapter {
 
@@ -11,6 +13,12 @@ interface IPlayerAdapter {
      * @return A promise which tells when the player is initialized and ready for use.
      */
     initialize(): Promise<any>;
+
+    /**
+     * Stops the playing of current track and 
+     * unloads it from the player.
+     */
+    unload(): void;
 
     /**
      * Loads the specified track.
@@ -30,11 +38,6 @@ interface IPlayerAdapter {
      * Pauses the current track.
      */
     pause(): void;
-
-    /**
-     * Stops the current track.
-     */
-    stop(): void;
 
     /**
      * Sets the players volume percentage.

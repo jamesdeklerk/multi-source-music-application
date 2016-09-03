@@ -97,7 +97,7 @@ gulp.task('reload:javascript', function () {
 gulp.task('reload:watch', function () {
     gulp.watch(htmlDirectory + '**/*.html', ['reload:html']);
     gulp.watch(cssDirectory + '**/*.css', ['reload:css']);
-    gulp.watch(javascriptDirectory + '**/*.js', ['reload:javascript']);
+    // gulp.watch(javascriptDirectory + '**/*.js', ['reload:javascript']);
 });
 
 // Reload task - starts Browsersync & reloads all files

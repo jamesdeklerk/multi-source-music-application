@@ -7,6 +7,62 @@
  */
 class Player {
 
+    // =======================================================
+    // CONSTANTS.
+    // =======================================================
+
+    private REGISTERED_SERVICES = CONSTANTS.PLAYER.REGISTERED_SERVICES;
+    private DEFAULTS = {
+        MUTED: CONSTANTS.PLAYER.DEFAULTS.MUTED,
+        REPEAT: CONSTANTS.PLAYER.DEFAULTS.REPEAT,
+        SHUFFLE: CONSTANTS.PLAYER.DEFAULTS.SHUFFLE,
+        TIME_AFTER_WHICH_TO_RESTART_TRACK: CONSTANTS.PLAYER.DEFAULTS.TIME_AFTER_WHICH_TO_RESTART_TRACK,
+        VOLUME: CONSTANTS.PLAYER.DEFAULTS.VOLUME,
+    };
+
+    // -------------------------------------------------------
+
+
+    // =======================================================
+    // Class parameters.
+    // =======================================================
+
+    /**
+     * Array of Registered Music Services and their associated Adapters.
+     * musicServices = [
+     *     {
+     *         adapter: Initialized DeezerAdapter,
+     *         initialized: false,
+     *         name: `Deezer`,
+     *     },
+     *     {
+     *         adapter: Initialized YouTubeAdapter,
+     *         initialized: false,
+     *         name: `YouTube`,
+     *     },
+     *     {
+     *         adapter: Initialized SoundCloudAdapter,
+     *         initialized: false,
+     *         name: `SoundCloud`,
+     *     },
+     * ]
+     */
+    private musicServices: IMusicService[] = [];
+    /**
+     * The index of the current musicService in the musicServices.
+     */
+    private currentMusicServiceIndex: number = -1;
+    /**
+     * A hashmap of the music services tried when loading a track.
+     * This is cleared as soon as a track is successfully loaded.
+     * 
+     * For example if SoundCloud hasn't been tried, it isn't there (i.e. is "false")
+     * musicServicesTried = {
+     *     "Deezer": true,
+     *     "YouTube": true,
+     * }
+     */
+    private musicServicesTried: any = {};
     /**
      * The current music service player being used.
      */
@@ -39,16 +95,19 @@ class Player {
      * - repeat all, cycle through queue.
      */
     private repeat: string;
-    private shuffle: boolean = false;
-    private volume: number = 1;
-    private muted: boolean = false;
+    private shuffle: boolean;
+    private volume: number;
+    private muted: boolean;
+
+    // -------------------------------------------------------
+
 
     /**
      * Creates the music player.
      * 
      * @param repeat The repeat setting @see CONSTANTS.PLAYER.REPEAT
      */
-    constructor(repeat?: string, shuffle?: boolean, volume?: number, muted?: boolean) {
+    constructor() {
 
         if (!CONSTANTS.PLAYER) {
             throw new Error(`CONSTANTS.PLAYER is used throughout the Player class and needs to be defined.`);
@@ -56,30 +115,37 @@ class Player {
 
         if (!publisher) {
             throw new Error(`The publish-subscribe library is used through the Player class ` +
-            `and should be instantiated before the Player class is instantiated.`);
+                `and should be instantiated before the Player class is instantiated.`);
         }
 
-        // Instantiate all the music service player adapters.
-        // for each registered music service player adapter... 
-        // playerAdapters = {
-        //    "deezer": Initialized DeezerAdapter,
-        //    "youtube": Initialized YouTubeAdapter,
-        //    "soundcloud": Initialized SoundCloudAdapter
-        // }
+        // Instantiate each of the registered music service player adapters.
+        // tslint:disable-next-line
+        // tslint:disable-next-line
+        for (let i = 0, musicService: IMusicService; musicService = this.REGISTERED_SERVICES[i]; i = i + 1) {
+            this.musicServices[i] = {
+                adapter: new musicService.adapter(),
+                // Set initialized to false because none of them have been
+                // initialized, they've only been instantiated.
+                initialized: false,
+                name: musicService.name,
+            };
+        }
 
-        // Initialize all the music service player adapters for use.
-
-        // Set the initial playerAdapter to be used
-        // using this.switchPlayer();
+        // Set the initial playerAdapter to be used.
+        if (this.musicServices[0]) {
+            this.switchMusicService(this.musicServices[0].name);
+        } else {
+            throw new Error(`No music service player adapters available.`);
+        }
 
         // Set the player defaults
-        this.setRepeat(repeat ? repeat : CONSTANTS.PLAYER.DEFAULTS.REPEAT);
-        this.setShuffle(shuffle ? shuffle : CONSTANTS.PLAYER.DEFAULTS.SHUFFLE);
-        this.setVolume(volume ? volume : CONSTANTS.PLAYER.DEFAULTS.VOLUME);
-        this.setMuted(muted ? muted : CONSTANTS.PLAYER.DEFAULTS.MUTED);
+        this.setRepeat(this.DEFAULTS.REPEAT);
+        this.setShuffle(this.DEFAULTS.SHUFFLE);
+        this.setVolume(this.DEFAULTS.VOLUME);
+        this.setMuted(this.DEFAULTS.MUTED);
 
         // More defaults
-        this.timeAfterWhichToRestartTrack = CONSTANTS.PLAYER.DEFAULTS.TIME_AFTER_WHICH_TO_RESTART_TRACK;
+        this.timeAfterWhichToRestartTrack = this.DEFAULTS.TIME_AFTER_WHICH_TO_RESTART_TRACK;
     }
 
 
@@ -119,24 +185,84 @@ class Player {
     // =======================================================
 
     /**
-     * Switches to a new music service.
+     * Switches to a new music service, initializing it if need be.
+     * Then resumes the current track.
      * 
-     * @param playerAdapter The adapter for the music service player one wants to switch to.
+     * @param musicServiceName The name of the music service one wants to switch to.
+     * @return A promise the tells when it's done switching services.
      */
-    public switchPlayer(playerAdapter: IPlayerAdapter): void {
+    public switchMusicService(musicServiceName: string): Promise<any> {
 
-        // @NB Unload old player
+        return new Promise((resolve, reject) => {
 
-        // Switch to the new music service player.
-        this.currentPlayer = playerAdapter;
+            let musicService: IMusicService;
+            let musicServiceIndex: number;
 
-        // Reset the current player volume and muted state since
-        // the new music service player adapter might not have the latest values.
-        this.setVolume(this.getVolume());
-        this.setMuted(this.getMuted());
+            // Find the music service in the list of registered music services.
+            // tslint:disable-next-line
+            for (let i = 0, currentMusicService: IMusicService; currentMusicService = this.musicServices[i]; i = i + 1) {
+                if (currentMusicService.name === musicServiceName) {
+                    musicService = currentMusicService;
+                    musicServiceIndex = i;
+                    // Break the for loop when found.
+                    break;
+                }
+            }
 
-        // Load the current track.
-        this.load(this.getCurrentTrack());
+            // Check if the music service was found.
+            if (!musicService) {
+                throw new Error(`Music service ${musicServiceName} not found in the list of ` +
+                    `registered music services (names are case-sensitive).`);
+            }
+
+            // Unload old player.
+            this.unload();
+
+            // If the new musicService isn't initialized,
+            // initialize it, then try switch music services again.
+            if (!musicService.initialized) {
+
+                (<IPlayerAdapter> musicService.adapter).initialize().then(() => {
+
+                    // The music service has been successfully Initialized.
+                    musicService.initialized = true;
+                    this.switchMusicService(musicService.name).then(() => {
+                        // If we get here, the musicService has been initialized,
+                        // then we switched to the new musicService, so finally we can
+                        // resolve the promise.
+                        resolve();
+                    });
+
+                }).catch(() => {
+                    // Failed to initialize the player,
+                    // reject the promise.
+                    reject();
+                });
+
+            } else {
+
+                // Set the new music service index.
+                this.currentMusicServiceIndex = musicServiceIndex;
+
+                // Switch to using the new music service player adapter.
+                this.currentPlayer = musicService.adapter;
+
+                // Reset the current player volume and muted state because
+                // the new music service player adapter might not have the latest values.
+                this.setVolume(this.getVolume());
+                this.setMuted(this.getMuted());
+
+                // Load the current track.
+                this.load(this.getCurrentTrack());
+
+                // Resolve for when the musicService
+                // was already initialized.
+                resolve();
+
+            }
+
+        });
+
     }
 
     // -------------------------------------------------------
@@ -215,9 +341,6 @@ class Player {
         }
 
         // Update the current track index to the index in the current queue.
-        // We don't use this.setCurrentIndex(currentTrackIndex);
-        // Because that would load the track when we just want to update the index.
-        // to be correct for the current queue.
         this.currentTrackIndex = currentTrackIndex;
 
         // Finally we can set the shuffled state
@@ -260,7 +383,7 @@ class Player {
         if (value === CONSTANTS.PLAYER.REPEAT.OFF ||
             value === CONSTANTS.PLAYER.REPEAT.ONE ||
             value === CONSTANTS.PLAYER.REPEAT.ALL) {
-                this.repeat = value;
+            this.repeat = value;
         } else {
             this.repeat = CONSTANTS.PLAYER.REPEAT.ALL;
         }
@@ -382,7 +505,7 @@ class Player {
         // If the queue is empty, set the current track index to -1.
         if (this.orderedQueue.length <= 0) {
             // @NB rather than this.currentTrackIndex = -1; 
-            // maybe call this.stop(); or maybe create an unload function...
+            // maybe call this.unload(); ...
             this.currentTrackIndex = -1;
         }
     }
@@ -451,21 +574,37 @@ class Player {
     }
 
     /**
-     * Sets the current track index and loads that track.
+     * Loads the track at that index from the queue.
      * 
      * @param index The index of the track in the queue.
-     * @return The new index.
      */
-    public setCurrentIndex(index: number): number {
-        let currentQueue = this.getQueue();
+    public loadTrackFromQueue(index: number): void {
 
-        if (this.isIndexInQueue(index, currentQueue)) {
-            this.currentTrackIndex = index;
-            // Load the track at that index.
-            this.load(currentQueue[index]);
-            return index;
+        // If it's not on the default music service, 
+        // change to the default music service.
+        if (this.currentMusicServiceIndex !== 0) {
+
+            let defaultMusicServiceName = this.musicServices[0].name;
+            this.switchMusicService(defaultMusicServiceName).then(() => {
+
+                // Once the music service is successfully switched 
+                // to the default music service, try load the track from the queue again.
+                this.loadTrackFromQueue(index);
+            });
+
         } else {
-            throw new Error(`The index given is out of the queue bounds.`);
+
+            let currentQueue = this.getQueue();
+
+            if (this.isIndexInQueue(index, currentQueue)) {
+                // Update the current track index.
+                this.currentTrackIndex = index;
+                // Load the track at that index.
+                this.load(currentQueue[index]);
+            } else {
+                throw new Error(`The index given is out of the queue bounds.`);
+            }
+
         }
     }
 
@@ -529,13 +668,13 @@ class Player {
         } else if (repeat === CONSTANTS.PLAYER.REPEAT.OFF) {
             // If it's the last track
             if (currentIndex >= (currentQueue.length - 1)) {
-                this.stop();
+                this.unload();
                 return;
             } else {
-                currentIndex = this.setCurrentIndex(currentIndex + 1);
+                this.loadTrackFromQueue(currentIndex + 1);
             }
         } else {
-            currentIndex = this.setCurrentIndex(this.incrementIndex(currentIndex, 1, currentQueue.length));
+            this.loadTrackFromQueue(this.incrementIndex(currentIndex, 1, currentQueue.length));
         }
     }
 
@@ -562,13 +701,13 @@ class Player {
         } else if (repeat === CONSTANTS.PLAYER.REPEAT.OFF) {
             // If it's the first track
             if (currentIndex === 0) {
-                this.stop();
+                this.unload();
                 return;
             } else {
-                currentIndex = this.setCurrentIndex(currentIndex - 1);
+                this.loadTrackFromQueue(currentIndex - 1);
             }
         } else {
-            currentIndex = this.setCurrentIndex(this.incrementIndex(currentIndex, -1, currentQueue.length));
+            this.loadTrackFromQueue(this.incrementIndex(currentIndex, -1, currentQueue.length));
         }
     }
 
@@ -580,25 +719,95 @@ class Player {
     // =======================================================
 
     /**
+     * Unloads the current track. This stops the playing of current track and 
+     * unloads it from the player.
+     */
+    public unload(): void {
+        if (this.currentPlayer) {
+            this.currentPlayer.unload();
+        }
+    }
+
+    /**
      * Loads the specified track, respecting the current paused state and seek position.
      * If it fails to load, it switches to the next playerAdapter
      * and loads the track.
      * 
      * @param track The track to be played (@NB: this is set as the current track).
      */
-    public load(track: ITrack): void {
+    private load(track: ITrack): void {
+
+        // If the currentPlayer doesn't exist, we can't try load a track.
+        if (!this.currentPlayer) {
+            return;
+        }
 
         // If track is undefined then don't try load it.
+        if (!track) {
+            this.unload();
+            return;
+        }
 
-        // Once the new track is loaded, remember to set the progress.
+        // Find the index of the track in the queue.
+        let currentQueue = this.getQueue();
+        let trackIndex = currentQueue.indexOf(track);
 
-        // update current track.
-        // update current track index.
-        this.currentPlayer.load(track).then(
-            // then once loaded, play track.
-            // actually no, the playerAdapter should play automatically.
-            // returning a promise
-        );
+        // Check if the track is in the queue.
+        if (trackIndex < 0) {
+            throw new Error(`Can't load a song that isn't in the queue.`);
+        }
+
+        // Store the track progress (in milliseconds).
+        let trackProgress = this.getCurrentTime();
+
+        this.currentPlayer.load(track).then(() => {
+            console.log(`The track has been loaded successfully :)`);
+
+            // Clear the music services tried.
+            this.musicServicesTried = {};
+
+            // Update the current track index.
+            this.currentTrackIndex = trackIndex;
+
+            // Resume track progress.
+            this.seekTo(trackProgress);
+
+            // Resume paused state.
+            if (this.getPaused()) {
+                this.pause();
+            } else {
+                this.play();
+            }
+
+        }).catch(() => {
+
+            // Check if the currentMusicServiceIndex is out of bounds.
+            if (this.currentMusicServiceIndex < 0) {
+                throw new Error(`this.currentMusicServiceIndex is out of bounds.`);
+            }
+
+            // The track failed to load on the current music service,
+            // mark this music service as tried (i.e. true).
+            let currentMusicServiceName = this.musicServices[this.currentMusicServiceIndex].name;
+            this.musicServicesTried[currentMusicServiceName] = true;
+            console.log(`The track failed to load using ${currentMusicServiceName} :(`);
+
+            console.log(`Try the next player`);
+
+            // Get the next music services name.
+            let nextMusicServicesIndex = this.incrementIndex(this.currentMusicServiceIndex, 1,
+                this.musicServices.length);
+            let nextMusicServicesName = this.musicServices[nextMusicServicesIndex].name;
+
+            // If this music service hasn't been tried, try it.
+            if (!this.musicServicesTried[nextMusicServicesName]) {
+                this.switchMusicService(nextMusicServicesName);
+            } else {
+                // Else all music services have been tried, move on to the next track.
+                this.next();
+            }
+
+        });
     }
 
     /**
@@ -615,7 +824,9 @@ class Player {
      */
     public play(): void {
         this.paused = false;
-        this.currentPlayer.play();
+        if (this.currentPlayer) {
+            this.currentPlayer.play();
+        }
     }
 
     /**
@@ -623,7 +834,9 @@ class Player {
      */
     public pause(): void {
         this.paused = true;
-        this.currentPlayer.pause();
+        if (this.currentPlayer) {
+            this.currentPlayer.pause();
+        }
     }
 
     /**
@@ -631,13 +844,6 @@ class Player {
      */
     public playPause(): void {
         this.getPaused() ? this.play() : this.pause();
-    }
-
-    /**
-     * Stops the current track and cancels loading of the current track.
-     */
-    public stop(): void {
-        this.currentPlayer.stop();
     }
 
     /**
@@ -673,13 +879,17 @@ class Player {
 
         // If not currently muted, just set the volume.
         if (!muted) {
-            this.currentPlayer.setVolume(volume);
+            if (this.currentPlayer) {
+                this.currentPlayer.setVolume(volume);
+            }
         } else
-        // If currently muted and unmute === true, unmute and set the volume.
-        if (muted && unmute) {
-            this.setMuted(false);
-            // this.currentPlayer.setVolume(volume); - don't need to call this as it is called in setMuted();
-        }
+            // If currently muted and unmute === true, unmute and set the volume.
+            if (muted && unmute) {
+                this.setMuted(false);
+                // if (this.currentPlayer) {
+                //     this.currentPlayer.setVolume(volume); // - don't need to call this as it is called in setMuted();
+                // }
+            }
 
     }
 
@@ -703,9 +913,13 @@ class Player {
         if (this.muted) {
             // Must use the currentPlayer.setVolume
             // else it will override the player volume
-            this.currentPlayer.setVolume(0);
+            if (this.currentPlayer) {
+                this.currentPlayer.setVolume(0);
+            }
         } else {
-            this.currentPlayer.setVolume(this.getVolume());
+            if (this.currentPlayer) {
+                this.currentPlayer.setVolume(this.getVolume());
+            }
         }
     }
 
@@ -725,10 +939,14 @@ class Player {
     /**
      * Gets the duration of the current track.
      * 
-     * @return The duration of the current track in milliseconds.
+     * @return The duration of the current track in milliseconds, 0 if the currentPlayer isn't available.
      */
     public getDuration(): number {
-        return this.currentPlayer.getDuration();
+        if (this.currentPlayer) {
+            return this.currentPlayer.getDuration();
+        } else {
+            return 0;
+        }
     }
 
     /**
@@ -739,7 +957,9 @@ class Player {
      * @param milliseconds The time in milliseconds to which the player should advance.
      */
     public seekTo(milliseconds: number): void {
-        this.currentPlayer.seekTo(milliseconds);
+        if (this.currentPlayer) {
+            this.currentPlayer.seekTo(milliseconds);
+        }
     }
 
     /**
@@ -756,28 +976,40 @@ class Player {
     /**
      * Gets the current time of the track.
      * 
-     * @return The current time of the track in milliseconds.
+     * @return The current time of the track in milliseconds, 0 if the currentPlayer isn't available.
      */
     public getCurrentTime(): number {
-        return this.currentPlayer.getCurrentTime();
+        if (this.currentPlayer) {
+            return this.currentPlayer.getCurrentTime();
+        } else {
+            return 0;
+        }
     }
 
     /**
      * Gets the current percentage played of the track.
      * 
-     * @return The current percentage (0 to 1) played of the track.
+     * @return The current percentage (0 to 1) played of the track, 0 if the currentPlayer isn't available.
      */
     public getCurrentPercentage(): number {
-        return this.getCurrentTime() / this.getDuration();
+        if (this.currentPlayer) {
+            return this.getCurrentTime() / this.getDuration();
+        } else {
+            return 0;
+        }
     }
 
     /**
      * Gets the percentage that the track has loaded.
      * 
-     * @return The percentage (0 to 1) that the track has loaded.
+     * @return The percentage (0 to 1) that the track has loaded, 0 if the currentPlayer isn't available.
      */
     public getPercentageLoaded(): number {
-        return this.currentPlayer.getPercentageLoaded();
+        if (this.currentPlayer) {
+            return this.currentPlayer.getPercentageLoaded();
+        } else {
+            return 0;
+        }
     }
 
     // -------------------------------------------------------

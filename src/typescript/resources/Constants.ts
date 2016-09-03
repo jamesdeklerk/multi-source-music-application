@@ -14,6 +14,16 @@ let CONSTANTS = {
              */
             ON_PAUSE: `player-onPause`,
         },
+        REGISTERED_SERVICES: [
+            /**
+             * In order of which the players will be tried.
+             * Use IMusicService format.
+             */
+            {
+                adapter: YouTubeAdapter,
+                name: `YouTube`,
+            },
+        ],
         REPEAT: {
             /**
              * Cycle through all the tracks in the queue.

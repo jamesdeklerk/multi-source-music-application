@@ -1,3 +1,4 @@
+// tslint:disable-next-line
 interface Window {
     onYouTubeIframeAPIReady: any;
 }
@@ -6,25 +7,34 @@ class YouTubeAdapter implements IPlayerAdapter {
 
     private youtubePlayer: YT.Player;
 
+    constructor() {
+
+        // =======================================================
+        // Registering Events
+        // =======================================================
+
+        publisher.register(`youtube-onStateChange`);
+        publisher.register(`youtube-onError`);
+
+        // -------------------------------------------------------
+
+    }
+
     public initialize(): Promise<any> {
 
         return new Promise((resolve, reject) => {
 
             // Load the IFrame Player API code asynchronously.
-            let tag = <HTMLScriptElement>document.createElement(`script`);
+            let tag = <HTMLScriptElement> document.createElement(`script`);
             tag.src = "https://www.youtube.com/iframe_api";
             let firstScriptTag = document.getElementsByTagName(`script`)[0];
             firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
             // Create an <iframe> (and YouTube player) after the API code downloads.
             // tslint:disable-next-line
-            let thisYouTubeAdapter = this;
+            let thisContext = this;
             window.onYouTubeIframeAPIReady = function onYouTubeIframeAPIReady() {
-
-                // May not be in the right scope, probably have to use thisYouTubeAdapter.
-                console.log(this);
-
-                thisYouTubeAdapter.youtubePlayer = new YT.Player(`youtube-player`, {
+                thisContext.youtubePlayer = new YT.Player(`youtube-player`, {
                     events: {
                         "onReady": function () {
                             // We don't have a "reject" because YouTube API doesn't
@@ -32,6 +42,9 @@ class YouTubeAdapter implements IPlayerAdapter {
                             resolve();
                         },
                         "onStateChange": function (e) {
+
+                            console.log(`onStateChange: ` + e.data);
+
                             // Have to use publisher to mimic the events fired.
                             // This is because the YouTube APIs removeEventListener
                             // function doesn't work.
@@ -46,7 +59,7 @@ class YouTubeAdapter implements IPlayerAdapter {
                     },
                     height: `300`,
                     playerVars: {
-                        "controls": 0,
+                        "controls": 1,
                     },
                     videoId: ``, // Set as none to start.
                     width: `600`,
@@ -57,20 +70,28 @@ class YouTubeAdapter implements IPlayerAdapter {
 
     }
 
+    public unload(): void {
+        this.youtubePlayer.stopVideo();
+    }
+
     public load(track: ITrack): Promise<{}> {
         return new Promise((resolve, reject) => {
-            // Get YouTube ID from track then load it.
-            // this.youtubePlayer.loadVideoById(...);
+
+            console.log(`YouTube load(track) was called!`);
 
             let thisYouTubeAdapter = this;
 
             function onStateChangeHandler(e: any) {
+                // If the state changes to playing (i.e. 1),
+                // then from the YouTube API we know it's the track is loaded.
                 if (e.data === 1) {
 
+                    console.log(`Track loaded!!!!!!!!!!!!!!!!`);
+
                     // We're done with the onStateChangeHandler, so get rid of it.
-                    publisher.unsubscribe('youtube-onStateChange', onStateChangeHandler);
+                    publisher.unsubscribe(`youtube-onStateChange`, onStateChangeHandler);
                     // We're done with the onErrorHandler, so get rid of it.
-                    publisher.unsubscribe('youtube-onError', onErrorHandler);
+                    publisher.unsubscribe(`youtube-onError`, onErrorHandler);
 
                     // Pause the video (as per interface definition of load)
                     thisYouTubeAdapter.pause();
@@ -82,13 +103,17 @@ class YouTubeAdapter implements IPlayerAdapter {
             function onErrorHandler(e: any) {
 
                 // We're done with the onStateChangeHandler, so get rid of it.
-                publisher.unsubscribe('youtube-onStateChange', onStateChangeHandler);
+                publisher.unsubscribe(`youtube-onStateChange`, onStateChangeHandler);
                 // We're done with the onErrorHandler, so get rid of it.
-                publisher.unsubscribe('youtube-onError', onErrorHandler);
+                publisher.unsubscribe(`youtube-onError`, onErrorHandler);
 
                 reject();
             }
 
+            publisher.subscribe(``, onStateChangeHandler);
+            publisher.subscribe(``, onErrorHandler);
+
+            // Get YouTube ID from track then load it.
             this.youtubePlayer.loadVideoById(`CR7TN-j4lY4`);
         });
     }
@@ -99,10 +124,6 @@ class YouTubeAdapter implements IPlayerAdapter {
 
     public pause(): void {
         this.youtubePlayer.pauseVideo();
-    }
-
-    public stop(): void {
-        this.youtubePlayer.stopVideo();
     }
 
     public setVolume(volume: number): void {
