@@ -12,6 +12,7 @@
         // Libraries
         "src/typescript/libraries/Publisher.ts",
         // Definitions
+        "src/typescript/definitions/es6-promise.d.ts",
         "src/typescript/definitions/youtube.d.ts",
         // Interfaces
         "src/typescript/interfaces/IAlbum.ts",

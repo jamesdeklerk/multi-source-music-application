@@ -7,15 +7,19 @@ interface IPlayerAdapter {
     /**
      * This should initialize the player in the relevant way.
      * This function is called immediately after the service adapter is created.
+     * 
+     * @return A promise which tells when the player is initialized and ready for use.
      */
-    initialize(): void;
+    initialize(): Promise<any>;
 
     /**
-     * Loads the specified track and starts playing the track from the beginning.
+     * Loads the specified track.
+     * The track should be paused at the beginning of the track.
      * 
      * @param track The track to be played.
+     * @return A promise which tells when the track is loaded or if it gave an error.
      */
-    load(track: ITrack): void;
+    load(track: ITrack): Promise<any>;
 
     /**
      * Plays the current track.
