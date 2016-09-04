@@ -9,7 +9,7 @@ class Main {
         window.player = player;
 
         // Create some tracks.
-        let track1: ITrack = {
+        let track0: ITrack = {
             artist: undefined,
             duration: 9769,
             services: {
@@ -21,10 +21,10 @@ class Main {
                 // and marked as false if the service has been searched but no track was found.
                 "SoundCloud": false,
             },
-            title: `1. No Church In The Wild`,
+            title: `0. No Church In The Wild`,
             uuid: `1`,
         };
-        let track2: ITrack = {
+        let track1: ITrack = {
             artist: undefined,
             duration: 9769,
             services: {
@@ -36,10 +36,10 @@ class Main {
                 // and marked as false if the service has been searched but no track was found.
                 "SoundCloud": false,
             },
-            title: `2. Get Low`,
+            title: `1. Get Low`,
             uuid: `1`,
         };
-        let track3: ITrack = {
+        let track2: ITrack = {
             artist: undefined,
             duration: 9769,
             services: {
@@ -51,40 +51,10 @@ class Main {
                 // and marked as false if the service has been searched but no track was found.
                 "SoundCloud": false,
             },
-            title: `3. Be Together feat. Wild Belle`,
+            title: `2. Be Together feat. Wild Belle`,
             uuid: `1`,
         };
-        let track4: ITrack = {
-            artist: undefined,
-            duration: 9769,
-            services: {
-                "Deezer": undefined,
-                "YouTube": {
-                    videoId: `viimfQi_pUw`,
-                },
-                // The service will have an undefined object if it hasn't been searched,
-                // and marked as false if the service has been searched but no track was found.
-                "SoundCloud": false,
-            },
-            title: `4. Ocean Eyes`,
-            uuid: `1`,
-        };
-        let track5: ITrack = {
-            artist: undefined,
-            duration: 9769,
-            services: {
-                "Deezer": undefined,
-                "YouTube": {
-                    videoId: `1ekZEVeXwek`,
-                },
-                // The service will have an undefined object if it hasn't been searched,
-                // and marked as false if the service has been searched but no track was found.
-                "SoundCloud": false,
-            },
-            title: `5. Into You`,
-            uuid: `1`,
-        };
-        let track6: ITrack = {
+        let track3: ITrack = {
             artist: undefined,
             duration: 9769,
             services: {
@@ -96,10 +66,40 @@ class Main {
                 // and marked as false if the service has been searched but no track was found.
                 "SoundCloud": false,
             },
-            title: `6. THIS TRACK ISN'T AVAILABLE (This video is private.)`,
+            title: `3. THIS TRACK ISN'T AVAILABLE (This video is private.)`,
             uuid: `1`,
         };
-        let track7: ITrack = {
+        let track4: ITrack = {
+            artist: undefined,
+            duration: 9769,
+            services: {
+                "Deezer": undefined,
+                "YouTube": {
+                    videoId: `1ekZEVeXwek`,
+                },
+                // The service will have an undefined object if it hasn't been searched,
+                // and marked as false if the service has been searched but no track was found.
+                "SoundCloud": false,
+            },
+            title: `4. Into You`,
+            uuid: `1`,
+        };
+        let track5: ITrack = {
+            artist: undefined,
+            duration: 9769,
+            services: {
+                "Deezer": undefined,
+                "YouTube": {
+                    videoId: `viimfQi_pUw`,
+                },
+                // The service will have an undefined object if it hasn't been searched,
+                // and marked as false if the service has been searched but no track was found.
+                "SoundCloud": false,
+            },
+            title: `5. Ocean Eyes`,
+            uuid: `1`,
+        };
+        let track6: ITrack = {
             artist: undefined,
             duration: 9769,
             services: {
@@ -111,12 +111,28 @@ class Main {
                 // and marked as false if the service has been searched but no track was found.
                 "SoundCloud": false,
             },
-            title: `7. Hypnotize`,
+            title: `6. Hypnotize`,
+            uuid: `1`,
+        };
+        let track7: ITrack = {
+            artist: undefined,
+            duration: 9769,
+            services: {
+                "Deezer": undefined,
+                "YouTube": {
+                    videoId: `Bm5iA4Zupek`,
+                },
+                // The service will have an undefined object if it hasn't been searched,
+                // and marked as false if the service has been searched but no track was found.
+                "SoundCloud": false,
+            },
+            title: `7. Runaway (Video Version) ft. Pusha T`,
             uuid: `1`,
         };
 
         // Queue multiple tracks.
         player.queue([
+            track0,
             track1,
             track2,
             track3,
@@ -133,7 +149,7 @@ class Main {
         player.setRepeat(player.REPEAT.OFF);
 
         // Play the 2nd track in the queue, this should play track1. 
-        player.loadTrackFromQueue(1);
+        player.loadTrackFromQueue(0);
 
     }
 }

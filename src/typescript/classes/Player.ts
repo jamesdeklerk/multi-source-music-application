@@ -557,15 +557,6 @@ class Player {
      */
     public dequeue(index: number): void {
 
-        if (!index) {
-            return;
-        }
-
-        let shuffled = this.getShuffle();
-        let currentTrackIndex = this.getCurrentIndex();
-        let currentTrack = this.getCurrentTrack();
-        let dequeuedTheTrackThatWasPlaying = false;
-
         // If the index given isn't in the queue, throw an error.
         if (!this.isIndexInQueue(index, this.getQueue())) {
             throw new Error(`The dequeue index provided is not a valid index (i.e. isn't in the queue).`)
@@ -573,6 +564,11 @@ class Player {
 
         // We know it's a valid index, so set it as the index of the track to dequeue.
         let indexOfTrackToDequeue = index;
+        console.log(`Dequeued: ${this.getQueue()[indexOfTrackToDequeue].title}`);
+
+        let shuffled = this.getShuffle();
+        let repeat = this.getRepeat();
+        let currentTrackIndex = this.getCurrentIndex();
 
         // If the queue isn't shuffled, just remove the track at the specified index,
         // from the ordered queue.
@@ -580,32 +576,68 @@ class Player {
             this.orderedQueue.splice(indexOfTrackToDequeue, 1);
         } else {
             // If the queue is shuffled, dequeue the first track of that type from the orderedQueue.
-            let indexOfTrackToDequeueFromOrderedQueue = this.orderedQueue.indexOf(currentTrack);
+            let trackToBeDequeued = this.shuffledQueue[indexOfTrackToDequeue];
+            let indexOfTrackToDequeueFromOrderedQueue = this.orderedQueue.indexOf(trackToBeDequeued);
             this.orderedQueue.splice(indexOfTrackToDequeueFromOrderedQueue, 1);
 
             // Then dequeue track from the shuffledQueue.
             this.shuffledQueue.splice(indexOfTrackToDequeue, 1);
         }
 
+        // Get the updated current queue (because a track was just dequeued).
+        let currentQueue = this.getQueue();
 
+        // If the queue is now empty, just unload the player.
+        if (currentQueue.length <= 0) {
+            this.unload();
+            return;
+        }
 
-
-
-        // Check if the track dequeued was the one currently playing.
+        // If the track dequeued was the one currently playing.
         if (currentTrackIndex === indexOfTrackToDequeue) {
-            dequeuedTheTrackThatWasPlaying = true;
+
+            // And repeat is one, clear the player.
+            if (repeat === this.REPEAT.ONE) {
+
+                // Clear the current track and set the currentTrackIndex to -1;
+                this.unload();
+
+                return;
+            }
+
+            // Else, if the track dequeued was the one currently playing,
+            // and the track dequeued wasn't the last track,
+            // load the track that took its place.
+            if (currentTrackIndex < currentQueue.length) {
+
+                this.loadTrackFromQueue(currentTrackIndex);
+
+            } else {
+
+                // Else the track dequeued was the last in the current queue,
+                // so no track took its place.
+                // Check the repeat state to determine what to do.
+                if (repeat === this.REPEAT.ALL) {
+                    // Load the first track in the current queue.
+                    this.loadTrackFromQueue(0);
+                } else {
+                    // Else it's repeat off,
+                    // so set the currentTrackIndex to the last track in the queue 
+                    // and unload the player.
+                    this.currentTrackIndex = currentQueue.length - 1;
+                    this.unload(true);
+                }
+
+            }
+
+            return;
         }
 
-        // If the track dequeued was before the current track (before in the queue),
-        // 
-        // then the currentTrackIndex needs to be shifted up one.
-        if (indexOfTrackToDequeue <= currentTrackIndex) {
-
-        }
-
-        // If the track that was currently playing was dequeued, go to the next track.
-        if (dequeuedTheTrackThatWasPlaying) {
-            this.next();
+        // If the track dequeued was before the current track in the queue,
+        // then the currentTrackIndex just needs to be shifted up one,
+        // in order to be corret (because one track was removed above it).
+        if (indexOfTrackToDequeue < currentTrackIndex) {
+            this.currentTrackIndex = currentTrackIndex - 1;
         }
     }
 
@@ -834,13 +866,10 @@ class Player {
      * unloads it from the player.
      * This sets this.currentTrackIndex = -1;
      * 
-     * @param dontClearCurrentTrackIndex Specifies that the that it shouldn't set this.currentTrackIndex = -1;
+     * @param dontClearCurrentTrackIndex True specifies that the that it shouldn't set this.currentTrackIndex = -1;
      */
     private unload(dontClearCurrentTrackIndex?: boolean): void {
         if (this.currentPlayer) {
-
-            // If the player is unloaded, set the player to paused.
-            // this.pause();
 
             // Unload the current player.
             this.currentPlayer.unload();
@@ -848,6 +877,8 @@ class Player {
             if (!dontClearCurrentTrackIndex) {
                 // Now there isn't a current track, so set the index to -1.
                 this.currentTrackIndex = -1;
+
+                // @NB publish unload event here.
             }
         }
     }
@@ -918,7 +949,7 @@ class Player {
             this.musicServicesTried[currentMusicServiceName] = true;
             console.log(`The track failed to load using ${currentMusicServiceName} :(`);
 
-            console.log(`Track failed to load, try the next player`);
+            console.log(`Track failed to load, try the next player.`);
 
             // Get the next music services name.
             let nextMusicServicesIndex = this.incrementIndex(this.currentMusicServiceIndex, 1,
@@ -931,6 +962,7 @@ class Player {
                 // on the next service.
                 this.switchMusicService(nextMusicServicesName, true);
             } else {
+                console.log(`All music service players have been tried, go to the next track...`);
                 // Else all music services have been tried, move on to the next track.
                 this.next();
             }
@@ -1152,7 +1184,7 @@ class Player {
 
         let playerContext = this;
 
-        // Automatically go to the next song.
+        // Automatically go to the next track.
         publisher.subscribe(this.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number) {
 
             // If percentage >= 1, go to this.next().
