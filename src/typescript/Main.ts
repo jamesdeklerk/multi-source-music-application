@@ -58,7 +58,9 @@ class Main {
             artist: undefined,
             duration: 9769,
             services: {
-                "Deezer": undefined,
+                "Deezer": {
+                    trackId: 126534877,
+                },
                 "YouTube": {
                     videoId: `KVAoKBfFkwg`,
                 },
@@ -66,7 +68,7 @@ class Main {
                 // and marked as false if the service has been searched but no track was found.
                 "SoundCloud": false,
             },
-            title: `3. THIS TRACK ISN'T AVAILABLE (This video is private.)`,
+            title: `3. The Longest Wave (only available on Deezer)`,
             uuid: `1`,
         };
         let track4: ITrack = {
@@ -88,6 +90,23 @@ class Main {
             artist: undefined,
             duration: 9769,
             services: {
+                "Deezer": {
+                    trackId: 890897887898798,
+                },
+                "YouTube": {
+                    videoId: `KVAoKBfFkwg`,
+                },
+                // The service will have an undefined object if it hasn't been searched,
+                // and marked as false if the service has been searched but no track was found.
+                "SoundCloud": false,
+            },
+            title: `5. THIS TRACK ISN'T AVAILABLE ANYWHERE`,
+            uuid: `1`,
+        };
+        let track6: ITrack = {
+            artist: undefined,
+            duration: 9769,
+            services: {
                 "Deezer": undefined,
                 "YouTube": {
                     videoId: `viimfQi_pUw`,
@@ -96,10 +115,10 @@ class Main {
                 // and marked as false if the service has been searched but no track was found.
                 "SoundCloud": false,
             },
-            title: `5. Ocean Eyes`,
+            title: `6. Ocean Eyes`,
             uuid: `1`,
         };
-        let track6: ITrack = {
+        let track7: ITrack = {
             artist: undefined,
             duration: 9769,
             services: {
@@ -111,10 +130,10 @@ class Main {
                 // and marked as false if the service has been searched but no track was found.
                 "SoundCloud": false,
             },
-            title: `6. Hypnotize`,
+            title: `7. Hypnotize`,
             uuid: `1`,
         };
-        let track7: ITrack = {
+        let track8: ITrack = {
             artist: undefined,
             duration: 9769,
             services: {
@@ -126,7 +145,7 @@ class Main {
                 // and marked as false if the service has been searched but no track was found.
                 "SoundCloud": false,
             },
-            title: `7. Runaway (Video Version) ft. Pusha T`,
+            title: `8. Runaway (Video Version) ft. Pusha T`,
             uuid: `1`,
         };
 
@@ -135,11 +154,12 @@ class Main {
             track0,
             track1,
             track2,
-            track3,
+            track3, // Not available on YouTube
             track4,
-            track5,
+            track5, // Not available on YouTube or Deezer
             track6,
             track7,
+            track8,
         ]);
 
         // After this the queue should look like this [track3, track1, track3, track4]

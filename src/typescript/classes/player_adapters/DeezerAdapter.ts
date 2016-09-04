@@ -28,7 +28,6 @@ class DeezerAdapter implements IPlayerAdapter {
                                 if (!currentContext.trackEnd) {
                                     currentContext.currentPosition = array[0];
                                 }
-                                console.log(`${currentContext.getCurrentTime()} - ${currentContext.getDuration()}`);
                             });
                             DZ.Event.subscribe(`player_buffering`, function (percentageLoaded: number) {
                                 currentContext.percentageLoaded = percentageLoaded;
@@ -72,18 +71,25 @@ class DeezerAdapter implements IPlayerAdapter {
             this.percentageLoaded = 0;
             this.trackEnd = false;
 
-            DZ.player.playTracks([124996690], function (response: any) {
+            DZ.player.playTracks([track.services[`Deezer`].trackId], function (response: any) {
                 // console.log(`Deezer track loaded response...`);
                 // console.log(response.tracks);
                 // console.log(`-------------------------------`);
 
-                currentContext.currentDuration = response.tracks[0].duration;
+                // If it returned no tracks then it failed to play the track.
+                if (response.tracks.length <= 0) {
+                    reject();
+                } else {
 
-                currentContext.pause();
+                    currentContext.currentDuration = response.tracks[0].duration;
 
-                // Resolve promise, @NB maybe use the response to check if there
-                // was an error loading the track.
-                resolve();
+                    currentContext.pause();
+
+                    // Resolve promise, @NB maybe use the response to check if there
+                    // was an error loading the track.
+                    resolve();
+
+                }
             });
 
         });
