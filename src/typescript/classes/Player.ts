@@ -193,7 +193,7 @@ class Player {
         let currentTime: number;
         let currentDuration: number;
         let currentPercentage: number;
-        let lastPercentage: number = 0;
+        let lastTime: number = 0;
         let playerContext = this;
         function timeUpdated() {
 
@@ -201,12 +201,13 @@ class Player {
             currentDuration = playerContext.getDuration();
             currentPercentage = (currentTime / currentDuration) || 0;
 
-            // If the progress has changed, publish the time update event.
-            if (currentPercentage !== lastPercentage) {
-                lastPercentage = currentPercentage;
+            // Only if the current time has actually changed should the onTimeUpdate event be published.
+            if (currentTime !== lastTime) {
+                lastTime = currentPercentage;
                 publisher.publish(playerContext.EVENTS.ON_TIME_UPDATE, currentTime, currentDuration, currentPercentage);
             }
 
+            // Check if the time has changed every 300 milliseconds.
             setTimeout(timeUpdated, 300);
         }
         // Start the timeUpdated recursive loop.
@@ -550,82 +551,55 @@ class Player {
     }
 
     /**
-     * Dequeue track.
-     * Then, if the queue is empty, set the current track index to -1.
+     * Dequeue a track by index in queue.
+     * If the currently playing track is dequeued, it will go to the next track in the queue.
      * 
-     * @param track The track to remove from the queue.
+     * @param index The index of the track to remove from the queue.
      */
-    public dequeue(track: ITrack): void
-    /**
-     * Dequeue multiple tracks.
-     * Then, if the queue is empty, set the current track index to -1.
-     * 
-     * @param track The tracks to remove from the queue.
-     */
-    public dequeue(tracks: ITrack[]): void
-    public dequeue(trackOrTracks: ITrack | ITrack[]): void {
+    public dequeue(index: number): void {
 
-        if (!trackOrTracks) {
+        if (!index) {
             return;
         }
 
         let shuffled = this.getShuffle();
         let currentTrackIndex = this.getCurrentIndex();
+        let currentTrack = this.getCurrentTrack();
         let dequeuedTheTrackThatWasPlaying = false;
 
-        let indexOfTrackToDequeue: number;
-        if (trackOrTracks instanceof Array) {
-            // trackOrTracks is multiple tracks.
+        // If the index given isn't in the queue, throw an error.
+        if (!this.isIndexInQueue(index, this.getQueue())) {
+            throw new Error(`The dequeue index provided is not a valid index (i.e. isn't in the queue).`)
+        }
 
-            // Dequeue each track on the from the orderedQueue.
-            for (let track of trackOrTracks) {
-                indexOfTrackToDequeue = this.orderedQueue.indexOf(track);
-                this.orderedQueue.splice(indexOfTrackToDequeue, 1);
-                // If the current queue is the ordered queue,
-                // Check if we dequeued the track that was currently playing.
-                if (!shuffled) {
-                    if (currentTrackIndex === indexOfTrackToDequeue) {
-                        dequeuedTheTrackThatWasPlaying = true;
-                    }
-                }
-            }
+        // We know it's a valid index, so set it as the index of the track to dequeue.
+        let indexOfTrackToDequeue = index;
 
-            // If the queue is shuffled,
-            // dequeue each track on the from the shuffledQueue.
-            if (shuffled) {
-                for (let track of trackOrTracks) {
-                    indexOfTrackToDequeue = this.shuffledQueue.indexOf(track);
-                    this.shuffledQueue.splice(indexOfTrackToDequeue, 1);
-                    // Check if we dequeued the track that was currently playing.
-                    if (currentTrackIndex === indexOfTrackToDequeue) {
-                        dequeuedTheTrackThatWasPlaying = true;
-                    }
-                }
-            }
-        } else {
-            // Else trackOrTracks is a single track.
-
-            // Dequeue track from the orderedQueue.
-            indexOfTrackToDequeue = this.orderedQueue.indexOf(trackOrTracks);
+        // If the queue isn't shuffled, remove the track at the specified index.
+        if (!shuffled) {
             this.orderedQueue.splice(indexOfTrackToDequeue, 1);
-            // If the current queue is the ordered queue,
-            // Check if we dequeued the track that was currently playing.
-            if (!shuffled) {
-                if (currentTrackIndex === indexOfTrackToDequeue) {
-                    dequeuedTheTrackThatWasPlaying = true;
-                }
-            }
+        } else {
+            // If the queue is shuffled, dequeue the first track of that type from the orderedQueue.
+            let indexOfTrackToDequeueFromOrderedQueue = this.orderedQueue.indexOf(currentTrack);
+            this.orderedQueue.splice(indexOfTrackToDequeueFromOrderedQueue, 1);
 
-            // If the queue is shuffled,
-            // dequeue track from the shuffledQueue.
-            if (shuffled) {
-                indexOfTrackToDequeue = this.shuffledQueue.indexOf(trackOrTracks);
-                this.shuffledQueue.splice(indexOfTrackToDequeue, 1);
-                // Check if we dequeued the track that was currently playing.
-                if (currentTrackIndex === indexOfTrackToDequeue) {
-                    dequeuedTheTrackThatWasPlaying = true;
-                }
-            }
+        }
+
+        // If the queue is shuffled,
+        // dequeue track from the shuffledQueue.
+        if (shuffled) {
+            this.shuffledQueue.splice(indexOfTrackToDequeue, 1);
+        }
+
+        // Check if the track dequeued was the one currently playing.
+        if (currentTrackIndex === indexOfTrackToDequeue) {
+            dequeuedTheTrackThatWasPlaying = true;
+        }
+
+        // If the track dequeued was before the current track (before in the queue)
+        // then the currentTrackIndex needs to be shifted up one.
+        if (indexOfTrackToDequeue <= currentTrackIndex) {
+
         }
 
         // If the queue is empty, unload whatever track was being played.

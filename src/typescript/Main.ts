@@ -96,15 +96,12 @@ class Main {
                 // and marked as false if the service has been searched but no track was found.
                 "SoundCloud": false,
             },
-            title: `3. Stubborn Love - THIS TRACK ISN'T AVAILABLE`,
+            title: `3. THIS TRACK ISN'T AVAILABLE`,
             uuid: `1`,
         };
 
         // Queue multiple tracks.
         player.queue([track1, track2, track3]);
-
-        // Dequeue multiple tracks.
-        player.dequeue([track2, track1]);
 
         // Queue single track.
         player.queue(track3);
@@ -112,9 +109,6 @@ class Main {
         player.queue(track6);
         player.queue(track5);
         player.queue(track4);
-
-        // Dequeue single track.
-        player.dequeue(track3);
 
         // After this the queue should look like this [track3, track1, track3, track4]
         console.log(player.getQueue());
