@@ -12,7 +12,6 @@ let CONSTANTS = {
             /**
              * Published when the player is paused.
              */
-            ON_PAUSE: `player-onPause`,
         },
         REGISTERED_SERVICES: [
             /**
@@ -41,5 +40,3 @@ let CONSTANTS = {
         },
     },
 };
-
-CONSTANTS.PLAYER.EVENTS.ON_PAUSE;

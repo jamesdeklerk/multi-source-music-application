@@ -110,8 +110,8 @@ class YouTubeAdapter implements IPlayerAdapter {
                 reject();
             }
 
-            publisher.subscribe(``, onStateChangeHandler);
-            publisher.subscribe(``, onErrorHandler);
+            publisher.subscribe(`as`, onStateChangeHandler);
+            publisher.subscribe(`ds`, onErrorHandler);
 
             // Get YouTube ID from track then load it.
             this.youtubePlayer.loadVideoById(`CR7TN-j4lY4`);

@@ -94,6 +94,7 @@ class Player {
     private shuffledQueue: ITrack[] = [];
     /**
      * The index of the current track in the queue.
+     * Set to -1 if no track is currently loaded.
      */
     private currentTrackIndex: number = -1;
     /**
@@ -150,7 +151,7 @@ class Player {
 
         // Set the initial playerAdapter to be used.
         if (this.musicServices[0]) {
-            this.switchMusicService(this.musicServices[0].name);
+            this.switchMusicService(this.musicServices[0].name, false);
         } else {
             throw new Error(`No music service player adapters available.`);
         }
@@ -210,9 +211,10 @@ class Player {
      * Then resumes the current track.
      * 
      * @param musicServiceName The name of the music service one wants to switch to.
+     * @param resumeCurrentTrack Specifies whether the current track should be reloaded.
      * @return A promise the tells when it's done switching services.
      */
-    public switchMusicService(musicServiceName: string): Promise<any> {
+    public switchMusicService(musicServiceName: string, resumeCurrentTrack: boolean): Promise<any> {
 
         return new Promise((resolve, reject) => {
 
@@ -236,8 +238,13 @@ class Player {
                     `registered music services (names are case-sensitive).`);
             }
 
-            // Unload old player.
-            this.unload();
+            // Unload the track from the current player (because we're going to be using a new player).
+            // Don't use this.unload() as that unloads the current song, setting the this.currentTrackIndex = -1,
+            // this means when we try load the track later (once we've switched players),
+            // we won't be able to find the current track (using this.getCurrentTrack())
+            if (this.currentPlayer) {
+                this.currentPlayer.unload();
+            }
 
             // If the new musicService isn't initialized,
             // initialize it, then try switch music services again.
@@ -247,7 +254,7 @@ class Player {
 
                     // The music service has been successfully Initialized.
                     musicService.initialized = true;
-                    this.switchMusicService(musicService.name).then(() => {
+                    this.switchMusicService(musicService.name, resumeCurrentTrack).then(() => {
                         // If we get here, the musicService has been initialized,
                         // then we switched to the new musicService, so finally we can
                         // resolve the promise.
@@ -273,8 +280,10 @@ class Player {
                 this.setVolume(this.getVolume());
                 this.setMuted(this.getMuted());
 
-                // Load the current track.
-                this.load(this.getCurrentTrack());
+                if (resumeCurrentTrack) {
+                    // Resume the current track.
+                    this.load(this.getCurrentTrack(), true);
+                }
 
                 // Resolve for when the musicService
                 // was already initialized.
@@ -490,44 +499,73 @@ class Player {
     public dequeue(tracks: ITrack[]): void
     public dequeue(trackOrTracks: ITrack | ITrack[]): void {
 
-        let indexOfTrack: number;
+        if (!trackOrTracks) {
+            return;
+        }
+
+        let shuffled = this.getShuffle();
+        let currentTrackIndex = this.getCurrentIndex();
+        let dequeuedTheTrackThatWasPlaying = false;
+
+        let indexOfTrackToDequeue: number;
         if (trackOrTracks instanceof Array) {
             // trackOrTracks is multiple tracks.
 
             // Dequeue each track on the from the orderedQueue.
             for (let track of trackOrTracks) {
-                indexOfTrack = this.orderedQueue.indexOf(track);
-                this.orderedQueue.splice(indexOfTrack, 1);
+                indexOfTrackToDequeue = this.orderedQueue.indexOf(track);
+                this.orderedQueue.splice(indexOfTrackToDequeue, 1);
+                // If the current queue is the ordered queue,
+                // Check if we dequeued the track that was currently playing.
+                if (!shuffled) {
+                    if (currentTrackIndex === indexOfTrackToDequeue) {
+                        dequeuedTheTrackThatWasPlaying = true;
+                    }
+                }
             }
 
             // If the queue is shuffled,
             // dequeue each track on the from the shuffledQueue.
-            if (this.getShuffle()) {
+            if (shuffled) {
                 for (let track of trackOrTracks) {
-                    indexOfTrack = this.shuffledQueue.indexOf(track);
-                    this.shuffledQueue.splice(indexOfTrack, 1);
+                    indexOfTrackToDequeue = this.shuffledQueue.indexOf(track);
+                    this.shuffledQueue.splice(indexOfTrackToDequeue, 1);
+                    // Check if we dequeued the track that was currently playing.
+                    if (currentTrackIndex === indexOfTrackToDequeue) {
+                        dequeuedTheTrackThatWasPlaying = true;
+                    }
                 }
             }
         } else {
             // Else trackOrTracks is a single track.
 
             // Dequeue track from the orderedQueue.
-            indexOfTrack = this.orderedQueue.indexOf(trackOrTracks);
-            this.orderedQueue.splice(indexOfTrack, 1);
+            indexOfTrackToDequeue = this.orderedQueue.indexOf(trackOrTracks);
+            this.orderedQueue.splice(indexOfTrackToDequeue, 1);
+            // If the current queue is the ordered queue,
+            // Check if we dequeued the track that was currently playing.
+            if (!shuffled) {
+                if (currentTrackIndex === indexOfTrackToDequeue) {
+                    dequeuedTheTrackThatWasPlaying = true;
+                }
+            }
 
             // If the queue is shuffled,
             // dequeue track from the shuffledQueue.
-            if (this.getShuffle()) {
-                indexOfTrack = this.shuffledQueue.indexOf(trackOrTracks);
-                this.shuffledQueue.splice(indexOfTrack, 1);
+            if (shuffled) {
+                indexOfTrackToDequeue = this.shuffledQueue.indexOf(trackOrTracks);
+                this.shuffledQueue.splice(indexOfTrackToDequeue, 1);
+                // Check if we dequeued the track that was currently playing.
+                if (currentTrackIndex === indexOfTrackToDequeue) {
+                    dequeuedTheTrackThatWasPlaying = true;
+                }
             }
         }
 
-        // If the queue is empty, set the current track index to -1.
-        if (this.orderedQueue.length <= 0) {
-            // @NB rather than this.currentTrackIndex = -1; 
-            // maybe call this.unload(); ...
-            this.currentTrackIndex = -1;
+        // If the queue is empty, unload whatever track was being played.
+        // If the track that was currently playing was dequeued, go to the next song.
+        if (dequeuedTheTrackThatWasPlaying) {
+            this.next();
         }
     }
 
@@ -536,9 +574,10 @@ class Player {
      * Then sets the current track index to -1 as there are no more tracks.
      */
     public dequeueAll(): void {
-        this.currentTrackIndex = -1;
         this.orderedQueue = [];
         this.shuffledQueue = [];
+        // Unload whatever track was being played.
+        this.unload();
     }
 
     /**
@@ -596,6 +635,7 @@ class Player {
 
     /**
      * Loads the track at that index from the queue.
+     * This will first try the default player (then the rest in order).
      * 
      * @param index The index of the track in the queue.
      */
@@ -606,7 +646,10 @@ class Player {
         if (this.currentMusicServiceIndex !== 0) {
 
             let defaultMusicServiceName = this.musicServices[0].name;
-            this.switchMusicService(defaultMusicServiceName).then(() => {
+
+            // We want to switch to the default music service, but we don't want to reload
+            // the current track, because we're about to load a new track.
+            this.switchMusicService(defaultMusicServiceName, false).then(() => {
 
                 // Once the music service is successfully switched 
                 // to the default music service, try load the track from the queue again.
@@ -620,8 +663,8 @@ class Player {
             if (this.isIndexInQueue(index, currentQueue)) {
                 // Update the current track index.
                 this.currentTrackIndex = index;
-                // Load the track at that index.
-                this.load(currentQueue[index]);
+                // Load the track at that index, not keeping the old tracks progress.
+                this.load(currentQueue[index], false);
             } else {
                 throw new Error(`The index given is out of the queue bounds.`);
             }
@@ -687,7 +730,8 @@ class Player {
             this.restart();
             return;
         } else if (repeat === CONSTANTS.PLAYER.REPEAT.OFF) {
-            // If it's the last track
+            // If it was on the last track, just unload it.
+            // Else load the next track.
             if (currentIndex >= (currentQueue.length - 1)) {
                 this.unload();
                 return;
@@ -720,7 +764,8 @@ class Player {
             this.restart();
             return;
         } else if (repeat === CONSTANTS.PLAYER.REPEAT.OFF) {
-            // If it's the first track
+            // If it was on the first track, just unload it.
+            // Else load the previous track.
             if (currentIndex === 0) {
                 this.unload();
                 return;
@@ -742,10 +787,13 @@ class Player {
     /**
      * Unloads the current track. This stops the playing of current track and 
      * unloads it from the player.
+     * This sets this.currentTrackIndex = -1;
      */
     public unload(): void {
         if (this.currentPlayer) {
             this.currentPlayer.unload();
+            // Now there isn't a current track, so set the index to -1.
+            this.currentTrackIndex = -1;
         }
     }
 
@@ -753,10 +801,11 @@ class Player {
      * Loads the specified track, respecting the current paused state and seek position.
      * If it fails to load, it switches to the next playerAdapter
      * and loads the track.
+     * This updates the current track index.
      * 
      * @param track The track to be played (@NB: this is set as the current track).
      */
-    private load(track: ITrack): void {
+    private load(track: ITrack, resumeTrackProgress: boolean): void {
 
         // If the currentPlayer doesn't exist, we can't try load a track.
         if (!this.currentPlayer) {
@@ -765,8 +814,7 @@ class Player {
 
         // If track is undefined then don't try load it.
         if (!track) {
-            this.unload();
-            return;
+            throw new Error(`Argument track was undefined...`);
         }
 
         // Find the index of the track in the queue.
@@ -775,7 +823,7 @@ class Player {
 
         // Check if the track is in the queue.
         if (trackIndex < 0) {
-            throw new Error(`Can't load a song that isn't in the queue.`);
+            throw new Error(`Can't load a track that isn't in the queue.`);
         }
 
         // Store the track progress (in milliseconds).
@@ -790,8 +838,13 @@ class Player {
             // Update the current track index.
             this.currentTrackIndex = trackIndex;
 
-            // Resume track progress.
-            this.seekTo(trackProgress);
+            if (resumeTrackProgress) {
+                // Resume track progress.
+                this.seekTo(trackProgress);
+            } else {
+                // Else restart the track.
+                this.restart();
+            }
 
             // Resume paused state.
             if (this.getPaused()) {
@@ -822,7 +875,9 @@ class Player {
 
             // If this music service hasn't been tried, try it.
             if (!this.musicServicesTried[nextMusicServicesName]) {
-                this.switchMusicService(nextMusicServicesName);
+                // When we switch music services, we want to try and reload the track
+                // on the next service.
+                this.switchMusicService(nextMusicServicesName, true);
             } else {
                 // Else all music services have been tried, move on to the next track.
                 this.next();
