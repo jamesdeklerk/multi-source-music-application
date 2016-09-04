@@ -28,4 +28,10 @@ interface ITrack {
      */
     album?: IAlbum;
 
+    /**
+     * Object containing the appropriate track properties
+     * for each music service it's available on.
+     */
+    services: any;
+
 }

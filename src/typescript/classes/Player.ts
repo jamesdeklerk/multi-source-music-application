@@ -12,6 +12,24 @@ class Player {
     // =======================================================
 
     private REGISTERED_SERVICES = CONSTANTS.PLAYER.REGISTERED_SERVICES;
+    /**
+     * Legal values for repeat.
+     */
+    public REPEAT = {
+        /**
+         * Cycle through all the tracks in the queue.
+         */
+        ALL: `repeat-all`,
+        /**
+         * When the player gets to the end of the queue,
+         * stop playing.
+         */
+        OFF: `repeat-off`,
+        /**
+         * Keep repeating the current track.
+         */
+        ONE: `repeat-one`,
+    };
     private DEFAULTS = {
         MUTED: CONSTANTS.PLAYER.DEFAULTS.MUTED,
         REPEAT: CONSTANTS.PLAYER.DEFAULTS.REPEAT,
@@ -164,6 +182,36 @@ class Player {
 
         // More defaults
         this.timeAfterWhichToRestartTrack = this.DEFAULTS.TIME_AFTER_WHICH_TO_RESTART_TRACK;
+
+        // Register the player events.
+        this.registerPlayerEvents();
+
+        // Subscribe to events.
+        this.subscribeToEvents();
+
+        // Setup the track progress event.
+        let currentTime: number;
+        let currentDuration: number;
+        let currentPercentage: number;
+        let lastPercentage: number = 0;
+        let playerContext = this;
+        function timeUpdated() {
+
+            currentTime = playerContext.getCurrentTime();
+            currentDuration = playerContext.getDuration();
+            currentPercentage = (currentTime / currentDuration) || 0;
+
+            // If the progress has changed, publish the time update event.
+            if (currentPercentage !== lastPercentage) {
+                lastPercentage = currentPercentage;
+                publisher.publish(playerContext.EVENTS.ON_TIME_UPDATE, currentTime, currentDuration, currentPercentage);
+            }
+
+            setTimeout(timeUpdated, 300);
+        }
+        // Start the timeUpdated recursive loop.
+        timeUpdated();
+
     }
 
 
@@ -174,11 +222,31 @@ class Player {
 
     private registerPlayerEvents(): void {
 
-        publisher.register(this.EVENTS.ON_ERROR, [{
-            name: `data`,
-            optional: true,
-            type: `object`,
-        }]);
+        publisher.register(this.EVENTS.ON_ERROR, [
+            {
+                name: `data`,
+                optional: true,
+                type: `object`,
+            },
+        ]);
+
+        publisher.register(this.EVENTS.ON_TIME_UPDATE, [
+            {
+                name: `time`,
+                optional: false,
+                type: `number`,
+            },
+            {
+                name: `duration`,
+                optional: false,
+                type: `number`,
+            },
+            {
+                name: `percentage`,
+                optional: false,
+                type: `number`,
+            },
+        ]);
 
     }
 
@@ -239,18 +307,16 @@ class Player {
             }
 
             // Unload the track from the current player (because we're going to be using a new player).
-            // Don't use this.unload() as that unloads the current song, setting the this.currentTrackIndex = -1,
+            // Unload the track, but don't set this.currentTrackIndex = -1;, setting the this.currentTrackIndex = -1,
             // this means when we try load the track later (once we've switched players),
             // we won't be able to find the current track (using this.getCurrentTrack())
-            if (this.currentPlayer) {
-                this.currentPlayer.unload();
-            }
+            this.unload(true);
 
             // If the new musicService isn't initialized,
             // initialize it, then try switch music services again.
             if (!musicService.initialized) {
 
-                (<IPlayerAdapter> musicService.adapter).initialize().then(() => {
+                (<IPlayerAdapter>musicService.adapter).initialize().then(() => {
 
                     // The music service has been successfully Initialized.
                     musicService.initialized = true;
@@ -282,7 +348,7 @@ class Player {
 
                 if (resumeCurrentTrack) {
                     // Resume the current track.
-                    this.load(this.getCurrentTrack(), true);
+                    this.load(this.getCurrentIndex(), true);
                 }
 
                 // Resolve for when the musicService
@@ -410,12 +476,12 @@ class Player {
      */
     public setRepeat(value: string): void {
 
-        if (value === CONSTANTS.PLAYER.REPEAT.OFF ||
-            value === CONSTANTS.PLAYER.REPEAT.ONE ||
-            value === CONSTANTS.PLAYER.REPEAT.ALL) {
+        if (value === this.REPEAT.OFF ||
+            value === this.REPEAT.ONE ||
+            value === this.REPEAT.ALL) {
             this.repeat = value;
         } else {
-            this.repeat = CONSTANTS.PLAYER.REPEAT.ALL;
+            this.repeat = this.REPEAT.ALL;
         }
     }
 
@@ -427,9 +493,9 @@ class Player {
     public cycleRepeat(): string {
         // Cycle order
         let cycleOrder = [
-            CONSTANTS.PLAYER.REPEAT.OFF,
-            CONSTANTS.PLAYER.REPEAT.ALL,
-            CONSTANTS.PLAYER.REPEAT.ONE,
+            this.REPEAT.OFF,
+            this.REPEAT.ALL,
+            this.REPEAT.ONE,
         ];
 
         let currentIndex = cycleOrder.indexOf(this.getRepeat());
@@ -563,7 +629,7 @@ class Player {
         }
 
         // If the queue is empty, unload whatever track was being played.
-        // If the track that was currently playing was dequeued, go to the next song.
+        // If the track that was currently playing was dequeued, go to the next track.
         if (dequeuedTheTrackThatWasPlaying) {
             this.next();
         }
@@ -651,6 +717,8 @@ class Player {
             // the current track, because we're about to load a new track.
             this.switchMusicService(defaultMusicServiceName, false).then(() => {
 
+                console.log(`Switch to the default music service.`);
+
                 // Once the music service is successfully switched 
                 // to the default music service, try load the track from the queue again.
                 this.loadTrackFromQueue(index);
@@ -664,7 +732,7 @@ class Player {
                 // Update the current track index.
                 this.currentTrackIndex = index;
                 // Load the track at that index, not keeping the old tracks progress.
-                this.load(currentQueue[index], false);
+                this.load(index, false);
             } else {
                 throw new Error(`The index given is out of the queue bounds.`);
             }
@@ -725,15 +793,16 @@ class Player {
             throw new Error(`Cannot get the next track in the queue if the current track isn't in the queue.`);
         }
 
-        if (repeat === CONSTANTS.PLAYER.REPEAT.ONE) {
+        if (repeat === this.REPEAT.ONE) {
             // Restart track.
             this.restart();
             return;
-        } else if (repeat === CONSTANTS.PLAYER.REPEAT.OFF) {
+        } else if (repeat === this.REPEAT.OFF) {
             // If it was on the last track, just unload it.
             // Else load the next track.
             if (currentIndex >= (currentQueue.length - 1)) {
-                this.unload();
+                // Unload the track, but don't set this.currentTrackIndex = -1;
+                this.unload(true);
                 return;
             } else {
                 this.loadTrackFromQueue(currentIndex + 1);
@@ -758,16 +827,17 @@ class Player {
             throw new Error(`Cannot get the previous track in the queue if the current track isn't in the queue.`);
         }
 
-        if ((repeat === CONSTANTS.PLAYER.REPEAT.ONE) ||
+        if ((repeat === this.REPEAT.ONE) ||
             (this.getCurrentTime() > this.timeAfterWhichToRestartTrack)) {
             // Restart track.
             this.restart();
             return;
-        } else if (repeat === CONSTANTS.PLAYER.REPEAT.OFF) {
+        } else if (repeat === this.REPEAT.OFF) {
             // If it was on the first track, just unload it.
             // Else load the previous track.
             if (currentIndex === 0) {
-                this.unload();
+                // Unload the track, but don't set this.currentTrackIndex = -1;
+                this.unload(true);
                 return;
             } else {
                 this.loadTrackFromQueue(currentIndex - 1);
@@ -788,55 +858,57 @@ class Player {
      * Unloads the current track. This stops the playing of current track and 
      * unloads it from the player.
      * This sets this.currentTrackIndex = -1;
+     * 
+     * @param dontClearCurrentTrackIndex Specifies that the that it shouldn't set this.currentTrackIndex = -1;
      */
-    public unload(): void {
+    private unload(dontClearCurrentTrackIndex?: boolean): void {
         if (this.currentPlayer) {
             this.currentPlayer.unload();
-            // Now there isn't a current track, so set the index to -1.
-            this.currentTrackIndex = -1;
+
+            if (!dontClearCurrentTrackIndex) {
+                // Now there isn't a current track, so set the index to -1.
+                this.currentTrackIndex = -1;
+            }
         }
     }
 
     /**
-     * Loads the specified track, respecting the current paused state and seek position.
+     * Loads the specified track from the queue, respecting the current paused state and seek position.
      * If it fails to load, it switches to the next playerAdapter
      * and loads the track.
      * This updates the current track index.
      * 
-     * @param track The track to be played (@NB: this is set as the current track).
+     * @param index The index of track to be played in the queue.
+     * @param resumeTrackProgress Specifies if the previous progress should resume.
      */
-    private load(track: ITrack, resumeTrackProgress: boolean): void {
+    private load(index: number, resumeTrackProgress: boolean): void {
 
         // If the currentPlayer doesn't exist, we can't try load a track.
         if (!this.currentPlayer) {
             return;
         }
 
-        // If track is undefined then don't try load it.
-        if (!track) {
-            throw new Error(`Argument track was undefined...`);
-        }
-
         // Find the index of the track in the queue.
         let currentQueue = this.getQueue();
-        let trackIndex = currentQueue.indexOf(track);
 
         // Check if the track is in the queue.
-        if (trackIndex < 0) {
+        if (!this.isIndexInQueue(index, currentQueue)) {
             throw new Error(`Can't load a track that isn't in the queue.`);
         }
+
+        // Get the current track.
+        let track = currentQueue[index];
 
         // Store the track progress (in milliseconds).
         let trackProgress = this.getCurrentTime();
 
         this.currentPlayer.load(track).then(() => {
-            console.log(`The track has been loaded successfully :)`);
 
             // Clear the music services tried.
             this.musicServicesTried = {};
 
             // Update the current track index.
-            this.currentTrackIndex = trackIndex;
+            this.currentTrackIndex = index;
 
             if (resumeTrackProgress) {
                 // Resume track progress.
@@ -866,7 +938,7 @@ class Player {
             this.musicServicesTried[currentMusicServiceName] = true;
             console.log(`The track failed to load using ${currentMusicServiceName} :(`);
 
-            console.log(`Try the next player`);
+            console.log(`Track failed to load, try the next player`);
 
             // Get the next music services name.
             let nextMusicServicesIndex = this.incrementIndex(this.currentMusicServiceIndex, 1,
@@ -1096,7 +1168,21 @@ class Player {
     // music service adapters.
     // =======================================================
 
+    private subscribeToEvents(): void {
 
+        let playerContext = this;
+
+        // Automatically go to the next song.
+        publisher.subscribe(this.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number) {
+
+            // If percentage >= 1, go to this.next().
+            if (percentage >= 1) {
+                playerContext.next();
+            }
+
+        });
+
+    }
 
     // -------------------------------------------------------
 

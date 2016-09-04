@@ -23,20 +23,5 @@ let CONSTANTS = {
                 name: `YouTube`,
             },
         ],
-        REPEAT: {
-            /**
-             * Cycle through all the tracks in the queue.
-             */
-            ALL: `repeat-all`,
-            /**
-             * When the player gets to the end of the queue,
-             * stop playing.
-             */
-            OFF: `repeat-off`,
-            /**
-             * Keep repeating the current track.
-             */
-            ONE: `repeat-one`,
-        },
     },
 };

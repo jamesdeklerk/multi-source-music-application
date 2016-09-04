@@ -42,9 +42,6 @@ class YouTubeAdapter implements IPlayerAdapter {
                             resolve();
                         },
                         "onStateChange": function (e) {
-
-                            console.log(`onStateChange: ` + e.data);
-
                             // Have to use publisher to mimic the events fired.
                             // This is because the YouTube APIs removeEventListener
                             // function doesn't work.
@@ -77,7 +74,7 @@ class YouTubeAdapter implements IPlayerAdapter {
     public load(track: ITrack): Promise<{}> {
         return new Promise((resolve, reject) => {
 
-            console.log(`YouTube load(track) was called!`);
+            console.log(`YouTube load was called for ${track.title}!`);
 
             let thisYouTubeAdapter = this;
 
@@ -86,15 +83,15 @@ class YouTubeAdapter implements IPlayerAdapter {
                 // then from the YouTube API we know it's the track is loaded.
                 if (e.data === 1) {
 
-                    console.log(`Track loaded!!!!!!!!!!!!!!!!`);
-
                     // We're done with the onStateChangeHandler, so get rid of it.
                     publisher.unsubscribe(`youtube-onStateChange`, onStateChangeHandler);
                     // We're done with the onErrorHandler, so get rid of it.
                     publisher.unsubscribe(`youtube-onError`, onErrorHandler);
 
                     // Pause the video (as per interface definition of load)
-                    thisYouTubeAdapter.pause();
+                    // Pausing the video doesn't ensure it is paused.
+                    // Stopping it is more reliable.
+                    thisYouTubeAdapter.youtubePlayer.stopVideo();
 
                     resolve();
                 }
@@ -110,11 +107,11 @@ class YouTubeAdapter implements IPlayerAdapter {
                 reject();
             }
 
-            publisher.subscribe(`as`, onStateChangeHandler);
-            publisher.subscribe(`ds`, onErrorHandler);
+            publisher.subscribe(`youtube-onStateChange`, onStateChangeHandler);
+            publisher.subscribe(`youtube-onError`, onErrorHandler);
 
             // Get YouTube ID from track then load it.
-            this.youtubePlayer.loadVideoById(`CR7TN-j4lY4`);
+            this.youtubePlayer.loadVideoById(track.services[`YouTube`].videoId);
         });
     }
 
