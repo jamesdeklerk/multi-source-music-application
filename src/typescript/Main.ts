@@ -90,25 +90,41 @@ class Main {
             services: {
                 "Deezer": undefined,
                 "YouTube": {
-                    videoId: `aaaaa`,
+                    videoId: `KVAoKBfFkwg`,
                 },
                 // The service will have an undefined object if it hasn't been searched,
                 // and marked as false if the service has been searched but no track was found.
                 "SoundCloud": false,
             },
-            title: `3. THIS TRACK ISN'T AVAILABLE`,
+            title: `6. THIS TRACK ISN'T AVAILABLE (This video is private.)`,
+            uuid: `1`,
+        };
+        let track7: ITrack = {
+            artist: undefined,
+            duration: 9769,
+            services: {
+                "Deezer": undefined,
+                "YouTube": {
+                    videoId: `4pflhw9QItc`,
+                },
+                // The service will have an undefined object if it hasn't been searched,
+                // and marked as false if the service has been searched but no track was found.
+                "SoundCloud": false,
+            },
+            title: `7. Hypnotize`,
             uuid: `1`,
         };
 
         // Queue multiple tracks.
-        player.queue([track1, track2, track3]);
-
-        // Queue single track.
-        player.queue(track3);
-        player.queue(track1);
-        player.queue(track6);
-        player.queue(track5);
-        player.queue(track4);
+        player.queue([
+            track1,
+            track2,
+            track3,
+            track4,
+            track5,
+            track6,
+            track7,
+        ]);
 
         // After this the queue should look like this [track3, track1, track3, track4]
         console.log(player.getQueue());

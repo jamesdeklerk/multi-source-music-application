@@ -156,7 +156,6 @@ class Player {
 
         // Instantiate each of the registered music service player adapters.
         // tslint:disable-next-line
-        // tslint:disable-next-line
         for (let i = 0, musicService: IMusicService; musicService = this.REGISTERED_SERVICES[i]; i = i + 1) {
             this.musicServices[i] = {
                 adapter: new musicService.adapter(),
@@ -575,7 +574,8 @@ class Player {
         // We know it's a valid index, so set it as the index of the track to dequeue.
         let indexOfTrackToDequeue = index;
 
-        // If the queue isn't shuffled, remove the track at the specified index.
+        // If the queue isn't shuffled, just remove the track at the specified index,
+        // from the ordered queue.
         if (!shuffled) {
             this.orderedQueue.splice(indexOfTrackToDequeue, 1);
         } else {
@@ -583,26 +583,26 @@ class Player {
             let indexOfTrackToDequeueFromOrderedQueue = this.orderedQueue.indexOf(currentTrack);
             this.orderedQueue.splice(indexOfTrackToDequeueFromOrderedQueue, 1);
 
-        }
-
-        // If the queue is shuffled,
-        // dequeue track from the shuffledQueue.
-        if (shuffled) {
+            // Then dequeue track from the shuffledQueue.
             this.shuffledQueue.splice(indexOfTrackToDequeue, 1);
         }
+
+
+
+
 
         // Check if the track dequeued was the one currently playing.
         if (currentTrackIndex === indexOfTrackToDequeue) {
             dequeuedTheTrackThatWasPlaying = true;
         }
 
-        // If the track dequeued was before the current track (before in the queue)
+        // If the track dequeued was before the current track (before in the queue),
+        // 
         // then the currentTrackIndex needs to be shifted up one.
         if (indexOfTrackToDequeue <= currentTrackIndex) {
 
         }
 
-        // If the queue is empty, unload whatever track was being played.
         // If the track that was currently playing was dequeued, go to the next track.
         if (dequeuedTheTrackThatWasPlaying) {
             this.next();
@@ -681,6 +681,15 @@ class Player {
      */
     public loadTrackFromQueue(index: number): void {
 
+        let currentQueue = this.getQueue();
+
+        if (this.isIndexInQueue(index, currentQueue)) {
+            // Update the current track index immediately.
+            this.currentTrackIndex = index;
+        } else {
+            throw new Error(`The index given is out of the queue bounds.`);
+        }
+
         // If it's not on the default music service, 
         // change to the default music service.
         if (this.currentMusicServiceIndex !== 0) {
@@ -700,16 +709,8 @@ class Player {
 
         } else {
 
-            let currentQueue = this.getQueue();
-
-            if (this.isIndexInQueue(index, currentQueue)) {
-                // Update the current track index.
-                this.currentTrackIndex = index;
-                // Load the track at that index, not keeping the old tracks progress.
-                this.load(index, false);
-            } else {
-                throw new Error(`The index given is out of the queue bounds.`);
-            }
+            // Load the track at that index, not keeping the old tracks progress.
+            this.load(index, false);
 
         }
     }
@@ -837,6 +838,11 @@ class Player {
      */
     private unload(dontClearCurrentTrackIndex?: boolean): void {
         if (this.currentPlayer) {
+
+            // If the player is unloaded, set the player to paused.
+            // this.pause();
+
+            // Unload the current player.
             this.currentPlayer.unload();
 
             if (!dontClearCurrentTrackIndex) {
@@ -866,7 +872,10 @@ class Player {
         let currentQueue = this.getQueue();
 
         // Check if the track is in the queue.
-        if (!this.isIndexInQueue(index, currentQueue)) {
+        if (this.isIndexInQueue(index, currentQueue)) {
+            // Update the current track index immediately.
+            this.currentTrackIndex = index;
+        } else {
             throw new Error(`Can't load a track that isn't in the queue.`);
         }
 
@@ -880,9 +889,6 @@ class Player {
 
             // Clear the music services tried.
             this.musicServicesTried = {};
-
-            // Update the current track index.
-            this.currentTrackIndex = index;
 
             if (resumeTrackProgress) {
                 // Resume track progress.
