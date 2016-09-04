@@ -1117,9 +1117,7 @@ class Player {
      * @param milliseconds The time in milliseconds to which the player should advance.
      */
     public seekTo(milliseconds: number): void {
-        if (this.currentPlayer) {
-            this.currentPlayer.seekTo(milliseconds);
-        }
+        this.seekToPercentage((milliseconds / this.getDuration()) || 0);
     }
 
     /**
@@ -1130,7 +1128,14 @@ class Player {
      * @param percentage The percentage (0 to 1) to which the player should advance.
      */
     public seekToPercentage(percentage: number): void {
-        this.seekTo(percentage * this.getDuration());
+        if (this.currentPlayer) {
+            this.currentPlayer.seekToPercentage(percentage);
+            if (this.getPaused()) {
+                this.pause();
+            } else {
+                this.play();
+            }
+        }
     }
 
     /**

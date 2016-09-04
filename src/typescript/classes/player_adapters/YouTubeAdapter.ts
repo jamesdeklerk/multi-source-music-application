@@ -127,8 +127,10 @@ class YouTubeAdapter implements IPlayerAdapter {
         this.youtubePlayer.setVolume(volume * 100);
     }
 
-    public seekTo(milliseconds: number): void {
-        this.youtubePlayer.seekTo(milliseconds / 1000, true);
+    public seekToPercentage(percentage: number): void {
+        // The YouTube player works in seconds,
+        // so the percentage has to be converted to seconds.
+        this.youtubePlayer.seekTo(this.youtubePlayer.getDuration() * percentage, true);
     }
 
     public getCurrentTime(): number {

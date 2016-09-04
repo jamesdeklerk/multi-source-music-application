@@ -151,6 +151,12 @@ class Main {
         // Play the 2nd track in the queue, this should play track1. 
         player.loadTrackFromQueue(0);
 
+        window.displayTracks = function(tracks: ITrack[]) {
+            for (let track of tracks) {
+                console.log(track.title);
+            }
+        };
+
     }
 }
 

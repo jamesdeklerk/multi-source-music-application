@@ -47,13 +47,13 @@ interface IPlayerAdapter {
     setVolume(volume: number): void;
 
     /**
-     * Seeks to a specified time in the current track.
+     * Seeks to a specified percentage in the current track.
      * If the player is paused it should remain paused.
      * If the player is in another state it should play the current track.
      * 
-     * @param milliseconds The time in milliseconds to which the player should advance.
+     * @param percentage The percentage (0 to 1) to which the player should advance.
      */
-    seekTo(milliseconds: number): void;
+    seekToPercentage(percentage: number): void;
 
     /**
      * Gets the current time of the track.
