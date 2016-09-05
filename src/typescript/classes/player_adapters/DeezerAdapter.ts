@@ -72,9 +72,6 @@ class DeezerAdapter implements IPlayerAdapter {
             this.trackEnd = false;
 
             DZ.player.playTracks([track.services[`Deezer`].trackId], function (response: any) {
-                // console.log(`Deezer track loaded response...`);
-                // console.log(response.tracks);
-                // console.log(`-------------------------------`);
 
                 // If it returned no tracks then it failed to play the track.
                 if (response.tracks.length <= 0) {

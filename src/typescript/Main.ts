@@ -171,11 +171,32 @@ class Main {
         // Play the 2nd track in the queue, this should play track1. 
         player.loadTrackFromQueue(0);
 
-        window.displayTracks = function(tracks: ITrack[]) {
+        window.displayTracks = function (tracks: ITrack[]) {
             for (let track of tracks) {
                 console.log(track.title);
             }
         };
+
+        // Dealing with the seek bar
+        let seekBar = <HTMLInputElement>document.getElementById(`seek-bar`);
+        let userMovingSeekBar = false;
+
+        seekBar.addEventListener(`mousedown`, function () {
+            userMovingSeekBar = true;
+        });
+
+        seekBar.addEventListener(`change`, function () {
+            userMovingSeekBar = false;
+
+            player.seekToPercentage(parseFloat(seekBar.value));
+        });
+
+        // tslint:disable-next-line
+        publisher.subscribe(player.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number) {
+            if (!userMovingSeekBar) {
+                seekBar.value = percentage.toString();
+            }
+        });
 
     }
 }
