@@ -12,9 +12,8 @@
      */
     "no-constructor-vars": true,
     "no-consecutive-blank-lines": false,
-    "member-ordering": [
-      
-    ]
+    "member-ordering": [],
+    "max-line-length": [true, 200]
   },
   "rulesDirectory": [
     /*

@@ -7,6 +7,11 @@
 interface IPlayerAdapter {
 
     /**
+     * The music services name.
+     */
+    name: string;
+
+    /**
      * This should initialize the player in the relevant way.
      * This function is called immediately after the service adapter is created.
      * 

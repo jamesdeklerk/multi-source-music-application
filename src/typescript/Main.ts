@@ -5,15 +5,17 @@ class Main {
     constructor() {
 
         // Create a new player object.
-        let player = new Player();
-        window.player = player;
+        let abstractPlayer = new Player();
+        window.abstractPlayer = abstractPlayer;
 
         // Create some tracks.
         let track0: ITrack = {
             artist: undefined,
             duration: 9769,
             services: {
-                "Deezer": undefined,
+                "Deezer": {
+                    trackId: 1,
+                },
                 "YouTube": {
                     videoId: `FJt7gNi3Nr4`,
                 },
@@ -28,7 +30,9 @@ class Main {
             artist: undefined,
             duration: 9769,
             services: {
-                "Deezer": undefined,
+                "Deezer": {
+                    trackId: 1,
+                },
                 "YouTube": {
                     videoId: `R594fw8I2a4`,
                 },
@@ -43,7 +47,9 @@ class Main {
             artist: undefined,
             duration: 9769,
             services: {
-                "Deezer": undefined,
+                "Deezer": {
+                    trackId: 113524324,
+                },
                 "YouTube": {
                     videoId: `GZSsOEqgm0c`,
                 },
@@ -75,7 +81,9 @@ class Main {
             artist: undefined,
             duration: 9769,
             services: {
-                "Deezer": undefined,
+                "Deezer": {
+                    trackId: 1,
+                },
                 "YouTube": {
                     videoId: `1ekZEVeXwek`,
                 },
@@ -107,7 +115,9 @@ class Main {
             artist: undefined,
             duration: 9769,
             services: {
-                "Deezer": undefined,
+                "Deezer": {
+                    trackId: 1,
+                },
                 "YouTube": {
                     videoId: `viimfQi_pUw`,
                 },
@@ -122,7 +132,9 @@ class Main {
             artist: undefined,
             duration: 9769,
             services: {
-                "Deezer": undefined,
+                "Deezer": {
+                    trackId: 1,
+                },
                 "YouTube": {
                     videoId: `4pflhw9QItc`,
                 },
@@ -137,7 +149,9 @@ class Main {
             artist: undefined,
             duration: 9769,
             services: {
-                "Deezer": undefined,
+                "Deezer": {
+                    trackId: 1,
+                },
                 "YouTube": {
                     videoId: `Bm5iA4Zupek`,
                 },
@@ -150,7 +164,7 @@ class Main {
         };
 
         // Queue multiple tracks.
-        player.queue([
+        abstractPlayer.queue([
             track0,
             track1,
             track2,
@@ -163,13 +177,13 @@ class Main {
         ]);
 
         // After this the queue should look like this [track3, track1, track3, track4]
-        console.log(player.getQueue());
+        console.log(abstractPlayer.getQueue());
 
         // Set repeat to false (for testing cycling through all tracks causes an infinite loop).
-        player.setRepeat(player.REPEAT.OFF);
+        abstractPlayer.setRepeat(abstractPlayer.REPEAT.OFF);
 
         // Play the 2nd track in the queue, this should play track1. 
-        player.loadTrackFromQueue(0);
+        abstractPlayer.loadTrackFromQueue(0);
 
         window.displayTracks = function (tracks: ITrack[]) {
             for (let track of tracks) {
@@ -188,14 +202,23 @@ class Main {
         seekBar.addEventListener(`change`, function () {
             userMovingSeekBar = false;
 
-            player.seekToPercentage(parseFloat(seekBar.value));
+            abstractPlayer.seekToPercentage(parseFloat(seekBar.value));
         });
 
         // tslint:disable-next-line
-        publisher.subscribe(player.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number) {
+        publisher.subscribe(abstractPlayer.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number) {
             if (!userMovingSeekBar) {
                 seekBar.value = percentage.toString();
             }
+        });
+
+
+
+
+
+        // Checking if music services have changed
+        publisher.subscribe(abstractPlayer.EVENTS.ON_MUSIC_SERVICE_CHANGE, function (previousMusicServiceName: string, currentMusicServiceName: string) {
+            console.log(`Current music service: ${currentMusicServiceName}`);
         });
 
     }

@@ -5,6 +5,7 @@ interface Window {
 
 class YouTubeAdapter implements IPlayerAdapter {
 
+    public name = `YouTube`;
     private youtubePlayer: YT.Player;
 
     constructor() {

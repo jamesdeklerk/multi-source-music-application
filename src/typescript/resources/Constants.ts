@@ -19,12 +19,12 @@ let CONSTANTS = {
              * Use IMusicService format.
              */
             {
-                adapter: YouTubeAdapter,
-                name: `YouTube`,
-            },
-            {
                 adapter: DeezerAdapter,
                 name: `Deezer`,
+            },
+            {
+                adapter: YouTubeAdapter,
+                name: `YouTube`,
             },
         ],
     },

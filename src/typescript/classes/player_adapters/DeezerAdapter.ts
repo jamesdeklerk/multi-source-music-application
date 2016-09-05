@@ -5,6 +5,7 @@ interface Window {
 
 class DeezerAdapter implements IPlayerAdapter {
 
+    public name = `Deezer`;
     private currentPosition = 0;
     private currentDuration = 0;
     private percentageLoaded = 0;
@@ -54,7 +55,10 @@ class DeezerAdapter implements IPlayerAdapter {
     }
 
     public unload(): void {
+        console.log(`Deezer Unload.`);
         this.pause();
+
+        // Unload all tracks from Deezer player.
         DZ.player.playTracks([]);
     }
 
@@ -62,6 +66,7 @@ class DeezerAdapter implements IPlayerAdapter {
         return new Promise((resolve, reject) => {
 
             console.log(`Deezer load was called for ${track.title}!`);
+            console.log(`Deezer trackId ${track.services[`Deezer`].trackId}...`);
 
             let currentContext = this;
 

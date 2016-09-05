@@ -38,19 +38,17 @@ class Player {
         VOLUME: CONSTANTS.PLAYER.DEFAULTS.VOLUME,
     };
     public EVENTS = {
-        ON_ERROR: `onError`, // Failed to load track, failed to change music service etc.
         ON_MUSIC_SERVICE_CHANGE: `onMusicServiceChange`,
         ON_MUTED_CHANGE: `onMutedChange`,
         ON_NEXT: `onNext`,
-        ON_PAUSE: `onPause`,
-        ON_PLAY: `onPlay`,
+        ON_PLAY_PAUSE: `onPlayPause`,
         ON_PREVIOUS: `onPrevious`,
         ON_REPEAT_CHANGE: `onRepeatChange`,
-        ON_SEEK_CHANGE: `onSeekChange`,
         ON_SHUFFLE_CHANGE: `onShuffleChange`,
         ON_TIME_UPDATE: `onTimeUpdate`, // Published when the current playback position has changed.
         ON_TRACK_DEQUEUED: `onTrackDequeued`,
         ON_TRACK_LOADED: `onTrackLoaded`, // loaded track
+        ON_TRACK_LOAD_FAILED: `onTrackLoadFailed`, // track failed to load
         ON_TRACK_QUEUED: `onTrackQueued`,
         ON_VOLUME_CHANGE: `onVolumeChange`,
     };
@@ -222,28 +220,108 @@ class Player {
 
     private registerPlayerEvents(): void {
 
-        publisher.register(this.EVENTS.ON_ERROR, [
+        publisher.register(this.EVENTS.ON_MUSIC_SERVICE_CHANGE, [
             {
-                name: `data`,
-                optional: true,
+                description: `The name of the music service that was being used.`,
+                name: `previousMusicServiceName`,
+                type: `string`,
+            },
+            {
+                description: `The name of the music service currently being used.`,
+                name: `currentMusicServiceName`,
+                type: `string`,
+            },
+        ]);
+
+        publisher.register(this.EVENTS.ON_MUTED_CHANGE, [
+            {
+                name: `muted`,
+                type: `boolean`,
+            },
+        ]);
+
+        publisher.register(this.EVENTS.ON_NEXT, [
+            {
+                name: `track`,
                 type: `object`,
             },
         ]);
 
+        publisher.register(this.EVENTS.ON_PLAY_PAUSE, [
+            {
+                name: `paused`,
+                type: `boolean`,
+            },
+        ]);
+
+        publisher.register(this.EVENTS.ON_PREVIOUS, [
+            {
+                name: `track`,
+                type: `object`,
+            },
+        ]);
+
+        publisher.register(this.EVENTS.ON_REPEAT_CHANGE, [
+            {
+                name: `repeat`,
+                type: `string`,
+            },
+        ]);
+
+        publisher.register(this.EVENTS.ON_SHUFFLE_CHANGE, [
+            {
+                name: `shuffled`,
+                type: `boolean`,
+            },
+        ]);
+
+        // Implemented
         publisher.register(this.EVENTS.ON_TIME_UPDATE, [
             {
                 name: `time`,
-                optional: false,
                 type: `number`,
             },
             {
                 name: `duration`,
-                optional: false,
                 type: `number`,
             },
             {
                 name: `percentage`,
-                optional: false,
+                type: `number`,
+            },
+        ]);
+
+        publisher.register(this.EVENTS.ON_TRACK_DEQUEUED, [
+            {
+                name: `track`,
+                type: `object`,
+            },
+        ]);
+
+        publisher.register(this.EVENTS.ON_TRACK_LOADED, [
+            {
+                name: `track`,
+                type: `object`,
+            },
+        ]);
+
+        publisher.register(this.EVENTS.ON_TRACK_LOAD_FAILED, [
+            {
+                name: `track`,
+                type: `object`,
+            },
+        ]);
+
+        publisher.register(this.EVENTS.ON_TRACK_QUEUED, [
+            {
+                name: `track`,
+                type: `object`,
+            },
+        ]);
+
+        publisher.register(this.EVENTS.ON_VOLUME_CHANGE, [
+            {
+                name: `volume`,
                 type: `number`,
             },
         ]);
@@ -285,6 +363,12 @@ class Player {
     public switchMusicService(musicServiceName: string, resumeCurrentTrack: boolean): Promise<any> {
 
         return new Promise((resolve, reject) => {
+
+            let previousMusicService = this.musicServices[this.currentMusicServiceIndex];
+            let previousMusicServiceName = `None`;
+            if (previousMusicService) {
+                previousMusicServiceName = previousMusicService.name;
+            }
 
             let musicService: IMusicService;
             let musicServiceIndex: number;
@@ -334,6 +418,11 @@ class Player {
                 });
 
             } else {
+
+                let currentMusicServiceName = this.musicServices[musicServiceIndex].name;
+
+                // tslint:disable-next-line
+                publisher.publish(this.EVENTS.ON_MUSIC_SERVICE_CHANGE, previousMusicServiceName, currentMusicServiceName);
 
                 // Set the new music service index.
                 this.currentMusicServiceIndex = musicServiceIndex;
@@ -732,8 +821,6 @@ class Player {
             // the current track, because we're about to load a new track.
             this.switchMusicService(defaultMusicServiceName, false).then(() => {
 
-                console.log(`Switch to the default music service.`);
-
                 // Once the music service is successfully switched 
                 // to the default music service, try load the track from the queue again.
                 this.loadTrackFromQueue(index);
@@ -918,6 +1005,8 @@ class Player {
 
         this.currentPlayer.load(track).then(() => {
 
+            console.log(`${track.title} loaded successfully using ${this.currentPlayer.name} (i.e. ${this.musicServices[this.currentMusicServiceIndex].name})`)
+
             // Clear the music services tried.
             this.musicServicesTried = {};
 
@@ -947,9 +1036,7 @@ class Player {
             // mark this music service as tried (i.e. true).
             let currentMusicServiceName = this.musicServices[this.currentMusicServiceIndex].name;
             this.musicServicesTried[currentMusicServiceName] = true;
-            console.log(`The track failed to load using ${currentMusicServiceName} :(`);
-
-            console.log(`Track failed to load, try the next player.`);
+            console.log(`The track failed to load using ${currentMusicServiceName} :( try the next player.`);
 
             // Get the next music services name.
             let nextMusicServicesIndex = this.incrementIndex(this.currentMusicServiceIndex, 1,
@@ -1129,7 +1216,9 @@ class Player {
      */
     public seekToPercentage(percentage: number): void {
         if (this.currentPlayer) {
+
             this.currentPlayer.seekToPercentage(percentage);
+
             if (this.getPaused()) {
                 this.pause();
             } else {
