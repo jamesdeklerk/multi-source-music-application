@@ -45,8 +45,8 @@ class DeezerAdapter implements IPlayerAdapter {
                 });
             };
 
-            let e = <HTMLScriptElement>document.createElement(`script`);
-            e.src = `https://cdns-files.dzcdn.net/js/min/dz.js`;
+            let e = <HTMLScriptElement> document.createElement(`script`);
+            e.src = "https://cdns-files.dzcdn.net/js/min/dz.js";
             e.async = true;
             document.getElementById(`dz-root`).appendChild(e);
 
@@ -65,8 +65,7 @@ class DeezerAdapter implements IPlayerAdapter {
     public load(track: ITrack): Promise<{}> {
         return new Promise((resolve, reject) => {
 
-            console.log(`Deezer load was called for ${track.title}!`);
-            console.log(`Deezer trackId ${track.services[`Deezer`].trackId}...`);
+            console.log(`Deezer load was called for ${track.title} (trackId ${track.services[`Deezer`].trackId})!`);
 
             let currentContext = this;
 

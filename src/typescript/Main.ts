@@ -183,7 +183,7 @@ class Main {
         abstractPlayer.setRepeat(abstractPlayer.REPEAT.OFF);
 
         // Play the 2nd track in the queue, this should play track1. 
-        abstractPlayer.loadTrackFromQueue(0);
+        //abstractPlayer.load(0);
 
         window.displayTracks = function (tracks: ITrack[]) {
             for (let track of tracks) {
