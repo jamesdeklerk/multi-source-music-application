@@ -31,11 +31,16 @@ class DeezerAdapter implements IPlayerAdapter {
                                 }
                             });
                             DZ.Event.subscribe(`player_buffering`, function (percentageLoaded: number) {
+                                console.log(`Deezer track buffering: ${percentageLoaded}`);
                                 currentContext.percentageLoaded = percentageLoaded;
                             });
                             DZ.Event.subscribe(`track_end`, function () {
                                 currentContext.trackEnd = true;
                                 currentContext.currentPosition = currentContext.currentDuration;
+                            });
+                            DZ.Event.subscribe(`current_track`, function (e) {
+                                console.log(`Deezer track changed!!!!!`);
+                                console.log(e);
                             });
 
                             // Resolve the promise.
@@ -45,7 +50,7 @@ class DeezerAdapter implements IPlayerAdapter {
                 });
             };
 
-            let e = <HTMLScriptElement> document.createElement(`script`);
+            let e = <HTMLScriptElement>document.createElement(`script`);
             e.src = "https://cdns-files.dzcdn.net/js/min/dz.js";
             e.async = true;
             document.getElementById(`dz-root`).appendChild(e);
@@ -84,11 +89,31 @@ class DeezerAdapter implements IPlayerAdapter {
 
                     currentContext.currentDuration = response.tracks[0].duration;
 
-                    currentContext.pause();
+                    let tryCount = 0;
 
-                    // Resolve promise, @NB maybe use the response to check if there
-                    // was an error loading the track.
-                    resolve();
+                    // Keep trying to see if the track is playable yet.
+                    function keepTrying() {
+                        if (DZ.player.play() === false) {
+                            // The track isn't ready yet.
+                            // For some reason, playing and pausing the song gets it to load.
+                            DZ.player.pause();
+
+                            tryCount = tryCount + 1;
+
+                            // try every 150 milliseconds.
+                            setTimeout(keepTrying, 150);
+                        } else {
+
+                            console.log(`tryCount: ${tryCount}`);
+
+                            // The track is now playable, so pause it (as per specification)
+                            // and resolve the promise.
+                            currentContext.pause();
+                            resolve();
+                        }
+                    }
+                    // Initialize the keep trying loop.
+                    keepTrying();
 
                 }
             });

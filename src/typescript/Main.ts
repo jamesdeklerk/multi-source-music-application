@@ -5,8 +5,8 @@ class Main {
     constructor() {
 
         // Create a new player object.
-        let abstractPlayer = new Player();
-        window.abstractPlayer = abstractPlayer;
+        let AP = new Player();
+        window.AP = AP;
 
         // Create some tracks.
         let track0: ITrack = {
@@ -164,7 +164,7 @@ class Main {
         };
 
         // Queue multiple tracks.
-        abstractPlayer.queue([
+        AP.queue([
             track0,
             track1,
             track2,
@@ -177,10 +177,10 @@ class Main {
         ]);
 
         // After this the queue should look like this [track3, track1, track3, track4]
-        console.log(abstractPlayer.getQueue());
+        console.log(AP.getQueue());
 
         // Set repeat to false (for testing cycling through all tracks causes an infinite loop).
-        abstractPlayer.setRepeat(abstractPlayer.REPEAT.OFF);
+        AP.setRepeat(AP.REPEAT.OFF);
 
         // Play the 2nd track in the queue, this should play track1. 
         //abstractPlayer.load(0);
@@ -202,11 +202,11 @@ class Main {
         seekBar.addEventListener(`change`, function () {
             userMovingSeekBar = false;
 
-            abstractPlayer.seekToPercentage(parseFloat(seekBar.value));
+            AP.seekToPercentage(parseFloat(seekBar.value));
         });
 
         // tslint:disable-next-line
-        publisher.subscribe(abstractPlayer.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number) {
+        publisher.subscribe(AP.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number) {
             if (!userMovingSeekBar) {
                 seekBar.value = percentage.toString();
             }
@@ -217,7 +217,7 @@ class Main {
 
 
         // Checking if music services have changed
-        publisher.subscribe(abstractPlayer.EVENTS.ON_MUSIC_SERVICE_CHANGE, function (previousMusicServiceName: string, currentMusicServiceName: string) {
+        publisher.subscribe(AP.EVENTS.ON_MUSIC_SERVICE_CHANGE, function (previousMusicServiceName: string, currentMusicServiceName: string) {
             console.log(`Current music service: ${currentMusicServiceName}`);
         });
 

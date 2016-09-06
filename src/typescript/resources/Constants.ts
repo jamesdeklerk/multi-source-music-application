@@ -3,6 +3,7 @@ let CONSTANTS = {
     PLAYER: {
         DEFAULTS: {
             MUTED: false,
+            PAUSED: false,
             REPEAT: `repeat-all`,
             SHUFFLE: false,
             TIME_AFTER_WHICH_TO_RESTART_TRACK: 3000, // in milliseconds

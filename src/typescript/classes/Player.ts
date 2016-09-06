@@ -32,6 +32,7 @@ class Player {
     };
     private DEFAULTS = {
         MUTED: CONSTANTS.PLAYER.DEFAULTS.MUTED,
+        PAUSED: CONSTANTS.PLAYER.DEFAULTS.PAUSED,
         REPEAT: CONSTANTS.PLAYER.DEFAULTS.REPEAT,
         SHUFFLE: CONSTANTS.PLAYER.DEFAULTS.SHUFFLE,
         TIME_AFTER_WHICH_TO_RESTART_TRACK: CONSTANTS.PLAYER.DEFAULTS.TIME_AFTER_WHICH_TO_RESTART_TRACK,
@@ -48,7 +49,8 @@ class Player {
         ON_TIME_UPDATE: `onTimeUpdate`, // Published when the current playback position has changed.
         ON_TRACK_DEQUEUED: `onTrackDequeued`,
         ON_TRACK_INDEX_UPDATED: `onTrackIndexUpdated`,
-        ON_TRACK_LOADED: `onTrackLoaded`, // loaded track
+        ON_TRACK_LOADED: `onTrackLoaded`, // track successfully loaded
+        ON_TRACK_LOADING: `onTrackLoading`, // track is being loaded
         ON_TRACK_LOAD_FAILED: `onTrackLoadFailed`, // track failed to load
         ON_TRACK_QUEUED: `onTrackQueued`,
         ON_VOLUME_CHANGE: `onVolumeChange`,
@@ -115,9 +117,13 @@ class Player {
      */
     private currentTrackIndex: number = -1;
     /**
+     * Specifies if the player is currently loading a track.
+     */
+    private currentlyLoadingTrack: boolean = false;
+    /**
      * The paused state of the player.
      */
-    private paused: boolean;
+    private paused: boolean = this.DEFAULTS.PAUSED;
     /**
      * The amount of time after which this.previous()
      * won't go to the previous track, but rather restart the current track.
@@ -315,6 +321,13 @@ class Player {
             },
         ]);
 
+        publisher.register(this.EVENTS.ON_TRACK_LOADING, [
+            {
+                name: `track`,
+                type: `object`,
+            },
+        ]);
+
         publisher.register(this.EVENTS.ON_TRACK_LOAD_FAILED, [
             {
                 name: `track`,
@@ -393,23 +406,23 @@ class Player {
      * This unloads the track from the previous player and does not load a track into the new player.
      * 
      * @param musicServiceName The name of the music service one wants to switch to.
+     * @param previousMusicService DON'T Pass this parameter in, it is used internally when a player is initialized.
      * @return A promise the tells when it's done switching services.
      */
-    private changeMusicService(musicServiceName: string): Promise<any> {
+    private changeMusicService(musicServiceName: string, previousMusicService?: IMusicService): Promise<any> {
 
         return new Promise((resolve, reject) => {
 
-            let previousMusicService = this.musicServices[this.getCurrentMusicServiceIndex()];
-            let previousMusicServiceName: string;
-            if (previousMusicService) {
-                previousMusicServiceName = previousMusicService.name;
-            }
-
-            // If the previous music service is the same as the new one,
-            // and it is initialized, immediately resolve the promise.
-            if (previousMusicServiceName === musicServiceName && previousMusicService.initialized) {
-                console.log(`You tried to load the player that's currently loaded.`);
-                resolve();
+            // If this wasn't a recursive call after initializing the player,
+            // find the previous player, else the previous player has already been
+            // found and passed in as a parameter after loading the new player.
+            if (!previousMusicService) {
+                previousMusicService = this.musicServices[this.getCurrentMusicServiceIndex()];
+                if (previousMusicService) {
+                    console.log(`previousMusicService = ${previousMusicService.name}`);
+                } else {
+                    console.log(`previousMusicService = ${undefined}`);
+                }
             }
 
             // Unload any track that was in the previous player.
@@ -442,21 +455,30 @@ class Player {
                     `registered music services (names are case-sensitive).`);
             }
 
-            this.currentMusicServiceIndex = musicServiceIndex;
+            // As soon as we know the new music service is valid, set it.
+            // Set the new music service index.
+            this.setCurrentMusicServiceIndex(musicServiceIndex);
+            // Set the currentPlayer to undefined just while were loading the new player,
+            // this is so that if anything else calls this.currentPlayer, it doesn't do something
+            // with the previous player.
             this.currentPlayer = undefined;
 
             // If the new musicService isn't initialized,
             // initialize it, then try switch music services again.
             if (!musicService.initialized) {
 
-                (<IPlayerAdapter> musicService.adapter).initialize().then(() => {
+                (<IPlayerAdapter>musicService.adapter).initialize().then(() => {
+
+                    console.log(`${musicService.name} successfully initialized.`);
 
                     // The music service has been successfully Initialized.
                     musicService.initialized = true;
-                    this.changeMusicService(musicService.name).then(() => {
+                    this.changeMusicService(musicService.name, previousMusicService).then(() => {
+
+                        console.log(`Successfully changed to the ${musicService.name} player adapter.`);
 
                         // If we get here, the musicService has been initialized,
-                        // and the it has switched to the new music service,
+                        // and the it has been successfully changed to the new music service,
                         // so finally we can resolve the original promise.
                         resolve();
 
@@ -478,9 +500,6 @@ class Player {
 
             } else {
 
-                // Set the new music service index.
-                this.setCurrentMusicServiceIndex(musicServiceIndex);
-
                 // Change to using the new music service player adapter.
                 this.currentPlayer = musicService.adapter;
 
@@ -489,9 +508,18 @@ class Player {
                 this.setVolume(this.getVolume());
                 this.setMuted(this.getMuted());
 
-                // Publish an event saying the music service has been switched successfully.
-                let currentMusicServiceName = this.musicServices[musicServiceIndex].name;
-                publisher.publish(this.EVENTS.ON_MUSIC_SERVICE_CHANGE, (previousMusicServiceName || `None`), currentMusicServiceName);
+                let previousMusicServiceName: string;
+                if (previousMusicService) {
+                    previousMusicServiceName = previousMusicService.name;
+                }
+                // If the music service was actually changed,
+                // publish the onMusicServiceChange event.
+                if (previousMusicServiceName !== musicServiceName) {
+
+                    let currentMusicServiceName = this.musicServices[musicServiceIndex].name;
+                    publisher.publish(this.EVENTS.ON_MUSIC_SERVICE_CHANGE, (previousMusicServiceName || `None`), currentMusicServiceName);
+
+                }
 
                 // Resolve promise for when the musicService
                 // was already initialized.
@@ -977,6 +1005,13 @@ class Player {
      * If repeat === repeat all, cycle through queue.
      */
     public next(): void {
+
+        // If it's currently loading a track, don't try load the next one.
+        if (this.currentlyLoadingTrack) {
+            console.log(`Next was called, but a track was currently being loaded.`);
+            return;
+        }
+
         let currentQueue = this.getQueue();
         let currentIndex = this.getCurrentIndex();
         let repeat = this.getRepeat();
@@ -1011,6 +1046,13 @@ class Player {
      * If repeat === repeat all, cycle through queue.
      */
     public previous(): void {
+
+        // If it's currently loading a track, don't try load the previous one.
+        if (this.currentlyLoadingTrack) {
+            console.log(`Previous was called, but a track was currently being loaded.`);
+            return;
+        }
+
         let currentQueue = this.getQueue();
         let currentIndex = this.getCurrentIndex();
         let repeat = this.getRepeat();
@@ -1080,31 +1122,43 @@ class Player {
         return new Promise((resolve, reject) => {
 
             if (!this.currentPlayer) {
-
-                reject();
-
+                reject(`No music service specified to play the track with.`);
             } else {
 
-                // Try set the new index, if that succeeds, that means
-                // that track is in the queue,so load the track that's at that index.
-                if (this.setCurrentIndex(index)) {
-                    let currentTrack = this.getCurrentTrack();
-
-                    // Try and load the track.
-                    this.currentPlayer.load(currentTrack).then(() => {
-
-                        // The track loaded successfully, so resolve the promise.
-                        resolve();
-                    }).catch(() => {
-
-                        // The track failed to load, reject the promise.
-                        reject();
-                    });
-
+                if (this.currentlyLoadingTrack) {
+                    reject(`The player hasn't finished loading the previous track.`);
                 } else {
 
-                    // Reject because there that wasn't a valid index.
-                    reject();
+                    // Try set the new index, if that succeeds, that means
+                    // that track is in the queue,so load the track that's at that index.
+                    if (this.setCurrentIndex(index)) {
+                        let currentTrack = this.getCurrentTrack();
+
+                        // Publish the track loading event.
+                        publisher.publish(this.EVENTS.ON_TRACK_LOADING, currentTrack);
+
+                        // Try and load the track.
+                        this.currentPlayer.load(currentTrack).then(() => {
+
+                            // The track loaded successfully, publish the track loaded event and
+                            // resolve the promise.
+                            publisher.publish(this.EVENTS.ON_TRACK_LOADED, currentTrack);
+                            resolve();
+
+                        }).catch(() => {
+
+                            // The track failed to load, publish the track load failed event and
+                            // reject the promise.
+                            publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, currentTrack);
+                            reject();
+                        });
+
+                    } else {
+
+                        // Reject because there that wasn't a valid index.
+                        reject();
+                    }
+
                 }
 
             }
@@ -1163,115 +1217,125 @@ class Player {
 
         return new Promise((resolve, reject) => {
 
-            // First just set the 
-            if (!this.setCurrentIndex(index)) {
-                throw new Error(`The given index isn't in the queue.`);
-            }
-
-            // If it is set to try default first and it's not on the default music service, 
-            // change to the default music service.
-            if (tryDefaultFirst && (this.currentMusicServiceIndex !== 0)) {
-
-                console.log(`SWITCHED TO DEFAULT`);
-
-                let defaultMusicServiceName = this.musicServices[0].name;
-                console.log(`defaultMusicServiceName: ${defaultMusicServiceName}`);
-
-                // Change to the default music service, but we don't want to reload
-                // the current track, because we're about to load a new track.
-                this.changeMusicService(defaultMusicServiceName).then(() => {
-
-                    // Successfully changed to the default music service,
-                    // so try again to play the track from the queue.
-                    this.playTrack(index, tryDefaultFirst).then(() => {
-
-                        // The track finally started playing using the default player,
-                        // so resolve the original promise.
-                        resolve();
-
-                    }).catch(() => {
-
-                        console.log(`REJECTED changeMusicService(defaultMusicServiceName);`);
-
-                        // The track failed to load on all the different music services.
-                        // Reject the original promise.
-                        reject();
-
-                    });
-
-                }).catch(() => {
-
-                    // Failed to load the default music service,
-                    // just reject the promise.
-                    reject();
-
-                });
-
+            if (this.currentlyLoadingTrack) {
+                reject(`The player hasn't finished loading the previous track.`);
             } else {
 
-                // Now we can start loading the new track.
+                // First just set the current index.
+                if (!this.setCurrentIndex(index)) {
+                    reject(`The given index isn't in the queue.`);
+                } else {
 
-                // Check if there is a current player
-                if (!this.currentPlayer) {
-                    throw new Error(`No music service specified to play the track with.`);
-                }
+                    // If it is set to try default first and it's not on the default music service, 
+                    // change to the default music service.
+                    if (tryDefaultFirst && (this.currentMusicServiceIndex !== 0)) {
 
-                // Try loading the new track.
-                this.load(index).then(() => {
+                        console.log(`SWITCHED TO DEFAULT`);
 
-                    // Track successfully loaded using the current player,
-                    // so start playing the track, reset the music services tried
-                    // and resolve the promise.
-                    this.play();
-                    this.musicServicesTried = {};
-                    resolve();
+                        let defaultMusicServiceName = this.musicServices[0].name;
+                        console.log(`defaultMusicServiceName: ${defaultMusicServiceName}`);
 
-                }).catch(() => {
+                        // Change to the default music service, but we don't want to reload
+                        // the current track, because we're about to load a new track.
+                        this.changeMusicService(defaultMusicServiceName).then(() => {
 
-                    // Failed to load the track using the current player,
-                    // try the next player.
+                            // Successfully changed to the default music service,
+                            // so try again to play the track from the queue.
+                            this.playTrack(index, tryDefaultFirst).then(() => {
 
-                    // Get the next music service to try.
-                    let nextMusicServiceToTry = this.getNextUntriedMusicService();
-
-                    // If the next music service to try is available, try it.
-                    if (nextMusicServiceToTry) {
-
-                        this.changeMusicService(nextMusicServiceToTry.name).then(() => {
-
-                            // Successfully changed to the next music service,
-                            // try play the track using this service.
-                            // Remember, the default player would've already been tried, so
-                            // don't set the second parameter to true or it will cause an infinite loop.
-                            this.playTrack(index, false).then(() => {
-
-                                // The track is successfully playing, so resolve the promise.
+                                // The track finally started playing using the default player,
+                                // so resolve the original promise.
                                 resolve();
 
                             }).catch(() => {
 
-                                // The track failed to load, reject the promise.
-                                reject();
+                                console.log(`REJECTED changeMusicService(defaultMusicServiceName);`);
+
+                                // The track failed to load on all the different music services.
+                                // Reject the original promise.
+                                reject(`The track failed to load on all the different music services.`);
 
                             });
 
                         }).catch(() => {
 
-                            // Failed to change the music service,
-                            // reject the promise.
+                            // Failed to load the default music service,
+                            // just reject the promise.
                             reject();
 
                         });
 
                     } else {
 
-                        // Else nextMusicServiceToTry was undefined,
-                        // that means all the music services have been tried, so reject the promise.
-                        reject();
+                        // Now we can start loading the new track.
+
+                        // Check if there is a current player
+                        if (!this.currentPlayer) {
+                            reject(`No music service specified to play the track with.`);
+                        } else {
+
+                            // Try loading the new track.
+                            this.load(index).then(() => {
+
+                                // Track successfully loaded using the current player,
+                                // so start playing the track, reset the music services tried
+                                // and resolve the promise.
+                                this.play();
+                                this.musicServicesTried = {};
+                                resolve();
+
+                            }).catch(() => {
+
+                                // Failed to load the track using the current player,
+                                // try the next player.
+
+                                // Get the next music service to try.
+                                let nextMusicServiceToTry = this.getNextUntriedMusicService();
+
+                                // If the next music service to try is available, try it.
+                                if (nextMusicServiceToTry) {
+
+                                    this.changeMusicService(nextMusicServiceToTry.name).then(() => {
+
+                                        // Successfully changed to the next music service,
+                                        // try play the track using this service.
+                                        // Remember, the default player would've already been tried, so
+                                        // don't set the second parameter to true or it will cause an infinite loop.
+                                        this.playTrack(index, false).then(() => {
+
+                                            // The track is successfully playing, so resolve the promise.
+                                            resolve();
+
+                                        }).catch(() => {
+
+                                            // The track failed to load, reject the promise.
+                                            reject();
+
+                                        });
+
+                                    }).catch(() => {
+
+                                        // Failed to change the music service,
+                                        // reject the promise.
+                                        reject();
+
+                                    });
+
+                                } else {
+
+                                    // Else nextMusicServiceToTry was undefined,
+                                    // that means all the music services have been tried, so reject the promise.
+                                    reject();
+
+                                }
+
+                            });
+
+                        }
 
                     }
 
-                });
+                }
 
             }
 
@@ -1293,23 +1357,29 @@ class Player {
 
         return new Promise((resolve, reject) => {
 
-            // Save the paused state.
-            let paused = this.getPaused();
+            if (this.currentlyLoadingTrack) {
+                reject(`The player hasn't finished loading the previous track.`);
+            } else {
 
-            this.playTrack(index, true).then(() => {
+                // Save the paused state.
+                let paused = this.getPaused();
 
-                if (paused) {
-                    this.pause();
-                }
-                resolve();
+                this.playTrack(index, true).then(() => {
 
-            }).catch(() => {
+                    if (paused) {
+                        this.pause();
+                    }
+                    resolve();
 
-                // This means the track failed to play on all the different
-                // music services, so move onto the next track.
-                this.next();
+                }).catch(() => {
 
-            });
+                    // This means the track failed to play on all the different
+                    // music services, so move onto the next track.
+                    this.next();
+
+                });
+
+            }
 
         });
 
@@ -1355,6 +1425,7 @@ class Player {
      * Restart the current track.
      */
     public restart(): void {
+        console.log(`Track restarted.`);
         this.seekTo(0);
     }
 
@@ -1541,9 +1612,21 @@ class Player {
 
             // If percentage >= 1, go to this.next().
             if (percentage >= 1) {
+                console.log(`publisher called next...`);
                 playerContext.next();
             }
 
+        });
+
+        // Update the currentlyLoadingTrack flag (for internal use).
+        publisher.subscribe(this.EVENTS.ON_TRACK_LOADING, function (track: ITrack) {
+            playerContext.currentlyLoadingTrack = true;
+        });
+        publisher.subscribe(this.EVENTS.ON_TRACK_LOADED, function (track: ITrack) {
+            playerContext.currentlyLoadingTrack = false;
+        });
+        publisher.subscribe(this.EVENTS.ON_TRACK_LOAD_FAILED, function (track: ITrack) {
+            playerContext.currentlyLoadingTrack = false;
         });
 
     }
