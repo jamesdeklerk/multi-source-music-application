@@ -124,6 +124,11 @@ class Player {
      */
     private currentTrackIndex: number = -1;
     /**
+     * The index of the track waiting to be loaded.
+     * Set to undefined if there is no track waiting to be loaded.
+     */
+    private waitingToLoadIndex: number;
+    /**
      * Specifies if the player is currently loading a track.
      */
     private currentlyLoadingTrack: boolean = false;
@@ -887,7 +892,7 @@ class Player {
 
         // If the index given isn't in the queue, throw an error.
         if (!this.isIndexInQueue(index, this.getQueue())) {
-            throw new Error(`The dequeue index provided is not a valid index (i.e. isn't in the queue).`)
+            throw new Error(`The dequeue index provided is not a valid index (i.e. isn't in the queue).`);
         }
 
         // Save the paused state.
@@ -1080,6 +1085,12 @@ class Player {
         for (let move of moves) {
             // Make sure the give indexes are in the current queue.
             if (this.isIndexInQueue(move.oldIndex, currentQueue) && this.isIndexInQueue(move.newIndex, currentQueue)) {
+
+                // Update the current index if need be.
+                if (move.oldIndex === this.getCurrentIndex()) {
+                    this.currentTrackIndex = move.newIndex;
+                }
+
                 // Remove the element from the array.
                 track = currentQueue.splice(move.oldIndex, 1)[0];
                 // Place it at the new index.
@@ -1105,21 +1116,23 @@ class Player {
     }
 
     /**
-     * Go to the next track.
+     * Go to the next track and start playing it.
      * If repeat === repeat off, don't cycle through queue.
      * If repeat === repeat one, restart current track.
      * If repeat === repeat all, cycle through queue.
      */
     public next(): void {
 
-        // If it's currently loading a track, don't try load the next one.
-        if (this.currentlyLoadingTrack) {
-            console.log(`Next was called, but a track was currently being loaded.`);
-            return;
-        }
+        this.play();
 
         let currentQueue = this.getQueue();
-        let currentIndex = this.getCurrentIndex();
+        // If there's an index waiting to be loaded, use that.
+        let currentIndex: number;
+        if (this.waitingToLoadIndex !== undefined) {
+            currentIndex = this.waitingToLoadIndex;
+        } else {
+            currentIndex = this.getCurrentIndex();
+        }
         let repeat = this.getRepeat();
 
         if (!this.isIndexInQueue(currentIndex, currentQueue)) {
@@ -1134,9 +1147,21 @@ class Player {
             // If it was on the last track, just unload it.
             // Else load the next track.
             if (currentIndex >= (currentQueue.length - 1)) {
-                // Unload the track, but don't set this.currentTrackIndex = -1;
-                this.unload(true);
-                return;
+
+                // We aren't waiting to load any more tracks.
+                this.waitingToLoadIndex = undefined;
+
+                // If we've gotten to the last index but never loaded the last track,
+                // we need to load it, then we can unload it.
+                if (this.getCurrentIndex() !== (currentQueue.length - 1)) {
+                    this.loadTrack((currentQueue.length - 1)).then(() => {
+                        this.seekToPercentage(0);
+                        this.pause();
+                    });
+                } else {
+                    this.seekToPercentage(0);
+                    this.pause();
+                }
             } else {
                 this.loadTrack(currentIndex + 1);
             }
@@ -1146,21 +1171,23 @@ class Player {
     }
 
     /**
-     * Go to the previous track.
+     * Go to the previous track and start playing it.
      * If repeat === repeat off, don't cycle through queue.
      * If repeat === repeat one, restart current track.
      * If repeat === repeat all, cycle through queue.
      */
     public previous(): void {
 
-        // If it's currently loading a track, don't try load the previous one.
-        if (this.currentlyLoadingTrack) {
-            console.log(`Previous was called, but a track was currently being loaded.`);
-            return;
-        }
+        this.play();
 
         let currentQueue = this.getQueue();
-        let currentIndex = this.getCurrentIndex();
+        // If there's an index waiting to be loaded, use that.
+        let currentIndex: number;
+        if (this.waitingToLoadIndex !== undefined) {
+            currentIndex = this.waitingToLoadIndex;
+        } else {
+            currentIndex = this.getCurrentIndex();
+        }
         let repeat = this.getRepeat();
 
         if (!this.isIndexInQueue(currentIndex, currentQueue)) {
@@ -1176,9 +1203,21 @@ class Player {
             // If it was on the first track, just unload it.
             // Else load the previous track.
             if (currentIndex === 0) {
-                // Unload the track, but don't set this.currentTrackIndex = -1;
-                this.unload(true);
-                return;
+
+                // We aren't waiting to load any more tracks.
+                this.waitingToLoadIndex = undefined;
+
+                // If we've gotten to the first index but never loaded the last track,
+                // we need to load, it then we can unload it.
+                if (this.getCurrentIndex() !== 0) {
+                    this.loadTrack(0).then(() => {
+                        this.restart();
+                        this.pause();
+                    });
+                } else {
+                    this.restart();
+                    this.pause();
+                }
             } else {
                 this.loadTrack(currentIndex - 1);
             }
@@ -1240,12 +1279,14 @@ class Player {
                     if (this.setCurrentIndex(index)) {
                         let currentTrack = this.getCurrentTrack();
 
+                        this.currentlyLoadingTrack = true;
                         // Publish the track loading event.
                         publisher.publish(this.EVENTS.ON_TRACK_LOADING, currentTrack, this.currentPlayer.name);
 
                         // Try and load the track.
                         this.currentPlayer.load(currentTrack).then(() => {
 
+                            this.currentlyLoadingTrack = false;
                             // The track loaded successfully, publish the track loaded event and
                             // resolve the promise.
                             publisher.publish(this.EVENTS.ON_TRACK_LOADED, currentTrack, this.currentPlayer.name);
@@ -1253,10 +1294,12 @@ class Player {
 
                         }).catch(() => {
 
+                            this.currentlyLoadingTrack = false;
                             // The track failed to load, publish the track load failed event and
                             // reject the promise.
                             publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, currentTrack, this.currentPlayer.name);
                             reject();
+
                         });
 
                     } else {
@@ -1321,7 +1364,7 @@ class Player {
      * @return Promise that tells when a track has finished loading and started playing,
      * or when it failed to load on all the different services.
      */
-    public playTrack(index: number, tryDefaultFirst: boolean): Promise<any> {
+    private playTrack(index: number, tryDefaultFirst: boolean): Promise<any> {
 
         return new Promise((resolve, reject) => {
 
@@ -1331,7 +1374,9 @@ class Player {
 
                 // First just set the current index.
                 if (!this.setCurrentIndex(index)) {
+
                     reject(`The given index isn't in the queue.`);
+
                 } else {
 
                     // If it is set to try default first and it's not on the default music service, 
@@ -1380,57 +1425,95 @@ class Player {
                             // Try loading the new track.
                             this.load(index).then(() => {
 
-                                // Track successfully loaded using the current player,
-                                // so start playing the track, reset the music services tried
-                                // and resolve the promise.
-                                this.play();
-                                this.musicServicesTried = {};
-                                resolve();
+                                if (this.waitingToLoadIndex !== undefined) {
 
-                            }).catch(() => {
+                                    // We're about to load the index that was waiting
+                                    // to be loaded, so clear this.waitingToLoadIndex.
+                                    let waitingToLoadIndex = this.waitingToLoadIndex;
+                                    this.waitingToLoadIndex = undefined;
 
-                                // Failed to load the track using the current player,
-                                // try the next player.
-
-                                // Get the next music service to try.
-                                let nextMusicServiceToTry = this.getNextUntriedMusicService();
-
-                                // If the next music service to try is available, try it.
-                                if (nextMusicServiceToTry) {
-
-                                    this.changeMusicService(nextMusicServiceToTry.name).then(() => {
-
-                                        // Successfully changed to the next music service,
-                                        // try play the track using this service.
-                                        // Remember, the default player would've already been tried, so
-                                        // don't set the second parameter to true or it will cause an infinite loop.
-                                        this.playTrack(index, false).then(() => {
-
-                                            // The track is successfully playing, so resolve the promise.
-                                            resolve();
-
-                                        }).catch(() => {
-
-                                            // The track failed to load, reject the promise.
-                                            reject();
-
-                                        });
-
+                                    // If there is a track waiting to be loaded, load it.
+                                    this.loadTrack(waitingToLoadIndex).then(() => {
+                                        resolve();
                                     }).catch(() => {
-
-                                        // Failed to change the music service,
-                                        // reject the promise.
                                         reject();
-
                                     });
 
                                 } else {
 
-                                    // Else nextMusicServiceToTry was undefined,
-                                    // that means all the music services have been tried.
-                                    // So reset the music services tried and reject the promise.
+                                    // Track successfully loaded using the current player,
+                                    // so start playing the track, reset the music services tried
+                                    // and resolve the promise.
+                                    this.play();
                                     this.musicServicesTried = {};
-                                    reject();
+                                    resolve();
+
+                                }
+
+                            }).catch(() => {
+
+
+                                // Failed to load the track, but check if there was a track waiting to be loaded.
+                                if (this.waitingToLoadIndex !== undefined) {
+
+                                    // We're about to load the index that was waiting
+                                    // to be loaded, so clear this.waitingToLoadIndex.
+                                    let waitingToLoadIndex = this.waitingToLoadIndex;
+                                    this.waitingToLoadIndex = undefined;
+
+                                    // If there is a track waiting to be loaded, load it.
+                                    this.loadTrack(waitingToLoadIndex).then(() => {
+                                        resolve();
+                                    }).catch(() => {
+                                        reject();
+                                    });
+
+                                } else {
+
+                                    // If there wasn't, the current track failed to load,
+                                    // using the current player, try the next player.
+
+                                    // Get the next music service to try.
+                                    let nextMusicServiceToTry = this.getNextUntriedMusicService();
+
+                                    // If the next music service to try is available, try it.
+                                    if (nextMusicServiceToTry) {
+
+                                        this.changeMusicService(nextMusicServiceToTry.name).then(() => {
+
+                                            // Successfully changed to the next music service,
+                                            // try play the track using this service.
+                                            // Remember, the default player would've already been tried, so
+                                            // don't set the second parameter to true or it will cause an infinite loop.
+                                            this.playTrack(index, false).then(() => {
+
+                                                // The track is successfully playing, so resolve the promise.
+                                                resolve();
+
+                                            }).catch(() => {
+
+                                                // The track failed to load, reject the promise.
+                                                reject();
+
+                                            });
+
+                                        }).catch(() => {
+
+                                            // Failed to change the music service,
+                                            // reject the promise.
+                                            reject();
+
+                                        });
+
+                                    } else {
+
+                                        // Else nextMusicServiceToTry was undefined,
+                                        // that means all the music services have been tried.
+                                        // So reset the music services tried and reject the promise.
+                                        this.musicServicesTried = {};
+                                        reject();
+
+                                    }
 
                                 }
 
@@ -1463,6 +1546,11 @@ class Player {
         return new Promise((resolve, reject) => {
 
             if (this.currentlyLoadingTrack) {
+
+                // It's busy loading a track, but store the track to be loaded next.
+                this.waitingToLoadIndex = index;
+                console.log(`waitingToLoadIndex: ${this.waitingToLoadIndex}`);
+
                 reject(`The player hasn't finished loading the previous track.`);
             } else {
 
@@ -1471,16 +1559,52 @@ class Player {
 
                 this.playTrack(index, true).then(() => {
 
-                    if (paused) {
-                        this.pause();
+                    if (this.waitingToLoadIndex !== undefined) {
+
+                        // We're about to load the index that was waiting
+                        // to be loaded, so clear this.waitingToLoadIndex.
+                        let waitingToLoadIndex = this.waitingToLoadIndex;
+                        this.waitingToLoadIndex = undefined;
+
+                        // If there is a track waiting to be loaded, load it.
+                        this.loadTrack(waitingToLoadIndex).then(() => {
+                            resolve();
+                        }).catch(() => {
+                            reject();
+                        });
+
+                    } else {
+
+                        // No track was waiting to be loaded, so resolve the promise.
+                        if (paused) {
+                            this.pause();
+                        }
+                        resolve();
                     }
-                    resolve();
 
                 }).catch(() => {
 
-                    // This means the track failed to play on all the different
-                    // music services, so move onto the next track.
-                    this.next();
+                    if (this.waitingToLoadIndex !== undefined) {
+
+                        // We're about to load the index that was waiting
+                        // to be loaded, so clear this.waitingToLoadIndex.
+                        let waitingToLoadIndex = this.waitingToLoadIndex;
+                        this.waitingToLoadIndex = undefined;
+
+                        // If there is a track waiting to be loaded, load it.
+                        this.loadTrack(waitingToLoadIndex).then(() => {
+                            resolve();
+                        }).catch(() => {
+                            reject();
+                        });
+
+                    } else {
+
+                        // This means the track failed to play on all the different
+                        // music services, so move onto the next track.
+                        this.next();
+
+                    }
 
                 });
 
@@ -1649,7 +1773,6 @@ class Player {
      * @param percentage The percentage (0 to 1) to which the player should advance.
      */
     public seekToPercentage(percentage: number): void {
-        console.log(`seekToPercentage: ${percentage}`);
         if (this.currentPlayer) {
 
             this.currentPlayer.seekToPercentage(percentage);
@@ -1712,42 +1835,31 @@ class Player {
     private subscribeToEvents(): void {
 
         let playerContext = this;
+        let lastTrackAndRepeatOff: boolean;
 
         // Automatically go to the next track.
         publisher.subscribe(this.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number) {
 
+            lastTrackAndRepeatOff = (playerContext.getCurrentIndex() === (playerContext.getQueue().length - 1)) && (playerContext.getRepeat() === playerContext.REPEAT.OFF);
+
             // If percentage >= 1, a track isn't being loaded and
             // a music service isn't being loaded.
             // go to this.next().
-            if (percentage >= 1 && !playerContext.currentlyLoadingTrack && !playerContext.currentlyLoadingMusicService) {
+            if ((percentage >= 1) && !playerContext.currentlyLoadingTrack && !playerContext.currentlyLoadingMusicService && !lastTrackAndRepeatOff) {
                 console.log(`publisher called next...`);
                 playerContext.next();
             }
 
         });
 
-        // Update the currentlyLoadingTrack flag (for internal use).
-        publisher.subscribe(this.EVENTS.ON_TRACK_LOADING, function (track: ITrack, musicServiceName: string) {
-            playerContext.currentlyLoadingTrack = true;
-        });
-        publisher.subscribe(this.EVENTS.ON_TRACK_LOADED, function (track: ITrack, musicServiceName: string) {
-            playerContext.currentlyLoadingTrack = false;
-        });
-        publisher.subscribe(this.EVENTS.ON_TRACK_LOAD_FAILED, function (track: ITrack, musicServiceName: string) {
-            playerContext.currentlyLoadingTrack = false;
-        });
-
         // Update the music service loading flag (for internal use).
         publisher.subscribe(this.EVENTS.ON_MUSIC_SERVICE_LOADING, function (musicServiceName: string) {
-            console.log(`${musicServiceName} loading...`);
             playerContext.currentlyLoadingMusicService = true;
         });
         publisher.subscribe(this.EVENTS.ON_MUSIC_SERVICE_CHANGE, function (previousMusicServiceName: string, currentMusicServiceName: string) {
-            console.log(`Music service changed to ${currentMusicServiceName}! (from ${currentMusicServiceName})`);
             playerContext.currentlyLoadingMusicService = false;
         });
         publisher.subscribe(this.EVENTS.ON_MUSIC_SERVICE_LOAD_FAILED, function (musicServiceName: string) {
-            console.log(`${musicServiceName} failed to load...`);
             playerContext.currentlyLoadingMusicService = false;
         });
 

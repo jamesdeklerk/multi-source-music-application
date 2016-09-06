@@ -75,8 +75,6 @@ class YouTubeAdapter implements IPlayerAdapter {
     public load(track: ITrack): Promise<{}> {
         return new Promise((resolve, reject) => {
 
-            console.log(`YouTube load was called for ${track.title}!`);
-
             let thisYouTubeAdapter = this;
 
             function onStateChangeHandler(e: any) {

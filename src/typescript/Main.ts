@@ -212,13 +212,15 @@ class Main {
             }
         });
 
-
-
-
-
-        // Checking if music services have changed
-        publisher.subscribe(AP.EVENTS.ON_MUSIC_SERVICE_CHANGE, function (previousMusicServiceName: string, currentMusicServiceName: string) {
-            console.log(`Current music service: ${currentMusicServiceName}`);
+        // Logging track status.
+        publisher.subscribe(AP.EVENTS.ON_TRACK_LOADING, function (track: ITrack, musicServiceName: string) {
+            console.log(`LOADING (${musicServiceName}) - ${track.title}.`);
+        });
+        publisher.subscribe(AP.EVENTS.ON_TRACK_LOADED, function (track: ITrack, musicServiceName: string) {
+            console.log(`SUCCESS (${musicServiceName}) - ${track.title}.`);
+        });
+        publisher.subscribe(AP.EVENTS.ON_TRACK_LOAD_FAILED, function (track: ITrack, musicServiceName: string) {
+            console.log(`FAILED (${musicServiceName}) - ${track.title}.`);
         });
 
     }

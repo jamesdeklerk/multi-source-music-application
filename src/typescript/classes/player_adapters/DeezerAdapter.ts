@@ -1,6 +1,7 @@
 // tslint:disable-next-line
 interface Window {
-
+    dzAsyncInit: any;
+    DZ: any;
 }
 
 class DeezerAdapter implements IPlayerAdapter {
@@ -18,23 +19,22 @@ class DeezerAdapter implements IPlayerAdapter {
             let currentContext = this;
 
             window.dzAsyncInit = function () {
-                DZ.init({
+                window.DZ.init({
                     appId: `190142`,
                     channelUrl: `http://developers.deezer.com/examples/channel.php`,
                     player: {
                         onload: function () {
 
                             // Subscribe to deezer events.
-                            DZ.Event.subscribe(`player_position`, function (array: any[]) {
+                            window.DZ.Event.subscribe(`player_position`, function (array: any[]) {
                                 if (!currentContext.trackEnd) {
                                     currentContext.currentPosition = array[0];
                                 }
                             });
-                            DZ.Event.subscribe(`player_buffering`, function (percentageLoaded: number) {
-                                console.log(`Deezer track buffering: ${percentageLoaded}`);
+                            window.DZ.Event.subscribe(`player_buffering`, function (percentageLoaded: number) {
                                 currentContext.percentageLoaded = percentageLoaded;
                             });
-                            DZ.Event.subscribe(`track_end`, function () {
+                            window.DZ.Event.subscribe(`track_end`, function () {
                                 currentContext.trackEnd = true;
                                 currentContext.currentPosition = currentContext.currentDuration;
                             });
@@ -46,7 +46,7 @@ class DeezerAdapter implements IPlayerAdapter {
                 });
             };
 
-            let e = <HTMLScriptElement>document.createElement(`script`);
+            let e = <HTMLScriptElement> document.createElement(`script`);
             e.src = "https://cdns-files.dzcdn.net/js/min/dz.js";
             e.async = true;
             document.getElementById(`dz-root`).appendChild(e);
@@ -56,7 +56,6 @@ class DeezerAdapter implements IPlayerAdapter {
     }
 
     public unload(): void {
-        console.log(`Deezer Unload.`);
         this.pause();
 
         this.currentPosition = 0;
@@ -65,13 +64,11 @@ class DeezerAdapter implements IPlayerAdapter {
         this.trackEnd = false;
 
         // Unload all tracks from Deezer player.
-        DZ.player.playTracks([]);
+        window.DZ.player.playTracks([]);
     }
 
     public load(track: ITrack): Promise<{}> {
         return new Promise((resolve, reject) => {
-
-            console.log(`Deezer load was called for ${track.title} (trackId ${track.services[`Deezer`].trackId})!`);
 
             let currentContext = this;
 
@@ -81,7 +78,7 @@ class DeezerAdapter implements IPlayerAdapter {
             this.percentageLoaded = 0;
             this.trackEnd = false;
 
-            DZ.player.playTracks([track.services[`Deezer`].trackId], function (response: any) {
+            window.DZ.player.playTracks([track.services[`Deezer`].trackId], function (response: any) {
 
                 // If it returned no tracks then it failed to play the track.
                 if (response.tracks.length <= 0) {
@@ -90,22 +87,17 @@ class DeezerAdapter implements IPlayerAdapter {
 
                     currentContext.currentDuration = response.tracks[0].duration;
 
-                    let tryCount = 0;
-
                     // Keep trying to see if the track is playable yet.
                     function keepTrying() {
-                        if (DZ.player.play() === false) {
+                        if (window.DZ.player.play() === false) {
+
                             // The track isn't ready yet.
                             // For some reason, playing and pausing the song gets it to load.
-                            DZ.player.pause();
-
-                            tryCount = tryCount + 1;
+                            window.DZ.player.pause();
 
                             // try every 150 milliseconds.
                             setTimeout(keepTrying, 150);
                         } else {
-
-                            console.log(`tryCount: ${tryCount}`);
 
                             // The track is now playable, so pause it (as per specification)
                             // and resolve the promise.
@@ -123,19 +115,19 @@ class DeezerAdapter implements IPlayerAdapter {
     }
 
     public play(): void {
-        DZ.player.play();
+        window.DZ.player.play();
     }
 
     public pause(): void {
-        DZ.player.pause();
+        window.DZ.player.pause();
     }
 
     public setVolume(volume: number): void {
-        DZ.player.setVolume(volume * 100);
+        window.DZ.player.setVolume(volume * 100);
     }
 
     public seekToPercentage(percentage: number): void {
-        DZ.player.seek(percentage * 100);
+        window.DZ.player.seek(percentage * 100);
     }
 
     public getCurrentTime(): number {
