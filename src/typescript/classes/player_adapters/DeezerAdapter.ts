@@ -38,10 +38,6 @@ class DeezerAdapter implements IPlayerAdapter {
                                 currentContext.trackEnd = true;
                                 currentContext.currentPosition = currentContext.currentDuration;
                             });
-                            DZ.Event.subscribe(`current_track`, function (e) {
-                                console.log(`Deezer track changed!!!!!`);
-                                console.log(e);
-                            });
 
                             // Resolve the promise.
                             resolve();

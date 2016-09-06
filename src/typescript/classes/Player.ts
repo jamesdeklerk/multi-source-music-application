@@ -1196,7 +1196,9 @@ class Player {
 
         } else {
 
-            // Else, all of them have been tried, so return undefined.
+            // Else, all of them have been tried, so reset the music services
+            // return undefined.
+            this.musicServicesTried = {};
             return undefined;
 
         }
@@ -1251,8 +1253,8 @@ class Player {
 
                                 console.log(`REJECTED changeMusicService(defaultMusicServiceName);`);
 
-                                // The track failed to load on all the different music services.
-                                // Reject the original promise.
+                                // The track failed to load on all the different music services,
+                                // so reject the original promise.
                                 reject(`The track failed to load on all the different music services.`);
 
                             });
@@ -1324,7 +1326,9 @@ class Player {
                                 } else {
 
                                     // Else nextMusicServiceToTry was undefined,
-                                    // that means all the music services have been tried, so reject the promise.
+                                    // that means all the music services have been tried.
+                                    // So reset the music services tried and reject the promise.
+                                    this.musicServicesTried = {};
                                     reject();
 
                                 }
@@ -1544,6 +1548,7 @@ class Player {
      * @param percentage The percentage (0 to 1) to which the player should advance.
      */
     public seekToPercentage(percentage: number): void {
+        console.log(`seekToPercentage: ${percentage}`);
         if (this.currentPlayer) {
 
             this.currentPlayer.seekToPercentage(percentage);
