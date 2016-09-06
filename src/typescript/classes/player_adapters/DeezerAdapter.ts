@@ -59,6 +59,11 @@ class DeezerAdapter implements IPlayerAdapter {
         console.log(`Deezer Unload.`);
         this.pause();
 
+        this.currentPosition = 0;
+        this.currentDuration = 0;
+        this.percentageLoaded = 0;
+        this.trackEnd = false;
+
         // Unload all tracks from Deezer player.
         DZ.player.playTracks([]);
     }
