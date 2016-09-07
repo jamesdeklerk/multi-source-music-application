@@ -1425,7 +1425,15 @@ class Player {
                             // Try loading the new track.
                             this.load(index).then(() => {
 
-                                if (this.waitingToLoadIndex !== undefined) {
+                                // Reset the music services tried.
+                                this.musicServicesTried = {};
+
+                                if (this.waitingToLoadIndex !== undefined && this.waitingToLoadIndex === this.getCurrentIndex()) {
+                                    console.log(`Don't need to reload the current song!!!!!!!!!!!!!!!!!!`);
+                                }
+
+                                // If there is a track waiting to be loaded and it's not the current track.
+                                if (this.waitingToLoadIndex !== undefined && this.waitingToLoadIndex !== this.getCurrentIndex()) {
 
                                     // We're about to load the index that was waiting
                                     // to be loaded, so clear this.waitingToLoadIndex.
@@ -1442,19 +1450,23 @@ class Player {
                                 } else {
 
                                     // Track successfully loaded using the current player,
-                                    // so start playing the track, reset the music services tried
-                                    // and resolve the promise.
+                                    // so start playing the track and resolve the promise.
                                     this.play();
-                                    this.musicServicesTried = {};
                                     resolve();
 
                                 }
 
                             }).catch(() => {
 
+                                if (this.waitingToLoadIndex !== undefined && this.waitingToLoadIndex === this.getCurrentIndex()) {
+                                    console.log(`Don't need to reload the current song!!!!!!!!!!!!!!!!!!`);
+                                }
 
                                 // Failed to load the track, but check if there was a track waiting to be loaded.
-                                if (this.waitingToLoadIndex !== undefined) {
+                                if (this.waitingToLoadIndex !== undefined && this.waitingToLoadIndex !== this.getCurrentIndex()) {
+
+                                    // Reset the music services tried.
+                                    this.musicServicesTried = {};
 
                                     // We're about to load the index that was waiting
                                     // to be loaded, so clear this.waitingToLoadIndex.
