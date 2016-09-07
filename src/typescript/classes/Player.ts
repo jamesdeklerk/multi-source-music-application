@@ -39,6 +39,7 @@ class Player {
         VOLUME: CONSTANTS.PLAYER.DEFAULTS.VOLUME,
     };
     public EVENTS = {
+        ON_ALL_TRACKS_DEQUEUED: `onAllTracksDequeued`,
         ON_MUSIC_SERVICE_CHANGE: `onMusicServiceChange`, // music service successfully changed
         ON_MUSIC_SERVICE_INITIALIZED: `onMusicServiceInitialized`, // music service successfully initialized
         ON_MUSIC_SERVICE_LOADING: `onMusicServiceLoading`, // music service is being loaded
@@ -47,15 +48,17 @@ class Player {
         ON_NEXT: `onNext`,
         ON_PLAY_PAUSE: `onPlayPause`,
         ON_PREVIOUS: `onPrevious`,
+        ON_REORDER_QUEUE: `onReorderQueue`,
         ON_REPEAT_CHANGE: `onRepeatChange`,
+        ON_RESTART: `onRestart`,
         ON_SHUFFLE_CHANGE: `onShuffleChange`,
         ON_TIME_UPDATE: `onTimeUpdate`, // Published when the current playback position has changed.
+        ON_TRACKS_QUEUED: `onTracksQueued`,
         ON_TRACK_DEQUEUED: `onTrackDequeued`,
         ON_TRACK_INDEX_UPDATED: `onTrackIndexUpdated`,
         ON_TRACK_LOADED: `onTrackLoaded`, // track successfully loaded
         ON_TRACK_LOADING: `onTrackLoading`, // track is being loaded
         ON_TRACK_LOAD_FAILED: `onTrackLoadFailed`, // track failed to load
-        ON_TRACK_QUEUED: `onTrackQueued`,
         ON_VOLUME_CHANGE: `onVolumeChange`,
     };
 
@@ -205,6 +208,10 @@ class Player {
 
     private registerPlayerEvents(): void {
 
+        // Implemented
+        publisher.register(this.EVENTS.ON_ALL_TRACKS_DEQUEUED);
+
+        // Implemented
         publisher.register(this.EVENTS.ON_MUSIC_SERVICE_CHANGE, [
             {
                 description: `The name of the music service that was being used.`,
@@ -218,6 +225,7 @@ class Player {
             },
         ]);
 
+        // Implemented
         publisher.register(this.EVENTS.ON_MUSIC_SERVICE_INITIALIZED, [
             {
                 description: `The name of the music service that was initialized used.`,
@@ -226,6 +234,7 @@ class Player {
             },
         ]);
 
+        // Implemented
         publisher.register(this.EVENTS.ON_MUSIC_SERVICE_LOADING, [
             {
                 description: `The name of the music service that is being loaded.`,
@@ -234,6 +243,7 @@ class Player {
             },
         ]);
 
+        // Implemented
         publisher.register(this.EVENTS.ON_MUSIC_SERVICE_LOAD_FAILED, [
             {
                 description: `The name of the music service that failed to load.`,
@@ -242,6 +252,7 @@ class Player {
             },
         ]);
 
+        // Implemented
         publisher.register(this.EVENTS.ON_MUTED_CHANGE, [
             {
                 name: `muted`,
@@ -249,13 +260,10 @@ class Player {
             },
         ]);
 
-        publisher.register(this.EVENTS.ON_NEXT, [
-            {
-                name: `track`,
-                type: `object`,
-            },
-        ]);
+        // Implemented
+        publisher.register(this.EVENTS.ON_NEXT);
 
+        // Implemented
         publisher.register(this.EVENTS.ON_PLAY_PAUSE, [
             {
                 name: `paused`,
@@ -263,13 +271,13 @@ class Player {
             },
         ]);
 
-        publisher.register(this.EVENTS.ON_PREVIOUS, [
-            {
-                name: `track`,
-                type: `object`,
-            },
-        ]);
+        // Implemented
+        publisher.register(this.EVENTS.ON_PREVIOUS);
 
+        // Implemented
+        publisher.register(this.EVENTS.ON_REORDER_QUEUE);
+
+        // Implemented
         publisher.register(this.EVENTS.ON_REPEAT_CHANGE, [
             {
                 name: `repeat`,
@@ -277,6 +285,10 @@ class Player {
             },
         ]);
 
+        // Implemented
+        publisher.register(this.EVENTS.ON_RESTART);
+
+        // Implemented
         publisher.register(this.EVENTS.ON_SHUFFLE_CHANGE, [
             {
                 name: `shuffled`,
@@ -300,6 +312,10 @@ class Player {
             },
         ]);
 
+        // Implemented
+        publisher.register(this.EVENTS.ON_TRACKS_QUEUED);
+
+        // Implemented
         publisher.register(this.EVENTS.ON_TRACK_DEQUEUED, [
             {
                 name: `track`,
@@ -307,6 +323,7 @@ class Player {
             },
         ]);
 
+        // Implemented
         publisher.register(this.EVENTS.ON_TRACK_INDEX_UPDATED, [
             {
                 name: `previousIndex`,
@@ -318,6 +335,7 @@ class Player {
             },
         ]);
 
+        // Implemented
         publisher.register(this.EVENTS.ON_TRACK_LOADED, [
             {
                 name: `track`,
@@ -329,6 +347,7 @@ class Player {
             },
         ]);
 
+        // Implemented
         publisher.register(this.EVENTS.ON_TRACK_LOADING, [
             {
                 name: `track`,
@@ -340,6 +359,7 @@ class Player {
             },
         ]);
 
+        // Implemented
         publisher.register(this.EVENTS.ON_TRACK_LOAD_FAILED, [
             {
                 name: `track`,
@@ -348,13 +368,6 @@ class Player {
             {
                 name: `musicServiceName`,
                 type: `string`,
-            },
-        ]);
-
-        publisher.register(this.EVENTS.ON_TRACK_QUEUED, [
-            {
-                name: `track`,
-                type: `object`,
             },
         ]);
 
@@ -512,7 +525,7 @@ class Player {
                 // initialize it, then try switch music services again.
                 if (!musicService.initialized) {
 
-                    (<IPlayerAdapter> musicService.adapter).initialize().then(() => {
+                    (<IPlayerAdapter>musicService.adapter).initialize().then(() => {
 
                         // Publish an event saying the music service was successfully initialized.
                         publisher.publish(this.EVENTS.ON_MUSIC_SERVICE_INITIALIZED, musicService.name);
@@ -536,7 +549,7 @@ class Player {
 
                             // Failed to switch music services.
                             // reject the original promise.
-                            reject();
+                            reject(error);
 
                         });
 
@@ -750,6 +763,9 @@ class Player {
 
         // Finally we can set the shuffled state
         this.shuffle = shuffle;
+
+        publisher.publish(this.EVENTS.ON_SHUFFLE_CHANGE, this.shuffle);
+
     }
 
     /**
@@ -792,6 +808,9 @@ class Player {
         } else {
             this.repeat = this.REPEAT.ALL;
         }
+
+        publisher.publish(this.EVENTS.ON_REPEAT_CHANGE, this.repeat);
+
     }
 
     /**
@@ -855,7 +874,11 @@ class Player {
             if (this.getShuffle()) {
                 this.shuffledQueue.push(trackOrTracks);
             }
+
         }
+
+        publisher.publish(this.EVENTS.ON_TRACKS_QUEUED);
+
     }
 
     /**
@@ -876,7 +899,7 @@ class Player {
 
         // We know it's a valid index, so set it as the index of the track to dequeue.
         let indexOfTrackToDequeue = index;
-        console.log(`Dequeued: ${this.getQueue()[indexOfTrackToDequeue].title}`);
+        let trackToBeDequeued: ITrack;
 
         let shuffled = this.getShuffle();
         let repeat = this.getRepeat();
@@ -885,10 +908,11 @@ class Player {
         // If the queue isn't shuffled, just remove the track at the specified index,
         // from the ordered queue.
         if (!shuffled) {
+            trackToBeDequeued = this.orderedQueue[indexOfTrackToDequeue];
             this.orderedQueue.splice(indexOfTrackToDequeue, 1);
         } else {
             // If the queue is shuffled, dequeue the first track of that type from the orderedQueue.
-            let trackToBeDequeued = this.shuffledQueue[indexOfTrackToDequeue];
+            trackToBeDequeued = this.shuffledQueue[indexOfTrackToDequeue];
             let indexOfTrackToDequeueFromOrderedQueue = this.orderedQueue.indexOf(trackToBeDequeued);
             this.orderedQueue.splice(indexOfTrackToDequeueFromOrderedQueue, 1);
 
@@ -902,6 +926,8 @@ class Player {
         // If the queue is now empty, just unload the player.
         if (currentQueue.length <= 0) {
             this.unload();
+
+            publisher.publish(this.EVENTS.ON_TRACK_DEQUEUED, trackToBeDequeued);
             return;
         }
 
@@ -914,6 +940,7 @@ class Player {
                 // Clear the current track and set the currentTrackIndex to -1;
                 this.unload();
 
+                publisher.publish(this.EVENTS.ON_TRACK_DEQUEUED, trackToBeDequeued);
                 return;
             }
 
@@ -954,6 +981,7 @@ class Player {
 
             }
 
+            publisher.publish(this.EVENTS.ON_TRACK_DEQUEUED, trackToBeDequeued);
             return;
         }
 
@@ -963,6 +991,9 @@ class Player {
         if (indexOfTrackToDequeue < currentTrackIndex) {
             this.setCurrentIndex(currentTrackIndex - 1);
         }
+
+        publisher.publish(this.EVENTS.ON_TRACK_DEQUEUED, trackToBeDequeued);
+
     }
 
     /**
@@ -970,10 +1001,14 @@ class Player {
      * Then sets the current track index to -1 as there are no more tracks.
      */
     public dequeueAll(): void {
+
         this.orderedQueue = [];
         this.shuffledQueue = [];
         // Unload whatever track was being played.
         this.unload();
+
+        publisher.publish(this.EVENTS.ON_ALL_TRACKS_DEQUEUED);
+
     }
 
     /**
@@ -1026,14 +1061,20 @@ class Player {
      * false if the index wasn't in the queue, hence didn't set the index.
      */
     public setCurrentIndex(index: number): boolean {
+
         let currentQueue = this.getQueue();
+        let previousIndex = this.getCurrentIndex();
 
         if (this.isIndexInQueue(index, currentQueue)) {
             this.currentTrackIndex = index;
+
+            publisher.publish(this.EVENTS.ON_TRACK_INDEX_UPDATED, previousIndex, index);
+
             return true;
         } else {
             return false;
         }
+
     }
 
     /**
@@ -1073,6 +1114,8 @@ class Player {
                 currentQueue.splice(move.newIndex, 0, track);
             }
         }
+
+        publisher.publish(this.EVENTS.ON_REORDER_QUEUE);
     }
 
     /**
@@ -1098,6 +1141,8 @@ class Player {
      * If repeat === repeat all, cycle through queue.
      */
     public next(): void {
+
+        publisher.publish(this.EVENTS.ON_NEXT);
 
         let currentQueue = this.getQueue();
         // If there's an index waiting to be loaded, use that.
@@ -1156,6 +1201,8 @@ class Player {
      * If repeat === repeat all, cycle through queue.
      */
     public previous(): void {
+
+        publisher.publish(this.EVENTS.ON_PREVIOUS);
 
         let currentQueue = this.getQueue();
         // If there's an index waiting to be loaded, use that.
@@ -1248,49 +1295,57 @@ class Player {
 
         return new Promise((resolve, reject) => {
 
+            let trackBeingLoaded = (this.getQueue())[index];
+            let currentMusicService = this.musicServices[this.getCurrentMusicServiceIndex()];
+            let currentMusicServiceName: string;
+            if (currentMusicService) {
+                currentMusicServiceName = currentMusicService.name;
+            }
+
             if (!this.currentPlayer) {
+
+                publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, currentMusicServiceName);
                 reject(`No music service specified to play the track with.`);
+
+            } else if (this.currentlyLoadingTrack) {
+
+                publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, currentMusicServiceName);
+                reject(`The player hasn't finished loading the previous track.`);
+
+            } else if (this.setCurrentIndex(index)) {
+
+                // If we succeeded in setting the new index
+                // that means that at that index there is a track in the queue 
+                // now we can load the track that's at that index.
+
+                this.currentlyLoadingTrack = true;
+
+                // Publish the track loading event.
+                publisher.publish(this.EVENTS.ON_TRACK_LOADING, trackBeingLoaded, this.currentPlayer.name);
+
+                // Try and load the track.
+                this.currentPlayer.load(trackBeingLoaded).then(() => {
+
+                    this.currentlyLoadingTrack = false;
+                    // The track loaded successfully, publish the track loaded event and
+                    // resolve the promise.
+                    publisher.publish(this.EVENTS.ON_TRACK_LOADED, trackBeingLoaded, this.currentPlayer.name);
+                    resolve();
+
+                }).catch((error) => {
+
+                    this.currentlyLoadingTrack = false;
+                    // The track failed to load, publish the track load failed event and
+                    // reject the promise.
+                    publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, this.currentPlayer.name);
+                    reject(error);
+
+                });
+
             } else {
 
-                if (this.currentlyLoadingTrack) {
-                    reject(`The player hasn't finished loading the previous track.`);
-                } else {
-
-                    // Try set the new index, if that succeeds, that means
-                    // that track is in the queue,so load the track that's at that index.
-                    if (this.setCurrentIndex(index)) {
-                        let currentTrack = this.getCurrentTrack();
-
-                        this.currentlyLoadingTrack = true;
-                        // Publish the track loading event.
-                        publisher.publish(this.EVENTS.ON_TRACK_LOADING, currentTrack, this.currentPlayer.name);
-
-                        // Try and load the track.
-                        this.currentPlayer.load(currentTrack).then(() => {
-
-                            this.currentlyLoadingTrack = false;
-                            // The track loaded successfully, publish the track loaded event and
-                            // resolve the promise.
-                            publisher.publish(this.EVENTS.ON_TRACK_LOADED, currentTrack, this.currentPlayer.name);
-                            resolve();
-
-                        }).catch(() => {
-
-                            this.currentlyLoadingTrack = false;
-                            // The track failed to load, publish the track load failed event and
-                            // reject the promise.
-                            publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, currentTrack, this.currentPlayer.name);
-                            reject();
-
-                        });
-
-                    } else {
-
-                        // Reject because there that wasn't a valid index.
-                        reject();
-                    }
-
-                }
+                // Reject because it wasn't a valid index.
+                reject(`Reject because it wasn't a valid index.`);
 
             }
 
@@ -1638,6 +1693,9 @@ class Player {
      */
     public play(): void {
         this.paused = false;
+
+        publisher.publish(this.EVENTS.ON_PLAY_PAUSE, this.paused);
+
         if (this.currentPlayer) {
             this.currentPlayer.play();
         }
@@ -1648,6 +1706,9 @@ class Player {
      */
     public pause(): void {
         this.paused = true;
+
+        publisher.publish(this.EVENTS.ON_PLAY_PAUSE, this.paused);
+
         if (this.currentPlayer) {
             this.currentPlayer.pause();
         }
@@ -1664,7 +1725,9 @@ class Player {
      * Restart the current track.
      */
     public restart(): void {
-        console.log(`Track restarted.`);
+
+        publisher.publish(this.EVENTS.ON_RESTART);
+
         this.seekTo(0);
     }
 
@@ -1691,6 +1754,8 @@ class Player {
 
         // Update the stored volume.
         this.volume = volume;
+
+        publisher.publish(this.EVENTS.ON_VOLUME_CHANGE, this.volume);
 
         // If not currently muted, just set the volume.
         if (!muted) {
@@ -1724,6 +1789,8 @@ class Player {
      */
     public setMuted(mute: boolean): void {
         this.muted = mute;
+
+        publisher.publish(this.EVENTS.ON_MUTED_CHANGE, this.muted);
 
         if (this.muted) {
             // Must use the currentPlayer.setVolume
@@ -1854,7 +1921,6 @@ class Player {
             // a music service isn't being loaded.
             // go to this.next().
             if ((percentage >= 1) && !playerContext.currentlyLoadingTrack && !playerContext.currentlyLoadingMusicService) {
-                console.log(`publisher called next...`);
                 playerContext.next();
             }
 
