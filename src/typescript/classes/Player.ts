@@ -1850,12 +1850,10 @@ class Player {
         // Automatically go to the next track.
         publisher.subscribe(this.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number) {
 
-            lastTrackAndRepeatOff = (playerContext.getCurrentIndex() === (playerContext.getQueue().length - 1)) && (playerContext.getRepeat() === playerContext.REPEAT.OFF);
-
             // If percentage >= 1, a track isn't being loaded and
             // a music service isn't being loaded.
             // go to this.next().
-            if ((percentage >= 1) && !playerContext.currentlyLoadingTrack && !playerContext.currentlyLoadingMusicService && !lastTrackAndRepeatOff) {
+            if ((percentage >= 1) && !playerContext.currentlyLoadingTrack && !playerContext.currentlyLoadingMusicService) {
                 console.log(`publisher called next...`);
                 playerContext.next();
             }
