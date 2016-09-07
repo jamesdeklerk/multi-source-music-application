@@ -599,7 +599,7 @@ class Player {
      * @param musicServiceName The name of the music service one wants to switch to.
      * @return A promise the tells when it's done switching services.
      */
-    public dynamicallyChangeMusicService(musicServiceName: string, recursiveCall: boolean, time: number, trackIndex: number, paused: boolean, previousMusicServiceName: string): Promise<any> {
+    public dynamicallyChangeMusicService(musicServiceName: string, recursiveCall?: boolean, time?: number, trackIndex?: number, paused?: boolean, previousMusicServiceName?: string): Promise<any> {
 
         return new Promise((resolve, reject) => {
 
@@ -625,19 +625,21 @@ class Player {
                 // Change music services.
                 this.changeMusicService(musicServiceName).then(() => {
 
+                    console.log("Dynamically changed, the tried music services should be empty.");
+                    console.log(this.musicServicesTried);
+
                     // The music service has successfully been changed,
-                    // so load the current track.
-                    this.load(trackIndex).then(() => {
+                    // so play the current track on the new service.
+                    this.playTrack(trackIndex, false).then(() => {
 
                         // The current track loaded successfully in the new music service.
                         // Now reload the current tracks previous state.
-                        //this.seekTo(time); // @NB This is supposed to resume from the current position but it isn't... FIX
+                        // this.seekTo(time); // @NB This is supposed to resume from the current position but it isn't... FIX
                         if (paused) {
                             this.pause();
                         } else {
                             this.play();
                         }
-
 
                         // The track was successfully loaded in the new music service,
                         // and its state restored so the promise can be resolved.
@@ -645,23 +647,9 @@ class Player {
 
                     }).catch(() => {
 
-                        // The current track failed to load in the new music service.
-                        // Fall back to the previous music service.
-                        if (previousMusicServiceName) {
-
-                            this.dynamicallyChangeMusicService(previousMusicServiceName, true, time, trackIndex, paused, previousMusicServiceName).then(() => {
-                                // Resolve original promise.
-                                resolve();
-                            }).catch(() => {
-                                // Reject original promise.
-                                reject();
-                            });
-
-                        } else {
-
-                            // If there isn't a previous music service to fall back on, just reject the promise.
-                            reject(`Failed to dynamically change music services, and there wasn't a previous service to fall back on.`);
-                        }
+                        // If the track couldn't be played on the set music service or any other music service,
+                        // just reject the promise.
+                        reject(`Failed to dynamically change music services, the track wasn't available on any music services.`);
 
                     });
 
@@ -671,6 +659,8 @@ class Player {
 
                     // Fall back to the previous music service.
                     if (previousMusicServiceName) {
+
+                        console.log(`Failed to change music services. Fall back to the previous music service.`);
 
                         this.dynamicallyChangeMusicService(previousMusicServiceName, true, time, trackIndex, paused, previousMusicServiceName).then(() => {
                             // Resolve original promise.
@@ -1123,8 +1113,6 @@ class Player {
      */
     public next(): void {
 
-        this.play();
-
         let currentQueue = this.getQueue();
         // If there's an index waiting to be loaded, use that.
         let currentIndex: number;
@@ -1142,6 +1130,7 @@ class Player {
         if (repeat === this.REPEAT.ONE) {
             // Restart track.
             this.restart();
+            this.play();
             return;
         } else if (repeat === this.REPEAT.OFF) {
             // If it was on the last track, just unload it.
@@ -1163,10 +1152,14 @@ class Player {
                     this.pause();
                 }
             } else {
-                this.loadTrack(currentIndex + 1);
+                this.loadTrack(currentIndex + 1).then(() => {
+                    this.play();
+                });
             }
         } else {
-            this.loadTrack(this.incrementIndex(currentIndex, 1, currentQueue.length));
+            this.loadTrack(this.incrementIndex(currentIndex, 1, currentQueue.length)).then(() => {
+                this.play();
+            });
         }
     }
 
@@ -1177,8 +1170,6 @@ class Player {
      * If repeat === repeat all, cycle through queue.
      */
     public previous(): void {
-
-        this.play();
 
         let currentQueue = this.getQueue();
         // If there's an index waiting to be loaded, use that.
@@ -1198,6 +1189,7 @@ class Player {
             (this.getCurrentTime() > this.timeAfterWhichToRestartTrack)) {
             // Restart track.
             this.restart();
+            this.play();
             return;
         } else if (repeat === this.REPEAT.OFF) {
             // If it was on the first track, just unload it.
@@ -1219,10 +1211,14 @@ class Player {
                     this.pause();
                 }
             } else {
-                this.loadTrack(currentIndex - 1);
+                this.loadTrack(currentIndex - 1).then(() => {
+                    this.play();
+                });
             }
         } else {
-            this.loadTrack(this.incrementIndex(currentIndex, -1, currentQueue.length));
+            this.loadTrack(this.incrementIndex(currentIndex, -1, currentQueue.length)).then(() => {
+                this.play();
+            });
         }
     }
 
@@ -1364,7 +1360,7 @@ class Player {
      * @return Promise that tells when a track has finished loading and started playing,
      * or when it failed to load on all the different services.
      */
-    private playTrack(index: number, tryDefaultFirst: boolean): Promise<any> {
+    private playTrack(index: number, tryDefaultFirst: boolean, ): Promise<any> {
 
         return new Promise((resolve, reject) => {
 
