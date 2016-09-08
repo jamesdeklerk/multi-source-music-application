@@ -371,6 +371,7 @@ class Player {
             },
         ]);
 
+        // Implemented
         publisher.register(this.EVENTS.ON_VOLUME_CHANGE, [
             {
                 name: `volume`,
@@ -456,8 +457,8 @@ class Player {
      * This unloads the track from the previous player and does not load a track into the new player.
      * 
      * @param musicServiceName The name of the music service one wants to switch to.
-     * @param previousMusicService              DON'T USE (used recursively).
-     * @param recursiveCallAfterInitialization  DON'T USE (used recursively).
+     * @param previousMusicService              DON'T USE (used for recursive internal call).
+     * @param recursiveCallAfterInitialization  DON'T USE (used for recursive internal call).
      * @return A promise the tells when it's done switching services.
      */
     private changeMusicService(musicServiceName: string, recursiveCallAfterInitialization?: boolean, previousMusicServiceName?: string): Promise<any> {
@@ -629,7 +630,7 @@ class Player {
 
                     // The music service has successfully been changed,
                     // so play the current track on the new service.
-                    this.playTrack(trackIndex, false).then(() => {
+                    this.loadTrack(trackIndex, false).then(() => {
 
                         // The current track loaded successfully in the new music service.
                         // Now reload the current tracks previous state.
@@ -644,35 +645,35 @@ class Player {
                         // and its state restored so the promise can be resolved.
                         resolve();
 
-                    }).catch(() => {
+                    }).catch((error) => {
 
                         // If the track couldn't be played on the set music service or any other music service,
                         // just reject the promise.
-                        reject(`Failed to dynamically change music services, the track wasn't available on any music services.`);
+                        reject(error);
 
                     });
 
-                }).catch(() => {
+                }).catch((error) => {
 
                     // Failed to change music services.
 
                     // Fall back to the previous music service.
                     if (previousMusicServiceName) {
 
-                        console.log(`Failed to change music services. Fall back to the previous music service.`);
+                        // Failed to change music services. Fall back to the previous music service.
 
                         this.dynamicallyChangeMusicService(previousMusicServiceName, true, time, trackIndex, paused, previousMusicServiceName).then(() => {
                             // Resolve original promise.
                             resolve();
-                        }).catch(() => {
+                        }).catch((error) => {
                             // Reject original promise.
-                            reject();
+                            reject(error);
                         });
 
                     } else {
 
                         // If there isn't a previous music service to fall back on, just reject the promise.
-                        reject();
+                        reject(error);
                     }
 
                 });
@@ -1421,8 +1422,9 @@ class Player {
      * trying all the music services in order.
      * 
      * @param index The index of track to be played in the queue.
-     * @param tryDefaultFirst True specifies that it should try load the default player first.
-     * @param musicServicesTried                DON'T USE (used recursively).
+     * @param tryDefaultFirst True specifies that it should try load the default player first,
+     * false (or undefined) specifies it should start with the current player first.
+     * @param musicServicesTried                DON'T USE (used for recursive internal call).
      * @return Promise that tells when a track has finished loading and started playing,
      * or when it failed to load on all the different services.
      */
@@ -1604,9 +1606,11 @@ class Player {
      * move on to the next track.
      * 
      * @param index The index of track to be played in the queue.
+     * @param tryDefaultFirst True specifies that it should try load the default player first,
+     * false (or undefined) specifies it should start with the current player first.
      * @return Promise that tells when some track (might not be the one initially specified) has finished loading.
      */
-    public loadTrack(index: number) {
+    public loadTrack(index: number, tryDefaultFirst?: boolean) {
 
         return new Promise((resolve, reject) => {
 
@@ -1622,7 +1626,13 @@ class Player {
                 // Save the paused state.
                 let paused = this.getPaused();
 
-                this.playTrack(index, true).then(() => {
+                // loadTrack trys the default player by default.
+                if (tryDefaultFirst === undefined) {
+                    tryDefaultFirst = true;
+                }
+
+                // Play the track using the default player.
+                this.playTrack(index, tryDefaultFirst).then(() => {
 
                     if (this.waitingToLoadIndex !== undefined) {
 
