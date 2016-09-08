@@ -45,6 +45,13 @@ interface IPlayerAdapter {
     pause(): void;
 
     /**
+     * Gets the players paused state.
+     * 
+     * @return True if the player is paused, false if not.
+     */
+    getPaused(): boolean;
+
+    /**
      * Sets the players volume percentage.
      * 
      * @param volume The percentage (0 to 1) volume to set the player to.

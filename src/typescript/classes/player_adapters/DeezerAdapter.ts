@@ -122,6 +122,10 @@ class DeezerAdapter implements IPlayerAdapter {
         window.DZ.player.pause();
     }
 
+    public getPaused(): boolean {
+        return !window.DZ.player.isPlaying();
+    }
+
     public setVolume(volume: number): void {
         window.DZ.player.setVolume(volume * 100);
     }

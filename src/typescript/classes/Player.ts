@@ -1769,6 +1769,11 @@ class Player {
      * @return True if the player is paused, else false.
      */
     public getPaused(): boolean {
+
+        // Don't use currentPlayer.getPaused as this might not return the state of the player that
+        // The user wants to be in, e.g. the user might rapidly click pause, play, pause.
+        // The correct state to be in is the paused state, but the currentPlayer might still be in the play state.
+
         return this.paused;
     }
 

@@ -151,6 +151,11 @@ class YouTubeAdapter implements IPlayerAdapter {
         this.youtubePlayer.pauseVideo();
     }
 
+    public getPaused(): boolean {
+        // 2 is the paused state for YouTube.
+        return this.youtubePlayer.getPlayerState() === 2;
+    }
+
     public setVolume(volume: number): void {
         this.youtubePlayer.setVolume(volume * 100);
     }
