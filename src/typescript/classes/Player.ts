@@ -602,14 +602,14 @@ class Player {
      * @param musicServiceName The name of the music service one wants to switch to.
      * @return A promise the tells when it's done switching services.
      */
-    public dynamicallyChangeMusicService(musicServiceName: string, recursiveCall?: boolean, time?: number, trackIndex?: number, paused?: boolean, previousMusicServiceName?: string): Promise<any> {
+    public dynamicallyChangeMusicService(musicServiceName: string, recursiveCall?: boolean, progress?: number, trackIndex?: number, paused?: boolean, previousMusicServiceName?: string): Promise<any> {
 
         return new Promise((resolve, reject) => {
 
             // If it's not the recursive call, we won't have the previous state information.
             // Hence, save the current time, track index, paused state and previous music service name.
             if (!recursiveCall) {
-                time = this.getCurrentTime();
+                progress = this.getCurrentPercentage();
                 trackIndex = this.getCurrentIndex();
                 paused = this.getPaused();
                 let previousMusicService = this.musicServices[this.getCurrentMusicServiceIndex()];
@@ -634,7 +634,7 @@ class Player {
 
                         // The current track loaded successfully in the new music service.
                         // Now reload the current tracks previous state.
-                        // this.seekTo(time); // @NB This is supposed to resume from the current position but it isn't... FIX
+                        this.seekToPercentage(progress);
                         if (paused) {
                             this.pause();
                         } else {
@@ -662,12 +662,12 @@ class Player {
 
                         // Failed to change music services. Fall back to the previous music service.
 
-                        this.dynamicallyChangeMusicService(previousMusicServiceName, true, time, trackIndex, paused, previousMusicServiceName).then(() => {
+                        this.dynamicallyChangeMusicService(previousMusicServiceName, true, progress, trackIndex, paused, previousMusicServiceName).then(() => {
                             // Resolve original promise.
                             resolve();
-                        }).catch((error) => {
+                        }).catch((e) => {
                             // Reject original promise.
-                            reject(error);
+                            reject(e);
                         });
 
                     } else {
@@ -1786,7 +1786,7 @@ class Player {
     }
 
     /**
-     * Pauses the current track.
+     * Pauses the current track. @NB recursively try for 10 seconds to maintain the paused state.
      */
     public pause(): void {
         this.paused = true;
@@ -1799,7 +1799,7 @@ class Player {
     }
 
     /**
-     * Plays or pauses the current track depending on its paused state.
+     * Plays or pauses the current track depending on its paused state. @NB recursively try for 10 seconds to maintain the paused state.
      */
     public playPause(): void {
         this.getPaused() ? this.play() : this.pause();
@@ -1812,7 +1812,7 @@ class Player {
 
         publisher.publish(this.EVENTS.ON_RESTART);
 
-        this.seekTo(0);
+        this.seekToPercentage(0);
     }
 
     /**
@@ -1936,8 +1936,11 @@ class Player {
     public seekToPercentage(percentage: number): void {
         if (this.currentPlayer) {
 
+            console.log(`Seeked to ${percentage}`);
+
             this.currentPlayer.seekToPercentage(percentage);
 
+            // Maintain the paused state.
             if (this.getPaused()) {
                 this.pause();
             } else {
