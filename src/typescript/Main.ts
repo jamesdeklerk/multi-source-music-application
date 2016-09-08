@@ -24,7 +24,7 @@ class Main {
                 "SoundCloud": false,
             },
             title: `0. No Church In The Wild`,
-            uuid: `1`,
+            uuid: `0`,
         };
         let track1: ITrack = {
             artist: undefined,
@@ -58,7 +58,7 @@ class Main {
                 "SoundCloud": false,
             },
             title: `2. Be Together feat. Wild Belle`,
-            uuid: `1`,
+            uuid: `2`,
         };
         let track3: ITrack = {
             artist: undefined,
@@ -75,7 +75,7 @@ class Main {
                 "SoundCloud": false,
             },
             title: `3. The Longest Wave (only available on Deezer)`,
-            uuid: `1`,
+            uuid: `3`,
         };
         let track4: ITrack = {
             artist: undefined,
@@ -92,7 +92,7 @@ class Main {
                 "SoundCloud": false,
             },
             title: `4. Into You`,
-            uuid: `1`,
+            uuid: `4`,
         };
         let track5: ITrack = {
             artist: undefined,
@@ -109,7 +109,7 @@ class Main {
                 "SoundCloud": false,
             },
             title: `5. THIS TRACK ISN'T AVAILABLE ANYWHERE`,
-            uuid: `1`,
+            uuid: `5`,
         };
         let track6: ITrack = {
             artist: undefined,
@@ -126,7 +126,7 @@ class Main {
                 "SoundCloud": false,
             },
             title: `6. Ocean Eyes`,
-            uuid: `1`,
+            uuid: `6`,
         };
         let track7: ITrack = {
             artist: undefined,
@@ -143,7 +143,7 @@ class Main {
                 "SoundCloud": false,
             },
             title: `7. Hypnotize`,
-            uuid: `1`,
+            uuid: `7`,
         };
         let track8: ITrack = {
             artist: undefined,
@@ -160,7 +160,7 @@ class Main {
                 "SoundCloud": false,
             },
             title: `8. Runaway (Video Version) ft. Pusha T`,
-            uuid: `1`,
+            uuid: `8`,
         };
 
         // Queue multiple tracks.

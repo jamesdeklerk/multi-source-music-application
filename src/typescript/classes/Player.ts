@@ -1019,9 +1019,9 @@ class Player {
      */
     public getQueue(): ITrack[] {
         if (this.getShuffle()) {
-            return this.shuffledQueue;
+            return this.shuffledQueue || [];
         } else {
-            return this.orderedQueue;
+            return this.orderedQueue || [];
         }
     }
 
@@ -1140,8 +1140,12 @@ class Player {
      * If repeat === repeat off, don't cycle through queue.
      * If repeat === repeat one, restart current track.
      * If repeat === repeat all, cycle through queue.
+     * 
+     * @param tracksTried                       DON'T USE (used for recursive internal call).
+     * tracksTried is used to make sure we don't have an infinite loop when all the tracks in the
+     * queue aren't available on any music service. Only loadTrack and next should use this internally.
      */
-    public next(): void {
+    public next(tracksTried?: any): void {
 
         publisher.publish(this.EVENTS.ON_NEXT);
 
@@ -1175,7 +1179,7 @@ class Player {
                 // If we've gotten to the last index but never loaded the last track,
                 // we need to load it, then we can unload it.
                 if (this.getCurrentIndex() !== (currentQueue.length - 1)) {
-                    this.loadTrack((currentQueue.length - 1)).then(() => {
+                    this.loadTrack((currentQueue.length - 1), true, tracksTried).then(() => {
                         this.seekToPercentage(0);
                         this.pause();
                     });
@@ -1184,12 +1188,12 @@ class Player {
                     this.pause();
                 }
             } else {
-                this.loadTrack(currentIndex + 1).then(() => {
+                this.loadTrack(currentIndex + 1, true, tracksTried).then(() => {
                     this.play();
                 });
             }
         } else {
-            this.loadTrack(this.incrementIndex(currentIndex, 1, currentQueue.length)).then(() => {
+            this.loadTrack(this.incrementIndex(currentIndex, 1, currentQueue.length), true, tracksTried).then(() => {
                 this.play();
             });
         }
@@ -1236,7 +1240,7 @@ class Player {
                 // If we've gotten to the first index but never loaded the last track,
                 // we need to load, it then we can unload it.
                 if (this.getCurrentIndex() !== 0) {
-                    this.loadTrack(0).then(() => {
+                    this.loadTrack(0, true).then(() => {
                         this.restart();
                         this.pause();
                     });
@@ -1245,12 +1249,12 @@ class Player {
                     this.pause();
                 }
             } else {
-                this.loadTrack(currentIndex - 1).then(() => {
+                this.loadTrack(currentIndex - 1, true).then(() => {
                     this.play();
                 });
             }
         } else {
-            this.loadTrack(this.incrementIndex(currentIndex, -1, currentQueue.length)).then(() => {
+            this.loadTrack(this.incrementIndex(currentIndex, -1, currentQueue.length), true).then(() => {
                 this.play();
             });
         }
@@ -1500,10 +1504,10 @@ class Player {
                         // If there is a track waiting to be loaded, load it.
                         // Load it using loadTrack because we want to automatically go to the next track
                         // if it's not available on any music service.
-                        this.loadTrack(waitingToLoadIndex).then(() => {
+                        this.loadTrack(waitingToLoadIndex, true).then(() => {
                             resolve();
-                        }).catch(() => {
-                            reject();
+                        }).catch((error) => {
+                            reject(error);
                         });
 
                     } else {
@@ -1530,10 +1534,10 @@ class Player {
                         // If there is a track waiting to be loaded, load it.
                         // Load it using loadTrack because we want to automatically go to the next track
                         // if it's not available on any music service.
-                        this.loadTrack(waitingToLoadIndex).then(() => {
+                        this.loadTrack(waitingToLoadIndex, true).then(() => {
                             resolve();
-                        }).catch(() => {
-                            reject();
+                        }).catch((error) => {
+                            reject(error);
                         });
 
                     } else {
@@ -1599,6 +1603,42 @@ class Player {
     }
 
     /**
+     * Takes in a hashmap of tracks tried and checks if all the tracks in the queue
+     * have been tried.
+     * 
+     * @param tracksTried A hashmap of tracks tried, key = track.uuid, value = true if tried.
+     * e.g.
+     * tracksTried = {
+     *     "uuid1": true,
+     *     "uuid2": true,
+     * }
+     * @return True if all the tracks have been tried, false if not.
+     */
+    private checkIfAllTracksHaveBeenTried(tracksTried: any): boolean {
+
+        // If tracksTried isn't defined, assume no tracks have been tried.
+        if (!tracksTried) {
+            return false;
+        }
+
+        let currentQueue = this.getQueue();
+
+        // tslint:disable-next-line
+        for (let i = 0, track: ITrack; track = currentQueue[i]; i = i + 1) {
+
+            // If we find a track that hasn't been tried, then return false.
+            if (tracksTried[track.uuid] !== true) {
+                return false;
+            }
+
+        }
+
+        // All the tracks if the queue have been tried.
+        return true;
+
+    }
+
+    /**
      * Loads a specified track from the queue respecting the current paused state,
      * if the track fails to load, it tries to load the the same track on the next music service,
      * trying all the music services in order.
@@ -1608,11 +1648,16 @@ class Player {
      * @param index The index of track to be played in the queue.
      * @param tryDefaultFirst True specifies that it should try load the default player first,
      * false (or undefined) specifies it should start with the current player first.
+     * @param tracksTried                       DON'T USE (used for recursive internal call).
+     * tracksTried is used to make sure we don't have an infinite loop when all the tracks in the
+     * queue aren't available on any music service. Only loadTrack and next should use this internally.
      * @return Promise that tells when some track (might not be the one initially specified) has finished loading.
      */
-    public loadTrack(index: number, tryDefaultFirst?: boolean) {
+    public loadTrack(index: number, tryDefaultFirst: boolean, tracksTried?: any) {
 
         return new Promise((resolve, reject) => {
+
+            let currentQueue = this.getQueue();
 
             if (this.currentlyLoadingTrack) {
 
@@ -1621,7 +1666,24 @@ class Player {
                 console.log(`waitingToLoadIndex: ${this.waitingToLoadIndex}`);
 
                 reject(`The player hasn't finished loading the previous track.`);
+
+            } else if (this.checkIfAllTracksHaveBeenTried(tracksTried) || (currentQueue.length <= 0)) {
+
+                reject(`None of the tracks in the queue are available on any of the music services.`);
+
             } else {
+
+                // If tracksTried is undefined, define it and
+                if (tracksTried === undefined) {
+                    tracksTried = {};
+                }
+
+                // Get the uuid of the track to load.
+                let trackToLoad = currentQueue[index];
+                let trackToLoadUUID: string;
+                if (trackToLoad) {
+                    trackToLoadUUID = trackToLoad.uuid;
+                }
 
                 // Save the paused state.
                 let paused = this.getPaused();
@@ -1642,10 +1704,12 @@ class Player {
                         this.waitingToLoadIndex = undefined;
 
                         // If there is a track waiting to be loaded, load it.
-                        this.loadTrack(waitingToLoadIndex).then(() => {
+                        // But don't pass in tracksTried, hence setting it to undefined,
+                        // because this essentially clears the tracksTried automatically.
+                        this.loadTrack(waitingToLoadIndex, true).then(() => {
                             resolve();
-                        }).catch(() => {
-                            reject();
+                        }).catch((error) => {
+                            reject(error);
                         });
 
                     } else {
@@ -1657,8 +1721,14 @@ class Player {
                         resolve();
                     }
 
-                }).catch(() => {
+                }).catch((error) => {
 
+                    // The track failed to play on all the available music services.
+                    // Set the track being loaded to tried.
+                    tracksTried[trackToLoadUUID] = true;
+
+                    // Check if there is a track waiting to
+                    // be played, if so play it, else move onto the next track.
                     if (this.waitingToLoadIndex !== undefined) {
 
                         // We're about to load the index that was waiting
@@ -1667,17 +1737,21 @@ class Player {
                         this.waitingToLoadIndex = undefined;
 
                         // If there is a track waiting to be loaded, load it.
-                        this.loadTrack(waitingToLoadIndex).then(() => {
+                        // Here we must pass in tracks tried because the track that was just tried
+                        // failed to play on all the music services, so we need to keep that information.
+                        this.loadTrack(waitingToLoadIndex, true, tracksTried).then(() => {
                             resolve();
-                        }).catch(() => {
-                            reject();
+                        }).catch((e) => {
+                            reject(e);
                         });
 
                     } else {
 
                         // This means the track failed to play on all the different
                         // music services, so move onto the next track.
-                        this.next();
+                        // Pass in the tracksTried so that when next calls loadTrack,
+                        // it knows what tracks have been tried.
+                        this.next(tracksTried);
 
                     }
 
