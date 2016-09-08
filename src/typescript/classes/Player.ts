@@ -54,7 +54,9 @@ class Player {
         ON_SHUFFLE_CHANGE: `onShuffleChange`,
         ON_TIME_UPDATE: `onTimeUpdate`, // Published when the current playback position has changed.
         ON_TRACKS_QUEUED: `onTracksQueued`,
+        ON_TRACK_BUFFERING: `onTrackBuffering`,
         ON_TRACK_DEQUEUED: `onTrackDequeued`,
+        ON_TRACK_FINISHED_BUFFERING: `onTrackFinishedBuffering`,
         ON_TRACK_INDEX_UPDATED: `onTrackIndexUpdated`,
         ON_TRACK_LOADED: `onTrackLoaded`, // track successfully loaded
         ON_TRACK_LOADING: `onTrackLoading`, // track is being loaded
@@ -90,6 +92,10 @@ class Player {
      * ]
      */
     private musicServices: IMusicService[] = [];
+    /**
+     * Specifies if the player is currently dynamically changing music services.
+     */
+    private currentlyDynamicallyChangingMusicServices: boolean = false;
     /**
      * The index of the current musicService in the musicServices.
      */
@@ -133,6 +139,15 @@ class Player {
      * won't go to the previous track, but rather restart the current track.
      */
     private timeAfterWhichToRestartTrack: number;
+    /**
+     * The number of milliseconds allowed to resolve a promise.
+     * For example, the maximum time allowed for to load a track. 
+     */
+    private millisecondsToTryFor = 8000;
+    /**
+     * The frequency with which to check a setTimeout event.
+     */
+    private updateTimeoutFrequency = 300;
     /**
      * Repeat can be:
      * - repeat off, don't cycle through queue.
@@ -316,12 +331,18 @@ class Player {
         publisher.register(this.EVENTS.ON_TRACKS_QUEUED);
 
         // Implemented
+        publisher.register(this.EVENTS.ON_TRACK_BUFFERING);
+
+        // Implemented
         publisher.register(this.EVENTS.ON_TRACK_DEQUEUED, [
             {
                 name: `track`,
                 type: `object`,
             },
         ]);
+
+        // Implemented
+        publisher.register(this.EVENTS.ON_TRACK_FINISHED_BUFFERING);
 
         // Implemented
         publisher.register(this.EVENTS.ON_TRACK_INDEX_UPDATED, [
@@ -397,22 +418,51 @@ class Player {
         let currentTime: number;
         let currentDuration: number;
         let currentPercentage: number;
+        let currentPercentageLoaded: number;
+        let publishedBufferingEvent = false;
+        let publishedFinishedBufferingEvent = false;
         let lastTime: number = 0;
-        let playerContext = this;
+        let currentContext = this;
         function timeUpdated() {
 
-            currentTime = playerContext.getCurrentTime();
-            currentDuration = playerContext.getDuration();
+            currentTime = currentContext.getCurrentTime();
+            currentDuration = currentContext.getDuration();
             currentPercentage = (currentTime / currentDuration) || 0;
+            currentPercentageLoaded = currentContext.getPercentageLoaded();
+
+            // Check if the player is still loading.
+            if (currentPercentageLoaded < currentPercentage) {
+
+                // It might finish buffering again in which case we haven't published an event.
+                publishedFinishedBufferingEvent = false;
+
+                // If it has, check that we've published a buffering event.
+                if (!publishedBufferingEvent) {
+                    publisher.publish(currentContext.EVENTS.ON_TRACK_BUFFERING);
+                    publishedBufferingEvent = true;
+                }
+
+            } else {
+
+                // It might start buffering again in which case we haven't published an event.
+                publishedBufferingEvent = false;
+
+                // Else check that we've published a finished buffering event.
+                if (!publishedFinishedBufferingEvent) {
+                    publisher.publish(currentContext.EVENTS.ON_TRACK_FINISHED_BUFFERING);
+                    publishedFinishedBufferingEvent = true;
+                }
+
+            }
 
             // Only if the current time has actually changed should the onTimeUpdate event be published.
             if (currentTime !== lastTime) {
                 lastTime = currentPercentage;
-                publisher.publish(playerContext.EVENTS.ON_TIME_UPDATE, currentTime, currentDuration, currentPercentage);
+                publisher.publish(currentContext.EVENTS.ON_TIME_UPDATE, currentTime, currentDuration, currentPercentage);
             }
 
-            // Check if the time has changed every 300 milliseconds.
-            setTimeout(timeUpdated, 300);
+            // Check if the time has changed every couple milliseconds.
+            setTimeout(timeUpdated, currentContext.updateTimeoutFrequency);
         }
         // Start the timeUpdated recursive loop.
         timeUpdated();
@@ -465,6 +515,31 @@ class Player {
 
         return new Promise((resolve, reject) => {
 
+            // Parameters for timer.
+            let millisecondsTried = 0;
+            let previousTime = Date.now();
+            let currentTime: number;
+            let promiseResolvedOrRejected = false;
+
+            // Create a timer for the track.
+            let currentContext = this;
+            function isTimeOver() {
+
+                currentTime = Date.now();
+                millisecondsTried = millisecondsTried + (currentTime - previousTime);
+                previousTime = currentTime;
+
+                if (millisecondsTried > currentContext.millisecondsToTryFor) {
+                    console.log(`The changing music service timed out.`);
+                    reject(`The changing music service timed out.`);
+                } else if (!promiseResolvedOrRejected) {
+                    setTimeout(isTimeOver, currentContext.updateTimeoutFrequency);
+                }
+
+            }
+            // Start timer.
+            isTimeOver();
+
             let musicService: IMusicService;
             let musicServiceIndex: number;
 
@@ -508,6 +583,7 @@ class Player {
 
                 // If not, publish a failed to load event and reject the promise.
                 publisher.publish(this.EVENTS.ON_MUSIC_SERVICE_LOAD_FAILED, musicServiceName);
+                promiseResolvedOrRejected = true;
                 reject(`Music service ${musicServiceName} not found in the list of registered music services (names are case-sensitive).`);
 
             } else {
@@ -526,7 +602,7 @@ class Player {
                 // initialize it, then try switch music services again.
                 if (!musicService.initialized) {
 
-                    (<IPlayerAdapter>musicService.adapter).initialize().then(() => {
+                    (<IPlayerAdapter> musicService.adapter).initialize().then(() => {
 
                         // Publish an event saying the music service was successfully initialized.
                         publisher.publish(this.EVENTS.ON_MUSIC_SERVICE_INITIALIZED, musicService.name);
@@ -541,6 +617,7 @@ class Player {
                             // If we get here, the musicService has been initialized,
                             // and the it has been successfully changed to the new music service,
                             // so finally we can resolve the original promise.
+                            promiseResolvedOrRejected = true;
                             resolve();
 
                         }).catch((error) => {
@@ -550,6 +627,7 @@ class Player {
 
                             // Failed to switch music services.
                             // reject the original promise.
+                            promiseResolvedOrRejected = true;
                             reject(error);
 
                         });
@@ -560,6 +638,7 @@ class Player {
                         // So publish an event saying we've failed to change to the new music service player adapter,
                         // then reject the original promise.
                         publisher.publish(this.EVENTS.ON_MUSIC_SERVICE_LOAD_FAILED, musicService.name);
+                        promiseResolvedOrRejected = true;
                         reject(`Failed to initialize the new music service.`);
 
                     });
@@ -585,6 +664,7 @@ class Player {
 
                     // Resolve promise for when the musicService
                     // was already initialized.
+                    promiseResolvedOrRejected = true;
                     resolve();
 
                 }
@@ -606,77 +686,96 @@ class Player {
 
         return new Promise((resolve, reject) => {
 
-            // If it's not the recursive call, we won't have the previous state information.
-            // Hence, save the current time, track index, paused state and previous music service name.
-            if (!recursiveCall) {
-                progress = this.getCurrentPercentage();
-                trackIndex = this.getCurrentIndex();
-                paused = this.getPaused();
-                let previousMusicService = this.musicServices[this.getCurrentMusicServiceIndex()];
-                if (previousMusicService) {
-                    previousMusicServiceName = previousMusicService.name;
-                }
-            }
+            if (this.currentlyDynamicallyChangingMusicServices || this.currentlyLoadingTrack) {
 
-            if (musicServiceName === previousMusicServiceName && !recursiveCall) {
-
-                // The music player stayed the same so just resolve it.
-                resolve();
+                console.log(`Already busy dynamically changing music services.`);
+                reject(`Already busy dynamically changing music services or busy loading a track into a music service.`);
 
             } else {
 
-                // Change music services.
-                this.changeMusicService(musicServiceName).then(() => {
+                // If it's not the recursive call, we won't have the previous state information.
+                // Hence, save the current time, track index, paused state and previous music service name.
+                if (!recursiveCall) {
 
-                    // The music service has successfully been changed,
-                    // so play the current track on the new service.
-                    this.loadTrack(trackIndex, false).then(() => {
+                    this.currentlyDynamicallyChangingMusicServices = true;
 
-                        // The current track loaded successfully in the new music service.
-                        // Now reload the current tracks previous state.
-                        this.seekToPercentage(progress);
-                        if (paused) {
-                            this.pause();
-                        } else {
-                            this.play();
-                        }
+                    progress = this.getCurrentPercentage();
+                    trackIndex = this.getCurrentIndex();
+                    paused = this.getPaused();
+                    let previousMusicService = this.musicServices[this.getCurrentMusicServiceIndex()];
+                    if (previousMusicService) {
+                        previousMusicServiceName = previousMusicService.name;
+                    }
 
-                        // The track was successfully loaded in the new music service,
-                        // and its state restored so the promise can be resolved.
-                        resolve();
+                }
+
+                if (musicServiceName === previousMusicServiceName && !recursiveCall) {
+
+                    // The music player stayed the same so just resolve it.
+                    this.currentlyDynamicallyChangingMusicServices = false;
+                    resolve();
+
+                } else {
+
+                    // Change music services.
+                    this.changeMusicService(musicServiceName).then(() => {
+
+                        this.currentlyDynamicallyChangingMusicServices = false;
+
+                        // The music service has successfully been changed,
+                        // so play the current track on the new service.
+                        this.loadTrack(trackIndex, false).then(() => {
+
+                            // The current track loaded successfully in the new music service.
+                            // Now reload the current tracks previous state.
+                            this.seekToPercentage(progress);
+                            if (paused) {
+                                this.pause();
+                            } else {
+                                this.play();
+                            }
+
+                            // The track was successfully loaded in the new music service,
+                            // and its state restored so the promise can be resolved.
+                            resolve();
+
+                        }).catch((error) => {
+
+                            // If the track couldn't be played on the set music service or any other music service,
+                            // just reject the promise.
+                            reject(error);
+
+                        });
 
                     }).catch((error) => {
 
-                        // If the track couldn't be played on the set music service or any other music service,
-                        // just reject the promise.
-                        reject(error);
+                        // Failed to change music services.
+
+                        // Fall back to the previous music service.
+                        if (previousMusicServiceName) {
+
+                            // Failed to change music services. Fall back to the previous music service.
+
+                            this.dynamicallyChangeMusicService(previousMusicServiceName, true, progress, trackIndex, paused, previousMusicServiceName).then(() => {
+                                // Resolve original promise.
+                                this.currentlyDynamicallyChangingMusicServices = false;
+                                resolve();
+                            }).catch((e) => {
+                                // Reject original promise.
+                                this.currentlyDynamicallyChangingMusicServices = false;
+                                reject(e);
+                            });
+
+                        } else {
+
+                            // If there isn't a previous music service to fall back on, just reject the promise.
+                            this.currentlyDynamicallyChangingMusicServices = false;
+                            reject(error);
+                        }
 
                     });
 
-                }).catch((error) => {
-
-                    // Failed to change music services.
-
-                    // Fall back to the previous music service.
-                    if (previousMusicServiceName) {
-
-                        // Failed to change music services. Fall back to the previous music service.
-
-                        this.dynamicallyChangeMusicService(previousMusicServiceName, true, progress, trackIndex, paused, previousMusicServiceName).then(() => {
-                            // Resolve original promise.
-                            resolve();
-                        }).catch((e) => {
-                            // Reject original promise.
-                            reject(e);
-                        });
-
-                    } else {
-
-                        // If there isn't a previous music service to fall back on, just reject the promise.
-                        reject(error);
-                    }
-
-                });
+                }
 
             }
 
@@ -1300,6 +1399,36 @@ class Player {
 
         return new Promise((resolve, reject) => {
 
+            // Parameters for timer.
+            let millisecondsTried = 0;
+            let previousTime = Date.now();
+            let currentTime: number;
+            let promiseResolvedOrRejected = false;
+
+            // Create a timer for the track.
+            let currentContext = this;
+            function isTimeOver() {
+
+                currentTime = Date.now();
+                millisecondsTried = millisecondsTried + (currentTime - previousTime);
+                previousTime = currentTime;
+
+                if (promiseResolvedOrRejected) {
+                    console.log(`Delt with the promise already.`);
+                }
+
+                if (millisecondsTried > currentContext.millisecondsToTryFor) {
+                    console.log(`Loading track timed out.`);
+                    publisher.publish(currentContext.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, currentMusicServiceName);
+                    reject(`The loading of ${trackBeingLoaded.title} timed out.`);
+                } else if (!promiseResolvedOrRejected) {
+                    setTimeout(isTimeOver, currentContext.updateTimeoutFrequency);
+                }
+
+            }
+            // Start timer.
+            isTimeOver();
+
             let trackBeingLoaded = (this.getQueue())[index];
             let currentMusicService = this.musicServices[this.getCurrentMusicServiceIndex()];
             let currentMusicServiceName: string;
@@ -1310,11 +1439,13 @@ class Player {
             if (!this.currentPlayer) {
 
                 publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, currentMusicServiceName);
+                promiseResolvedOrRejected = true;
                 reject(`No music service specified to play the track with.`);
 
             } else if (this.currentlyLoadingTrack) {
 
                 publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, currentMusicServiceName);
+                promiseResolvedOrRejected = true;
                 reject(`The player hasn't finished loading the previous track.`);
 
             } else if (this.setCurrentIndex(index)) {
@@ -1335,6 +1466,7 @@ class Player {
                     // The track loaded successfully, publish the track loaded event and
                     // resolve the promise.
                     publisher.publish(this.EVENTS.ON_TRACK_LOADED, trackBeingLoaded, this.currentPlayer.name);
+                    promiseResolvedOrRejected = true;
                     resolve();
 
                 }).catch((error) => {
@@ -1343,6 +1475,7 @@ class Player {
                     // The track failed to load, publish the track load failed event and
                     // reject the promise.
                     publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, this.currentPlayer.name);
+                    promiseResolvedOrRejected = true;
                     reject(error);
 
                 });
@@ -1350,6 +1483,7 @@ class Player {
             } else {
 
                 // Reject because it wasn't a valid index.
+                promiseResolvedOrRejected = true;
                 reject(`Reject because it wasn't a valid index.`);
 
             }
@@ -1780,14 +1914,61 @@ class Player {
     /**
      * Plays the current track.
      */
-    public play(): void {
-        this.paused = false;
+    public play(): Promise<any> {
 
-        publisher.publish(this.EVENTS.ON_PLAY_PAUSE, this.paused);
+        return new Promise((resolve, reject) => {
 
-        if (this.currentPlayer) {
-            this.currentPlayer.play();
-        }
+            // // Keep trying to pause the video.
+            // let millisecondsTried = 0;
+            // let millisecondsToTryFor = 10000; // i.e. 10 seconds
+            // let previousTime = Date.now();
+            // let currentTime: number;
+
+            // function keepTrying() {
+
+            //     currentTime = Date.now();
+            //     millisecondsTried = millisecondsTried + (currentTime - previousTime);
+            //     previousTime = currentTime;
+
+            //     if (millisecondsTried > millisecondsToTryFor) {
+
+            //         console.log(`We've been trying for ${millisecondsToTryFor} milliseconds, so just give up.`);
+            //         reject(`Could not get the YouTube player into the paused state.`);
+
+            //     } else if (currentContext.youtubePlayer.getPlayerState() !== 2) { // If the youtube players state isn't paused, keep trying to pause it.
+
+            //         currentContext.youtubePlayer.pauseVideo();
+
+            //         // try every 150 milliseconds.
+            //         setTimeout(keepTrying, 150);
+
+            //     } else {
+
+            //         // The track is now playable, and paused as per interface specification,
+            //         // and resolve the promise.
+            //         resolve();
+
+            //     }
+            // }
+            // // Initialize the keep trying loop.
+            // keepTrying();
+
+
+
+
+
+
+
+            this.paused = false;
+
+            publisher.publish(this.EVENTS.ON_PLAY_PAUSE, this.paused);
+
+            if (this.currentPlayer) {
+                this.currentPlayer.play();
+            }
+
+        });
+
     }
 
     /**

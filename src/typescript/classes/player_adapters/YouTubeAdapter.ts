@@ -89,7 +89,7 @@ class YouTubeAdapter implements IPlayerAdapter {
 
                     // Keep trying to pause the video.
                     let millisecondsTried = 0;
-                    let millisecondsToTryFor = 10000; // i.e. 10 seconds
+                    let millisecondsToTryFor = 7000; // i.e. 7 seconds
                     let previousTime = Date.now();
                     let currentTime: number;
 
@@ -101,7 +101,6 @@ class YouTubeAdapter implements IPlayerAdapter {
 
                         if (millisecondsTried > millisecondsToTryFor) {
 
-                            console.log(`We've been trying for ${millisecondsToTryFor} milliseconds, so just give up.`);
                             reject(`Could not get the YouTube player into the paused state.`);
 
                         } else if (currentContext.youtubePlayer.getPlayerState() !== 2) { // If the youtube players state isn't paused, keep trying to pause it.

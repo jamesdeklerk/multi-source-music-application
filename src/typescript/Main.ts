@@ -223,6 +223,14 @@ class Main {
             console.log(`FAILED (${musicServiceName}) - ${track.title}.`);
         });
 
+        // Buffering events
+        publisher.subscribe(AP.EVENTS.ON_TRACK_BUFFERING, function () {
+            console.log(`BUFFERING`);
+        });
+        publisher.subscribe(AP.EVENTS.ON_TRACK_FINISHED_BUFFERING, function () {
+            console.log(`FINISHED BUFFERING`);
+        });
+
     }
 }
 
