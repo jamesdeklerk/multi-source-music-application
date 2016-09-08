@@ -26,7 +26,7 @@ class YouTubeAdapter implements IPlayerAdapter {
         return new Promise((resolve, reject) => {
 
             // Load the IFrame Player API code asynchronously.
-            let tag = <HTMLScriptElement>document.createElement(`script`);
+            let tag = <HTMLScriptElement> document.createElement(`script`);
             tag.src = "https://www.youtube.com/iframe_api";
             let firstScriptTag = document.getElementsByTagName(`script`)[0];
             firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
