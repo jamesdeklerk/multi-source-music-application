@@ -144,7 +144,7 @@ class Player {
      * This should not be done too quickley else the
      * adapter players can get confused.
      */
-    private pausedUpdateTimeoutFrequency = 300;
+    private pausedUpdateTimeoutFrequency = 700;
     /**
      * Specifies the percentage the player is currently trying to seek to.
      * Set to -1 when it's done seeking.
@@ -159,7 +159,7 @@ class Player {
      * This should not be done too quickley else the
      * adapter players can get confused.
      */
-    private seekUpdateTimeoutFrequency = 2000;
+    private seekUpdateTimeoutFrequency = 1000;
     /**
      * The number of milliseconds allowed to resolve a promise.
      * For example, the maximum time allowed for to load a track. 
@@ -631,7 +631,7 @@ class Player {
                 // initialize it, then try switch music services again.
                 if (!musicService.initialized) {
 
-                    (<IPlayerAdapter> musicService.adapter).initialize().then(() => {
+                    (<IPlayerAdapter>musicService.adapter).initialize().then(() => {
 
                         // Publish an event saying the music service was successfully initialized.
                         publisher.publish(this.EVENTS.ON_MUSIC_SERVICE_INITIALIZED, musicService.name);
@@ -705,6 +705,84 @@ class Player {
     }
 
     /**
+     * Seek after dynamically changing music services.
+     * 
+     * @return A promise that tells us if it has changed or not.
+     */
+    private seekToPercentageAfterDynamicChange(percentage: number): Promise<any> {
+
+        return new Promise((resolve, reject) => {
+
+            if (!this.currentPlayer) {
+
+                reject(`Current player not set.`);
+
+            } else if ((percentage < 0) || (percentage > 1)) {
+
+                reject(`The percentage given is not between 0 and 1.`);
+
+            } else {
+
+                // Set the percentage to seek to.
+                this.currentlySeekingToPercentage = percentage;
+
+                let timeToSeekTo = this.getDuration() * percentage;
+                let acceptableSeekErrorInMilliseconds = 2000;
+
+                // Parameters for timer.
+                let millisecondsTried = 0;
+                let previousTime = Date.now();
+                let currentTime: number;
+
+                // Create a timer for the track.
+                let currentContext = this;
+                function isTimeOver() {
+
+                    currentTime = Date.now();
+                    millisecondsTried = millisecondsTried + (currentTime - previousTime);
+                    previousTime = currentTime;
+
+                    // If the time isn't over, and this.currentlySeekingToPercentage hasn't changed,
+                    // keep trying to set the seek position.
+                    if (millisecondsTried <= currentContext.millisecondsToTrySeekFor && currentContext.currentlySeekingToPercentage === percentage) {
+
+                        // If it still isn't in the correct seek position, try set the seek position.
+                        if (Math.abs(timeToSeekTo - currentContext.getCurrentTime()) > acceptableSeekErrorInMilliseconds) {
+
+                            currentContext.currentPlayer.seekToPercentage(currentContext.currentlySeekingToPercentage);
+                            setTimeout(isTimeOver, currentContext.seekUpdateTimeoutFrequency);
+
+                        } else {
+
+                            console.log(`Has seeked to the correct position, now resuming play/pause state!!!!.`);
+                            currentContext.currentlySeekingToPercentage = -1;
+
+                            // Else the player is at the correct seek position so
+                            // resolve the promise.
+                            resolve();
+
+                        }
+
+                    } else {
+
+                        // Else the time is up or this.currentlySeekingToPercentage has changed,
+                        // so just resolve the promise.
+                        currentContext.currentlySeekingToPercentage = -1;
+                        reject(`Failed to seek to the correct position.`);
+
+                    }
+
+                }
+                // Start timer.
+                isTimeOver();
+
+            }
+
+        });
+
+    }
+
+    /**
      * Changes to a new music service and resumes
      * the track that was playing on the previous music service.
      * 
@@ -717,7 +795,7 @@ class Player {
 
             if (this.currentlyDynamicallyChangingMusicServices || this.currentlyLoadingTrack) {
 
-                console.log(`Already busy dynamically changing music services.`);
+                console.log(`Already busy dynamically changing music services or loading a track.`);
                 reject(`Already busy dynamically changing music services or busy loading a track into a music service.`);
 
             } else {
@@ -755,14 +833,47 @@ class Player {
                         // so play the current track on the new service.
                         this.loadTrack(trackIndex, false).then(() => {
 
+                            console.log(`The state before dynamically changing was paused: ${paused}`);
+
                             // The current track loaded successfully in the new music service.
                             // Now reload the current tracks previous state.
-                            this.seekToPercentage(progress);
-                            // paused ? this.pause() : this.play(); @NB
+                            this.seekToPercentageAfterDynamicChange(progress).then(() => {
 
-                            // The track was successfully loaded in the new music service,
-                            // and its state restored so the promise can be resolved.
-                            resolve();
+                                // The track was successfully loaded in the new music service.
+                                // Resume paused state and resolve the promise.
+                                if (paused) {
+                                    this.pause().then(() => {
+                                        resolve();
+                                    }).catch(() => {
+                                        resolve();
+                                    });
+                                } else {
+                                    this.play().then(() => {
+                                        resolve();
+                                    }).catch(() => {
+                                        resolve();
+                                    });
+                                }
+
+                            }).catch(() => {
+
+                                // The track was successfully loaded in the new music service.
+                                // Resume paused state and resolve the promise.
+                                if (paused) {
+                                    this.pause().then(() => {
+                                        resolve();
+                                    }).catch(() => {
+                                        resolve();
+                                    });
+                                } else {
+                                    this.play().then(() => {
+                                        resolve();
+                                    }).catch(() => {
+                                        resolve();
+                                    });
+                                }
+
+                            });
 
                         }).catch((error) => {
 
@@ -1074,10 +1185,8 @@ class Player {
             // load the track that took its place.
             if (currentTrackIndex < currentQueue.length) {
 
-                this.playTrack(currentTrackIndex, true).then(() => {
-                    if (paused) {
-                        this.pause();
-                    }
+                this.loadTrack(currentTrackIndex, true).then(() => {
+                    paused ? this.pause() : this.play();
                 });
 
             } else {
@@ -1088,10 +1197,8 @@ class Player {
                 if (repeat === this.REPEAT.ALL) {
 
                     // Load the first track in the current queue.
-                    this.playTrack(0, true).then(() => {
-                        if (paused) {
-                            this.pause();
-                        }
+                    this.loadTrack(0, true).then(() => {
+                        paused ? this.pause() : this.play();
                     });
 
                 } else {
@@ -1282,6 +1389,7 @@ class Player {
             currentIndex = this.getCurrentIndex();
         }
         let repeat = this.getRepeat();
+        let paused = this.getPaused();
 
         if (!this.isIndexInQueue(currentIndex, currentQueue)) {
             throw new Error(`Cannot get the next track in the queue if the current track isn't in the queue.`);
@@ -1290,7 +1398,8 @@ class Player {
         if (repeat === this.REPEAT.ONE) {
             // Restart track.
             this.restart();
-            this.play();
+            //this.play();
+            paused ? this.pause() : this.play();
             return;
         } else if (repeat === this.REPEAT.OFF) {
             // If it was on the last track, just unload it.
@@ -1301,7 +1410,7 @@ class Player {
                 this.waitingToLoadIndex = undefined;
 
                 // If we've gotten to the last index but never loaded the last track,
-                // we need to load it, then we can unload it.
+                // we need to load it, then we can pause it.
                 if (this.getCurrentIndex() !== (currentQueue.length - 1)) {
                     this.loadTrack((currentQueue.length - 1), true, tracksTried).then(() => {
                         this.restart();
@@ -1312,10 +1421,14 @@ class Player {
                     this.pause();
                 }
             } else {
-                this.loadTrack(currentIndex + 1, true, tracksTried);
+                this.loadTrack(currentIndex + 1, true, tracksTried).then(() => {
+                    paused ? this.pause() : this.play();
+                });
             }
         } else {
-            this.loadTrack(this.incrementIndex(currentIndex, 1, currentQueue.length), true, tracksTried);
+            this.loadTrack(this.incrementIndex(currentIndex, 1, currentQueue.length), true, tracksTried).then(() => {
+                paused ? this.pause() : this.play();
+            });
         }
     }
 
@@ -1338,6 +1451,7 @@ class Player {
             currentIndex = this.getCurrentIndex();
         }
         let repeat = this.getRepeat();
+        let paused = this.getPaused();
 
         if (!this.isIndexInQueue(currentIndex, currentQueue)) {
             throw new Error(`Cannot get the previous track in the queue if the current track isn't in the queue.`);
@@ -1347,7 +1461,8 @@ class Player {
             (this.getCurrentTime() > this.timeAfterWhichToRestartTrack)) {
             // Restart track.
             this.restart();
-            this.play();
+            //this.play();
+            paused ? this.pause() : this.play();
             return;
         } else if (repeat === this.REPEAT.OFF) {
             // If it was on the first track, just unload it.
@@ -1369,10 +1484,14 @@ class Player {
                     this.pause();
                 }
             } else {
-                this.loadTrack(currentIndex - 1, true);
+                this.loadTrack(currentIndex - 1, true).then(() => {
+                    paused ? this.pause() : this.play();
+                });
             }
         } else {
-            this.loadTrack(this.incrementIndex(currentIndex, -1, currentQueue.length), true);
+            this.loadTrack(this.incrementIndex(currentIndex, -1, currentQueue.length), true).then(() => {
+                paused ? this.pause() : this.play();
+            });
         }
     }
 
@@ -1480,10 +1599,10 @@ class Player {
                 // Try and load the track.
                 this.currentPlayer.load(trackBeingLoaded).then(() => {
 
-                    // Immediately start playing the track.
+                    // Immediately pause the track.
                     this.pause().then(() => {
 
-                        console.log(`LOADED AND PAUSED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
+                        console.log(`SUCCESSFULLY LOADED AND PAUSED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
 
                         this.currentlyLoadingTrack = false;
                         // The track loaded successfully, publish the track loaded event and
@@ -1494,7 +1613,7 @@ class Player {
 
                     }).catch((error) => {
 
-                        console.log(`LOADED AND NOT PAUSED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
+                        console.log(`SUCCESSFULLY LOADED BUT FAILED TO PAUSE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
 
                         this.currentlyLoadingTrack = false;
                         publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, this.currentPlayer.name);
@@ -1589,9 +1708,12 @@ class Player {
     }
 
     /**
-     * Loads and plays the specified track from the queue, if the track fails to load,
+     * Loads and pauses the specified track from the queue, if the track fails to load,
      * it tries to load the the same track on the next music service,
      * trying all the music services in order.
+     * 
+     * It does not go to the next track when all services fail to load the track,
+     * use loadTrack for that.
      * 
      * @param index The index of track to be played in the queue.
      * @param tryDefaultFirst True specifies that it should try load the default player first,
@@ -1600,7 +1722,7 @@ class Player {
      * @return Promise that tells when a track has finished loading and started playing,
      * or when it failed to load on all the different services.
      */
-    private playTrack(index: number, tryDefaultFirst: boolean, musicServicesTried?: any): Promise<any> {
+    private loadTrackOnSomeService(index: number, tryDefaultFirst: boolean, musicServicesTried?: any): Promise<any> {
 
         return new Promise((resolve, reject) => {
 
@@ -1629,7 +1751,7 @@ class Player {
 
                     // Successfully changed to the default music service,
                     // so try again to play the track from the queue.
-                    this.playTrack(index, tryDefaultFirst, musicServicesTried).then(() => {
+                    this.loadTrackOnSomeService(index, tryDefaultFirst, musicServicesTried).then(() => {
                         resolve();
                     }).catch((error) => {
                         reject(error);
@@ -1639,7 +1761,7 @@ class Player {
 
                     // Failed to load the default music service,
                     // so just try some other service.
-                    this.playTrack(index, false, musicServicesTried).then(() => {
+                    this.loadTrackOnSomeService(index, false, musicServicesTried).then(() => {
                         resolve();
                     }).catch((error) => {
                         reject(error);
@@ -1681,12 +1803,9 @@ class Player {
                     } else {
 
                         // Track successfully loaded using the current player,
-                        // so start playing the track and resolve the promise.
-                        this.play().then(() => {
-                            resolve();
-                        }).catch(() => {
-                            resolve();
-                        });
+                        // we don't need to pause the track as this is done
+                        // in load(index), so resolve the promise.
+                        resolve();
 
                     }
 
@@ -1734,7 +1853,7 @@ class Player {
                                 // try play the track using this service.
                                 // Remember, the default player would've already been tried, so
                                 // don't set the second parameter to true or it will cause an infinite loop.
-                                this.playTrack(index, false, musicServicesTried).then(() => {
+                                this.loadTrackOnSomeService(index, false, musicServicesTried).then(() => {
 
                                     // The track is successfully playing, so resolve the promise.
                                     resolve();
@@ -1810,10 +1929,10 @@ class Player {
     }
 
     /**
-     * Loads a specified track from the queue respecting the current paused state,
+     * Loads a specified track from the queue pausing the track,
      * if the track fails to load, it tries to load the the same track on the next music service,
      * trying all the music services in order.
-     * If all the music services have been tried and none could play the track,
+     * If all the music services have been tried and none could load the track,
      * move on to the next track.
      * 
      * @param index The index of track to be played in the queue.
@@ -1824,7 +1943,7 @@ class Player {
      * queue aren't available on any music service. Only loadTrack and next should use this internally.
      * @return Promise that tells when some track (might not be the one initially specified) has finished loading.
      */
-    public loadTrack(index: number, tryDefaultFirst: boolean, tracksTried?: any) {
+    private loadTrack(index: number, tryDefaultFirst: boolean, tracksTried?: any): Promise<any> {
 
         return new Promise((resolve, reject) => {
 
@@ -1862,7 +1981,7 @@ class Player {
                 }
 
                 // Play the track using the default player.
-                this.playTrack(index, tryDefaultFirst).then(() => {
+                this.loadTrackOnSomeService(index, tryDefaultFirst).then(() => {
 
                     if (this.waitingToLoadIndex !== undefined) {
 
@@ -1923,6 +2042,40 @@ class Player {
                 });
 
             }
+
+        });
+
+    }
+
+    /**
+     * Plays the specified track from the queue,
+     * if the track fails to load, it tries to load the the same track on the next music service,
+     * trying all the music services in order (starting with the default player).
+     * If all the music services have been tried and none could play the track,
+     * move on to the next track.
+     * 
+     * @param index The index of track to be played in the queue.
+     * @return A promise that specifies whether the track successfully played or not.
+     */
+    public playTrack(index: number): Promise<any> {
+
+        return new Promise((resolve, reject) => {
+
+            this.loadTrack(index, true).then(() => {
+
+                // The track has loaded and is ready to be played.
+                this.play().then(() => {
+                    // The track is playing so resolve the promise.
+                    resolve();
+                }).catch(() => {
+                    // The track is failed to play, but it successfully loaded,
+                    // so resolve the promise anyway.
+                    resolve();
+                });
+
+            }).catch((error) => {
+                reject(error);
+            });
 
         });
 
@@ -2075,13 +2228,19 @@ class Player {
     /**
      * Restart the current track.
      */
-    public restart(): void {
+    public restart(): Promise<any> {
 
-        publisher.publish(this.EVENTS.ON_RESTART);
+        return new Promise((resolve, reject) => {
 
-        if (this.currentPlayer) {
-            this.currentPlayer.seekToPercentage(0);
-        }
+            publisher.publish(this.EVENTS.ON_RESTART);
+
+            this.seekToPercentage(0).then(() => {
+                resolve();
+            }).catch(() => {
+                resolve();
+            });
+
+        });
 
     }
 
@@ -2207,68 +2366,31 @@ class Player {
 
         return new Promise((resolve, reject) => {
 
-            if (!this.currentPlayer) {
+            if ((percentage < 0) || (percentage > 1)) {
 
-                reject(`Current player not set.`);
+                reject(`The percentage given was not between 0 and 1.`);
 
-            } else if ((percentage < 0) || (percentage > 1)) {
+            } else if (this.currentPlayer) {
 
-                reject(`The percentage given is not between 0 and 1.`);
+                // let paused = this.getPaused();
 
-            } else {
+                this.currentPlayer.seekToPercentage(percentage);
+                this.currentlySeekingToPercentage = -1;
 
-                // Set the percentage to seek to.
-                this.currentlySeekingToPercentage = percentage;
-
-                let timeToSeekTo = this.getDuration() * percentage;
-                let acceptableSeekErrorInMilliseconds = 1500;
-
-                // Parameters for timer.
-                let millisecondsTried = 0;
-                let previousTime = Date.now();
-                let currentTime: number;
-
-                // Create a timer for the track.
-                let currentContext = this;
-                function isTimeOver() {
-
-                    currentTime = Date.now();
-                    millisecondsTried = millisecondsTried + (currentTime - previousTime);
-                    previousTime = currentTime;
-
-                    // If the time isn't over, and this.currentlySeekingToPercentage hasn't changed,
-                    // keep trying to set the seek position.
-                    if (millisecondsTried <= currentContext.millisecondsToTrySeekFor && currentContext.currentlySeekingToPercentage === percentage) {
-
-                        // If it still isn't in the correct seek position, try set the seek position.
-                        if (Math.abs(timeToSeekTo - currentContext.getCurrentTime()) > acceptableSeekErrorInMilliseconds) {
-
-                            currentContext.currentPlayer.seekToPercentage(currentContext.currentlySeekingToPercentage);
-                            setTimeout(isTimeOver, currentContext.seekUpdateTimeoutFrequency);
-
-                        } else {
-
-                            console.log(`Has seeked to the correct position, now resuming play/pause state!!!!.`);
-                            currentContext.currentlySeekingToPercentage = -1;
-
-                            // Else the player is at the correct seek position so
-                            // resolve the promise.
-                            resolve();
-
-                        }
-
-                    } else {
-
-                        // Else the time is up or this.currentlySeekingToPercentage has changed,
-                        // so just resolve the promise.
-                        currentContext.currentlySeekingToPercentage = -1;
-                        reject(`Failed to seek to the correct position.`);
-
-                    }
-
-                }
-                // Start timer.
-                isTimeOver();
+                // Resume paused state.
+                // if (paused) {
+                //     this.pause().then(() => {
+                //         resolve();
+                //     }).catch(() => {
+                //         resolve();
+                //     });
+                // } else {
+                //     this.play().then(() => {
+                //         resolve();
+                //     }).catch(() => {
+                //         resolve();
+                //     });
+                // }
 
             }
 
