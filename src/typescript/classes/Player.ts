@@ -15,7 +15,7 @@ class Player {
     /**
      * Legal values for repeat.
      */
-    public REPEAT = {
+    public REPEAT_STATES = {
         /**
          * Cycle through all the tracks in the queue.
          */
@@ -30,9 +30,27 @@ class Player {
          */
         ONE: `repeat-one`,
     };
+    /**
+     * Legal values for paused state.
+     */
+    public PAUSED_STATES = {
+        /**
+         * Maintain the current play/paused state.
+         */
+        MAINTAIN_CURRENT: `maintain-current`,
+        /**
+         * Paused
+         */
+        PAUSED: `paused`,
+        /**
+         * Play
+         */
+        PLAY: `play`,
+    };
     private DEFAULTS = {
         MUTED: CONSTANTS.PLAYER.DEFAULTS.MUTED,
         PAUSED: CONSTANTS.PLAYER.DEFAULTS.PAUSED,
+        PAUSED_STATE_AFTER_PREVIOUS_OR_NEXT: CONSTANTS.PLAYER.DEFAULTS.PAUSED_STATE_AFTER_PREVIOUS_OR_NEXT,
         REPEAT: CONSTANTS.PLAYER.DEFAULTS.REPEAT,
         SHUFFLE: CONSTANTS.PLAYER.DEFAULTS.SHUFFLE,
         TIME_AFTER_WHICH_TO_RESTART_TRACK: CONSTANTS.PLAYER.DEFAULTS.TIME_AFTER_WHICH_TO_RESTART_TRACK,
@@ -139,6 +157,10 @@ class Player {
      * The current pause state of the player.
      */
     private isPaused = this.DEFAULTS.PAUSED;
+    /**
+     * The players paused state after clicking previous or next.
+     */
+    private pausedStateAfterPreviousOrNext = this.DEFAULTS.PAUSED_STATE_AFTER_PREVIOUS_OR_NEXT;
     /**
      * Specifies the percentage the player is currently trying to seek to.
      * Set to -1 when it's done seeking.
@@ -344,6 +366,10 @@ class Player {
                 name: `percentage`,
                 type: `number`,
             },
+            {
+                name: `percentageLoaded`,
+                type: `number`,
+            },
         ]);
 
         // Implemented
@@ -480,10 +506,10 @@ class Player {
 
                 // If the player is currently trying to seek to a percentage, publish that.
                 if (currentContext.currentlySeekingToPercentage !== -1) {
-                    publisher.publish(currentContext.EVENTS.ON_TIME_UPDATE, currentTime, currentDuration, currentContext.currentlySeekingToPercentage);
+                    publisher.publish(currentContext.EVENTS.ON_TIME_UPDATE, currentTime, currentDuration, currentContext.currentlySeekingToPercentage, currentPercentageLoaded);
                 } else {
                     // Else publish the actual percentage.
-                    publisher.publish(currentContext.EVENTS.ON_TIME_UPDATE, currentTime, currentDuration, currentPercentage);
+                    publisher.publish(currentContext.EVENTS.ON_TIME_UPDATE, currentTime, currentDuration, currentPercentage, currentPercentageLoaded);
                 }
 
             }
@@ -999,22 +1025,22 @@ class Player {
     }
 
     /**
-     * Sets the repeat value.
-     * If the value given is not a valid repeat value, it sets it to all by default.
+     * Sets the repeat state.
+     * If the state given is not a valid repeat state, it sets it to all by default.
      * - repeat off, don't cycle through queue.
      * - repeat one, restart current track.
      * - repeat all, cycle through queue.
      * 
-     * @param value The value to set repeat to.
+     * @param state The state to set repeat to.
      */
-    public setRepeat(value: string): void {
+    public setRepeat(state: string): void {
 
-        if (value === this.REPEAT.OFF ||
-            value === this.REPEAT.ONE ||
-            value === this.REPEAT.ALL) {
-            this.repeat = value;
+        if (state === this.REPEAT_STATES.OFF ||
+            state === this.REPEAT_STATES.ONE ||
+            state === this.REPEAT_STATES.ALL) {
+            this.repeat = state;
         } else {
-            this.repeat = this.REPEAT.ALL;
+            this.repeat = this.REPEAT_STATES.ALL;
         }
 
         publisher.publish(this.EVENTS.ON_REPEAT_CHANGE, this.repeat);
@@ -1029,9 +1055,9 @@ class Player {
     public cycleRepeat(): string {
         // Cycle order
         let cycleOrder = [
-            this.REPEAT.OFF,
-            this.REPEAT.ALL,
-            this.REPEAT.ONE,
+            this.REPEAT_STATES.OFF,
+            this.REPEAT_STATES.ALL,
+            this.REPEAT_STATES.ONE,
         ];
 
         let currentIndex = cycleOrder.indexOf(this.getRepeat());
@@ -1145,7 +1171,7 @@ class Player {
         if (currentTrackIndex === indexOfTrackToDequeue) {
 
             // And repeat is one, clear the player.
-            if (repeat === this.REPEAT.ONE) {
+            if (repeat === this.REPEAT_STATES.ONE) {
 
                 // Clear the current track and set the currentTrackIndex to -1;
                 this.unload();
@@ -1171,7 +1197,7 @@ class Player {
                 // Else the track dequeued was the last in the current queue,
                 // so no track took its place.
                 // Check the repeat state to determine what to do.
-                if (repeat === this.REPEAT.ALL) {
+                if (repeat === this.REPEAT_STATES.ALL) {
 
                     // If there is a track waiting to be loaded, rather load that one.
                     if (this.waitingToLoadIndex !== undefined) {
@@ -1362,6 +1388,36 @@ class Player {
     }
 
     /**
+     * Sets the state the state the player should be in after
+     * clicking the previous or next buttons.
+     * 
+     * @param state The state to be set.
+     */
+    public setPausedStateAfterPreviousOrNext(state: string): void {
+
+        if (state === this.PAUSED_STATES.PAUSED ||
+            state === this.PAUSED_STATES.PLAY ||
+            state === this.PAUSED_STATES.MAINTAIN_CURRENT) {
+            this.repeat = state;
+        } else {
+            this.repeat = this.PAUSED_STATES.MAINTAIN_CURRENT;
+        }
+
+    }
+
+    /**
+     * Used to set the correct state after previous or next.
+     */
+    private maintainPlayOrPause(): void {
+        if (this.pausedStateAfterPreviousOrNext === this.PAUSED_STATES.PAUSED) {
+            this.pause();
+        } else if (this.pausedStateAfterPreviousOrNext === this.PAUSED_STATES.PLAY) {
+            this.play();
+        }
+        // Don't need to do the maintain state because that'll be done by default.
+    }
+
+    /**
      * Go to the next track and start playing it.
      * If repeat === repeat off, don't cycle through queue.
      * If repeat === repeat one, restart current track.
@@ -1395,11 +1451,12 @@ class Player {
             throw new Error(`Cannot get the next track in the queue if the current track isn't in the queue.`);
         }
 
-        if (repeat === this.REPEAT.ONE) {
+        if (repeat === this.REPEAT_STATES.ONE) {
             // Restart track.
             this.restart();
+            this.maintainPlayOrPause();
             return;
-        } else if (repeat === this.REPEAT.OFF) {
+        } else if (repeat === this.REPEAT_STATES.OFF) {
             // If it was on the last track, just unload it.
             // Else load the next track.
             if (currentIndex >= (currentQueue.length - 1)) {
@@ -1420,9 +1477,11 @@ class Player {
                 }
             } else {
                 this.loadTrack(currentIndex + 1, true, tracksTried);
+                this.maintainPlayOrPause();
             }
         } else {
             this.loadTrack(this.incrementIndex(currentIndex, 1, currentQueue.length), true, tracksTried);
+            this.maintainPlayOrPause();
         }
     }
 
@@ -1456,12 +1515,13 @@ class Player {
             throw new Error(`Cannot get the previous track in the queue if the current track isn't in the queue.`);
         }
 
-        if ((repeat === this.REPEAT.ONE) ||
+        if ((repeat === this.REPEAT_STATES.ONE) ||
             (this.getCurrentTime() > this.timeAfterWhichToRestartTrack)) {
             // Restart track.
             this.restart();
+            this.maintainPlayOrPause();
             return;
-        } else if (repeat === this.REPEAT.OFF) {
+        } else if (repeat === this.REPEAT_STATES.OFF) {
             // If it was on the first track, just unload it.
             // Else load the previous track.
             if (currentIndex === 0) {
@@ -1482,9 +1542,11 @@ class Player {
                 }
             } else {
                 this.loadTrack(currentIndex - 1, true);
+                this.maintainPlayOrPause();
             }
         } else {
             this.loadTrack(this.incrementIndex(currentIndex, -1, currentQueue.length), true);
+            this.maintainPlayOrPause();
         }
     }
 
@@ -2300,7 +2362,7 @@ class Player {
      */
     public getPercentageLoaded(): number {
         if (this.currentPlayer) {
-            return this.currentPlayer.getPercentageLoaded();
+            return this.currentPlayer.getPercentageLoaded() || 0;
         } else {
             return 0;
         }
@@ -2363,7 +2425,7 @@ class Player {
         let playerContext = this;
 
         // Automatically go to the next track.
-        publisher.subscribe(this.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number) {
+        publisher.subscribe(this.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number, percentageLoaded: number) {
 
             // If percentage >= 1, a track isn't being loaded and
             // a music service isn't being loaded.

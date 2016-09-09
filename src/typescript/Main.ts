@@ -180,7 +180,7 @@ class Main {
         console.log(AP.getQueue());
 
         // Set repeat to false (for testing cycling through all tracks causes an infinite loop).
-        AP.setRepeat(AP.REPEAT.OFF);
+        AP.setRepeat(AP.REPEAT_STATES.OFF);
 
         // Play the 2nd track in the queue, this should play track1. 
         //abstractPlayer.load(0);
@@ -193,6 +193,7 @@ class Main {
 
         // Dealing with the seek bar
         let seekBar = <HTMLInputElement>document.getElementById(`seek-bar`);
+        let bufferingBar = <HTMLInputElement>document.getElementById(`buffering-bar`);
         let userMovingSeekBar = false;
 
         seekBar.addEventListener(`mousedown`, function () {
@@ -206,10 +207,11 @@ class Main {
         });
 
         // tslint:disable-next-line
-        publisher.subscribe(AP.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number) {
+        publisher.subscribe(AP.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number, percentageLoaded: number) {
             if (!userMovingSeekBar) {
                 seekBar.value = percentage.toString();
             }
+            bufferingBar.value = percentageLoaded.toString();
         });
 
         // Logging track status.

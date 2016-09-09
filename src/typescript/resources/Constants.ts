@@ -4,6 +4,7 @@ let CONSTANTS = {
         DEFAULTS: {
             MUTED: false,
             PAUSED: false,
+            PAUSED_STATE_AFTER_PREVIOUS_OR_NEXT: `maintain-current`,
             REPEAT: `repeat-all`,
             SHUFFLE: false,
             TIME_AFTER_WHICH_TO_RESTART_TRACK: 3000, // in milliseconds
