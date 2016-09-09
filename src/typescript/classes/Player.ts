@@ -39,11 +39,11 @@ class Player {
          */
         MAINTAIN_CURRENT: `maintain-current`,
         /**
-         * Paused
+         * Paused.
          */
         PAUSED: `paused`,
         /**
-         * Play
+         * Play.
          */
         PLAY: `play`,
     };
