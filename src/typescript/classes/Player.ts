@@ -136,15 +136,9 @@ class Player {
      */
     private timeAfterWhichToRestartTrack: number;
     /**
-     * The number of milliseconds allowed to try correct the players state. 
+     * The current pause state of the player.
      */
-    private millisecondsToTryPlayOrPauseFor = 3000;
-    /**
-     * The frequency with which to check if the paused state is correct.
-     * This should not be done too quickley else the
-     * adapter players can get confused.
-     */
-    private pausedUpdateTimeoutFrequency = 700;
+    private isPaused = false;
     /**
      * Specifies the percentage the player is currently trying to seek to.
      * Set to -1 when it's done seeking.
@@ -233,6 +227,10 @@ class Player {
 
         // More defaults
         this.timeAfterWhichToRestartTrack = this.DEFAULTS.TIME_AFTER_WHICH_TO_RESTART_TRACK;
+
+        // Make sure the current state is correct,
+        // e.g. if the track is supposed to be playing, make sure it's playing.
+        this.verifyStates();
 
     }
 
@@ -836,44 +834,13 @@ class Player {
                             console.log(`The state before dynamically changing was paused: ${paused}`);
 
                             // The current track loaded successfully in the new music service.
+
                             // Now reload the current tracks previous state.
-                            this.seekToPercentageAfterDynamicChange(progress).then(() => {
+                            this.seekToPercentageAfterDynamicChange(progress);
 
-                                // The track was successfully loaded in the new music service.
-                                // Resume paused state and resolve the promise.
-                                if (paused) {
-                                    this.pause().then(() => {
-                                        resolve();
-                                    }).catch(() => {
-                                        resolve();
-                                    });
-                                } else {
-                                    this.play().then(() => {
-                                        resolve();
-                                    }).catch(() => {
-                                        resolve();
-                                    });
-                                }
-
-                            }).catch(() => {
-
-                                // The track was successfully loaded in the new music service.
-                                // Resume paused state and resolve the promise.
-                                if (paused) {
-                                    this.pause().then(() => {
-                                        resolve();
-                                    }).catch(() => {
-                                        resolve();
-                                    });
-                                } else {
-                                    this.play().then(() => {
-                                        resolve();
-                                    }).catch(() => {
-                                        resolve();
-                                    });
-                                }
-
-                            });
+                            // Resume paused state and resolve the promise.
+                            paused ? this.pause() : this.play();
+                            resolve();
 
                         }).catch((error) => {
 
@@ -1356,6 +1323,7 @@ class Player {
      * @return The current track in the queue, if there are no tracks, return undefined.
      */
     public getCurrentTrack(): ITrack {
+
         let currentQueue = this.getQueue();
         let currentIndex = this.getCurrentIndex();
 
@@ -1364,6 +1332,7 @@ class Player {
         } else {
             return undefined;
         }
+
     }
 
     /**
@@ -1600,27 +1569,14 @@ class Player {
                 this.currentPlayer.load(trackBeingLoaded).then(() => {
 
                     // Immediately pause the track.
-                    this.pause().then(() => {
+                    this.pause();
 
-                        console.log(`SUCCESSFULLY LOADED AND PAUSED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
-
-                        this.currentlyLoadingTrack = false;
-                        // The track loaded successfully, publish the track loaded event and
-                        // resolve the promise.
-                        publisher.publish(this.EVENTS.ON_TRACK_LOADED, trackBeingLoaded, this.currentPlayer.name);
-                        promiseResolvedOrRejected = true;
-                        resolve();
-
-                    }).catch((error) => {
-
-                        console.log(`SUCCESSFULLY LOADED BUT FAILED TO PAUSE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
-
-                        this.currentlyLoadingTrack = false;
-                        publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, this.currentPlayer.name);
-                        promiseResolvedOrRejected = true;
-                        reject(error);
-
-                    });
+                    // The track loaded successfully, publish the track loaded event and
+                    // resolve the promise.
+                    this.currentlyLoadingTrack = false;
+                    publisher.publish(this.EVENTS.ON_TRACK_LOADED, trackBeingLoaded, this.currentPlayer.name);
+                    promiseResolvedOrRejected = true;
+                    resolve();
 
                 }).catch((error) => {
 
@@ -2063,15 +2019,9 @@ class Player {
 
             this.loadTrack(index, true).then(() => {
 
-                // The track has loaded and is ready to be played.
-                this.play().then(() => {
-                    // The track is playing so resolve the promise.
-                    resolve();
-                }).catch(() => {
-                    // The track is failed to play, but it successfully loaded,
-                    // so resolve the promise anyway.
-                    resolve();
-                });
+                // The track has loaded, play it and resolve the promise.
+                this.play();
+                resolve();
 
             }).catch((error) => {
                 reject(error);
@@ -2087,142 +2037,44 @@ class Player {
      * @return True if the player is paused, else false.
      */
     public getPaused(): boolean {
-        return this.currentPlayer.getPaused();
+        return this.isPaused;
     }
 
     /**
      * Plays the current track.
      */
-    public play(): Promise<any> {
+    public play(): void {
 
-        return new Promise((resolve, reject) => {
+        if (this.currentPlayer) {
 
-            if (!this.currentPlayer) {
+            this.isPaused = false;
+            this.currentPlayer.play();
+            publisher.publish(this.EVENTS.ON_PLAY_PAUSE, this.isPaused);
 
-                reject(`Current player not set.`);
-
-            } else {
-
-                // Parameters for timer.
-                let millisecondsTried = 0;
-                let previousTime = Date.now();
-                let currentTime: number;
-
-                // Create a timer for the track.
-                let currentContext = this;
-                function isTimeOver() {
-
-                    currentTime = Date.now();
-                    millisecondsTried = millisecondsTried + (currentTime - previousTime);
-                    previousTime = currentTime;
-
-                    // If the time isn't over,
-                    // keep trying to get the players state to playing.
-                    if (millisecondsTried <= currentContext.millisecondsToTryPlayOrPauseFor) {
-
-                        // If it's still paused, and the state is still playing,
-                        // try once again to set it to playing.
-                        if (currentContext.currentPlayer.getPaused() === true) {
-
-                            console.log(`Still trying to play.`);
-                            currentContext.currentPlayer.play();
-                            setTimeout(isTimeOver, currentContext.pausedUpdateTimeoutFrequency);
-
-                        } else {
-
-                            // Else the player is in the playing state so we can resolve the promise.
-                            publisher.publish(currentContext.EVENTS.ON_PLAY_PAUSE, false);
-                            console.log(`It's playing!!!!.`);
-                            resolve();
-
-                        }
-
-                    } else {
-
-                        // Else the time is up, so reject the promise.
-                        reject(`Failed to change paused state to playing.`);
-
-                    }
-
-                }
-                // Start timer.
-                isTimeOver();
-
-            }
-
-        });
+        }
 
     }
 
     /**
-     * Pauses the current track. @NB recursively try for 10 seconds to maintain the paused state.
+     * Pauses the current track.
      */
-    public pause(): Promise<any> {
+    public pause(): void {
 
-        return new Promise((resolve, reject) => {
+        if (this.currentPlayer) {
 
-            if (!this.currentPlayer) {
+            this.isPaused = true;
+            this.currentPlayer.pause();
+            publisher.publish(this.EVENTS.ON_PLAY_PAUSE, this.isPaused);
 
-                reject(`Current player not set.`);
-
-            } else {
-
-                // Parameters for timer.
-                let millisecondsTried = 0;
-                let previousTime = Date.now();
-                let currentTime: number;
-
-                // Create a timer for the track.
-                let currentContext = this;
-                function isTimeOver() {
-
-                    currentTime = Date.now();
-                    millisecondsTried = millisecondsTried + (currentTime - previousTime);
-                    previousTime = currentTime;
-
-                    // If the time isn't over,
-                    // keep trying to get the players state to paused.
-                    if (millisecondsTried <= currentContext.millisecondsToTryPlayOrPauseFor) {
-
-                        // If it's still playing,
-                        // try once again to set it to paused.
-                        if (currentContext.currentPlayer.getPaused() === false) {
-
-                            console.log(`Still trying to pause.`);
-                            currentContext.currentPlayer.pause();
-                            setTimeout(isTimeOver, currentContext.pausedUpdateTimeoutFrequency);
-
-                        } else {
-
-                            // Else the player is in the paused state so we can resolve the promise.
-                            publisher.publish(currentContext.EVENTS.ON_PLAY_PAUSE, true);
-                            console.log(`It's paused!!!!.`);
-                            resolve();
-
-                        }
-
-                    } else {
-
-                        // Else the time is up, so reject the promise.
-                        reject(`Failed to change paused state to paused.`);
-
-                    }
-
-                }
-                // Start timer.
-                isTimeOver();
-
-            }
-
-        });
+        }
 
     }
 
     /**
-     * Plays or pauses the current track depending on its paused state. @NB recursively try for 10 seconds to maintain the paused state.
+     * Plays or pauses the current track depending on its paused state.
      */
     public playPause(): void {
-        this.getPaused() ? this.play() : this.pause();
+        this.isPaused ? this.play() : this.pause();
     }
 
     /**
@@ -2435,6 +2287,50 @@ class Player {
         } else {
             return 0;
         }
+    }
+
+    // -------------------------------------------------------
+
+
+    // =======================================================
+    // Verifying states
+    // =======================================================
+
+    private verifyStates(): void {
+
+        /**
+         * The frequency with which to check if the paused state is correct.
+         * And if not, correct it.
+         */
+        let frequencyToVerifyPausedState = 500; // in milliseconds
+
+        let currentContext = this;
+        function verifyPausedState() {
+
+            // If the current player exists, check the paused state.
+            if (currentContext.currentPlayer) {
+
+                // If the player is supposed to be playing but it's not, play the track.
+                if ((!currentContext.isPaused) && currentContext.currentPlayer.getPaused()) {
+
+                    console.log(`Correct current state to playing!`);
+                    currentContext.currentPlayer.play();
+
+                } else if (currentContext.isPaused && (!currentContext.currentPlayer.getPaused())) {
+
+                    // Else if the player is supposed to be paused but it's not, pause it.
+                    console.log(`Correct current state to paused!`);
+                    currentContext.currentPlayer.pause();
+
+                }
+
+            }
+
+            setTimeout(verifyPausedState, frequencyToVerifyPausedState);
+
+        }
+        verifyPausedState();
+
     }
 
     // -------------------------------------------------------
