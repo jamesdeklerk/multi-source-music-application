@@ -1942,6 +1942,7 @@ class Player {
 
                 // It's busy loading a track, but store the track to be loaded next.
                 this.waitingToLoadIndex = index;
+                console.log(`WAITING TO LOAD: ${(this.getQueue())[this.waitingToLoadIndex].title}`);
 
                 reject(`The player hasn't finished loading the previous track, the waitingToLoadIndex was updated though.`);
 
