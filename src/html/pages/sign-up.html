@@ -1,0 +1,20 @@
+<div class="sign-up">
+
+    <h1>SIGN UP HERE</h1>
+    <div>{{bob}}</div>
+
+    <form ng-submit="signUper()">
+        <input type="email" ng-model="user.email" name="email" placeholder="Email" ng-class="emailError" autofocus>
+        <br/>
+        <br/>
+        <input type="password" ng-model="user.password" name="password" placeholder="Password" ng-class="passwordError">
+        <br/>
+        <br/>
+        <input type="submit" class="next-icon" ng-hide="loading" value="sign-up" >
+    </form>
+
+    <button ng-click="signUper(this)">Click ME!</button>
+
+    {{user.email}}
+
+</div>

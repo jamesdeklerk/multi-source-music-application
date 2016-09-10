@@ -2392,13 +2392,11 @@ class Player {
                 // If the player is supposed to be playing but it's not, play the track.
                 if ((!currentContext.isPaused) && currentContext.currentPlayer.getPaused()) {
 
-                    console.log(`Correct current state to playing!`);
                     currentContext.currentPlayer.play();
 
                 } else if (currentContext.isPaused && (!currentContext.currentPlayer.getPaused())) {
 
                     // Else if the player is supposed to be paused but it's not, pause it.
-                    console.log(`Correct current state to paused!`);
                     currentContext.currentPlayer.pause();
 
                 }

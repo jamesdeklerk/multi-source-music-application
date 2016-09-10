@@ -12,7 +12,10 @@
         // Libraries
         "src/typescript/libraries/Publisher.ts",
         // Definitions
+        "src/typescript/definitions/angular-route.d.ts",
+        "src/typescript/definitions/angular.d.ts",
         "src/typescript/definitions/es6-promise.d.ts",
+        "src/typescript/definitions/firebase.d.ts",
         "src/typescript/definitions/youtube.d.ts",
         // Interfaces
         "src/typescript/interfaces/IAlbum.ts",

@@ -4,6 +4,8 @@
 class Main {
     constructor() {
 
+        this.setupAngular();
+
         // Create a new player object.
         let AP = new Player();
         window.AP = AP;
@@ -232,6 +234,98 @@ class Main {
         publisher.subscribe(AP.EVENTS.ON_TRACK_FINISHED_BUFFERING, function () {
             console.log(`FINISHED BUFFERING`);
         });
+
+    }
+
+    private setupAngular(): void {
+
+        angular.module('music-application', ['ngRoute'])
+
+            .config(function ($routeProvider: any) {
+                var resolveProjects = {
+                    projects: function () {
+                        return "";
+                    }
+                };
+
+                $routeProvider
+                    .when('/', {
+                        controller: 'ProjectListController as projectList',
+                        templateUrl: 'src/html/pages/list.html',
+                        resolve: resolveProjects
+                    })
+                    .when('/edit/:projectId/', {
+                        controller: 'EditProjectController as editProject',
+                        templateUrl: 'src/html/pages/detail.html',
+                        resolve: resolveProjects
+                    })
+                    .when('/new', {
+                        controller: 'NewProjectController as editProject',
+                        templateUrl: 'src/html/pages/detail.html',
+                        resolve: resolveProjects
+                    })
+                    .when('/sign-up', {
+                        controller: 'SignUpController as SignUpController',
+                        templateUrl: 'src/html/pages/sign-up.html',
+                        resolve: resolveProjects
+                    })
+                    .otherwise({
+                        redirectTo: '/'
+                    });
+            })
+
+            .controller('ProjectListController', function (projects: any) {
+                this.controller = "ProjectListController";
+            })
+
+            .controller('SignUpController', function ($scope: any, projects: any) {
+
+                let controller = $scope;
+
+                controller.user = {};
+
+                // controller.user = {};
+                // controller.emailError = "";
+                // controller.usernameError = "";
+                // controller.passwordError = "";
+                // controller.password2Error = "";
+
+                controller.bob = "sign up! now!";
+
+                controller.signUper = function (a) {
+                    console.log(a);
+
+                    if (!controller.user.email || !controller.user.password) {
+                        return;
+                    }
+
+                    firebase.auth().createUserWithEmailAndPassword(controller.user.email, controller.user.password).then((noice: any) => {
+                        console.log("yay, were signed up!");
+                        console.log(noice.email);
+                        console.log(noice.uid);
+                    }).catch(function (error: any) {
+                        // Handle Errors here.
+                        var errorCode = error.code;
+                        var errorMessage = error.message;
+                        // ...
+                        console.log(errorMessage);
+                    });
+                };
+
+                controller.signUper();
+
+            })
+
+            .controller('NewProjectController', function (projects: any) {
+                this.controller = "NewProjectController";
+            })
+
+            .controller('EditProjectController', function (projects: any, $routeParams: any) {
+                this.controller = "EditProjectController";
+                this.projectId = $routeParams.projectId;
+                this.search = $routeParams.search;
+                this.other = $routeParams.other;
+            });
 
     }
 }
