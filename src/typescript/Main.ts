@@ -239,7 +239,7 @@ class Main {
 
     private setupAngular(): void {
 
-        angular.module('music-application', ['ngRoute'])
+        angular.module("music-application", ["ngRoute", "firebase"])
 
             .config(function ($routeProvider: any) {
                 var resolveProjects = {
@@ -278,9 +278,28 @@ class Main {
                 this.controller = "ProjectListController";
             })
 
-            .controller('SignUpController', function ($scope: any, projects: any) {
+            .controller('SignUpController', function ($scope: any, projects: any, $firebaseObject: any, $firebaseArray: any) {
 
                 let controller = $scope;
+                let ref = firebase.database().ref().child("data");
+
+                // Download the data into a local object.
+                let syncObject = $firebaseObject(ref);
+
+                // Synchronize the object with a three-way data binding.
+                syncObject.$bindTo($scope, "data");
+
+                ref = firebase.database().ref().child("array-test");
+
+                // create a synchronized array
+                $scope.messages = $firebaseArray(ref);
+
+                // add new items to the array
+                $scope.addMessage = function () {
+                    $scope.messages.$add({
+                        text: $scope.newMessageText,
+                    });
+                };
 
                 controller.user = {};
 
