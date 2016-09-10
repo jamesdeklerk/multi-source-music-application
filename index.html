@@ -1,15 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html ng-app="music-app">
 
 <head>
     <title>Page Title</title>
     <link rel="stylesheet" type="text/css" href="build/css/styles.css">
+
+    <script src="bower_components/angular/angular.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular-resource.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular-route.min.js"></script>
 </head>
 
 <body>
-
-    <h1>Noice!</h1>
-
+    
+    <h2>JavaScript Projects</h2>
+    <div ng-view></div>
     <div id="youtube-player"></div>
 
     <br />
@@ -17,7 +21,6 @@
     <button onclick="AP.playPause()">play/pause</button>
     <button onclick="AP.previous()">previous</button>
     <button onclick="AP.next()">next</button>
-
     <br />
 
     <input type="range" step="any" min="0" max="1" id="seek-bar" value="0"></input>
