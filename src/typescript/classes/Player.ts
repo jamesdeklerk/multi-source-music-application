@@ -202,6 +202,10 @@ class Player {
      */
     private updateTimeoutFrequency = 300;
     /**
+     * Specifies whether automatically calling next is allowed.
+     */
+    private automaticNextAllowed = true;
+    /**
      * Repeat can be:
      * - repeat off, don't cycle through queue.
      * - repeat one, restart current track.
@@ -607,7 +611,7 @@ class Player {
                 if (millisecondsTried > playerContext.millisecondsToTryFor && (promiseResolvedOrRejected === false)) {
 
                     console.log(`The changing music service timed out.`);
-                    publisher.publish(this.EVENTS.ON_MUSIC_SERVICE_LOAD_FAILED, musicServiceName);
+                    publisher.publish(playerContext.EVENTS.ON_MUSIC_SERVICE_LOAD_FAILED, musicServiceName);
                     playerContext.currentlyLoadingMusicService = false;
                     promiseResolvedOrRejected = true;
                     reject(`The changing music service timed out.`);
@@ -1459,8 +1463,6 @@ class Player {
             this.currentPlayer.pause();
         }
 
-        publisher.publish(this.EVENTS.ON_NEXT);
-
         let currentQueue = this.getQueue();
         // If there's an index waiting to be loaded, use that.
         let currentIndex: number;
@@ -1475,9 +1477,15 @@ class Player {
             throw new Error(`Cannot get the next track in the queue if the current track isn't in the queue.`);
         }
 
+        publisher.publish(this.EVENTS.ON_NEXT);
+
         if (repeat === this.REPEAT_STATES.ONE) {
             // Restart track.
-            this.restart();
+            this.restart().then(() => {
+                this.automaticNextAllowed = true;
+            }).catch(() => {
+                this.automaticNextAllowed = true;
+            });
             this.maintainPlayOrPause();
             return;
         } else if (repeat === this.REPEAT_STATES.OFF) {
@@ -1494,17 +1502,29 @@ class Player {
                     this.loadTrack((currentQueue.length - 1), true, tracksTried).then(() => {
                         this.restart();
                         this.pause();
+                        this.automaticNextAllowed = true;
+                    }).catch(() => {
+                        this.automaticNextAllowed = true;
                     });
                 } else {
                     this.restart();
                     this.pause();
+                    this.automaticNextAllowed = true;
                 }
             } else {
-                this.loadTrack(currentIndex + 1, true, tracksTried);
+                this.loadTrack(currentIndex + 1, true, tracksTried).then(() => {
+                    this.automaticNextAllowed = true;
+                }).catch(() => {
+                    this.automaticNextAllowed = true;
+                });
                 this.maintainPlayOrPause();
             }
         } else {
-            this.loadTrack(this.incrementIndex(currentIndex, 1, currentQueue.length), true, tracksTried);
+            this.loadTrack(this.incrementIndex(currentIndex, 1, currentQueue.length), true, tracksTried).then(() => {
+                this.automaticNextAllowed = true;
+            }).catch(() => {
+                this.automaticNextAllowed = true;
+            });
             this.maintainPlayOrPause();
         }
     }
@@ -2383,6 +2403,7 @@ class Player {
 
                 this.currentPlayer.seekToPercentage(percentage);
                 this.currentlySeekingToPercentage = -1;
+                resolve();
 
             }
 
@@ -2449,15 +2470,27 @@ class Player {
         let previousTime = Date.now();
         let currentTime: number;
 
+        // This holds the time till the track ends.
+        // The reason this is needed is so that then the track ends we don't mistakenly start playing the track
+        // just before this.next() is automatically called
+        // (because this can cause two songs to start playing at once if the next song is only available on another service). 
+        let timeTillTrackEnds: number;
+        let boundToNotChangeToPlaying = 1500; // 1 second
+
         let playerContext = this;
         function verifyPausedState() {
 
             // Update the current time.
             currentTime = Date.now();
 
-            // If the current player exists, check the paused state.
-            if (playerContext.currentPlayer && !playerContext.currentlyBusyWithLoadTrack && !playerContext.currentlyBusyWithLoad
-                && !playerContext.currentlyLoadingMusicService && !playerContext.currentlyDynamicallyChangingMusicServices) {
+            // Update the time till the track ends.
+            timeTillTrackEnds = playerContext.getDuration() - playerContext.getCurrentTime();
+
+            // If the current player exists, and all these conditions are met, check the paused state.
+            if (playerContext.currentPlayer
+                && !playerContext.currentlyBusyWithLoadTrack && !playerContext.currentlyBusyWithLoad
+                && !playerContext.currentlyLoadingMusicService && !playerContext.currentlyDynamicallyChangingMusicServices
+                && (timeTillTrackEnds > boundToNotChangeToPlaying)) { // Don't change the paused state when this.next() has been called (i.e. at the end of a track)
 
                 // If the player is supposed to be playing but it's not, play the track.
                 if ((!playerContext.isPaused) && playerContext.currentPlayer.getPaused()) {
@@ -2467,12 +2500,12 @@ class Player {
 
                     // Still not playing after the waiting period, try force it again.
                     if (playerContext.millisecondsSinceCorrectingToPlaying >= frequencyToTryGetIntoTheSameState) {
-                        //console.log(`Trying to correct the current state to playing!`);
+                        console.log(`Trying to correct the current state to playing!`);
                         // Restart time since last tried to play.
                         playerContext.millisecondsSinceCorrectingToPlaying = 0;
                         playerContext.currentPlayer.play();
                     } else {
-                        //console.log(`Waiting to try play again...`);
+                        console.log(`Waiting to try play again...`);
                         // Update time since last tried to play.
                         playerContext.millisecondsSinceCorrectingToPlaying = playerContext.millisecondsSinceCorrectingToPlaying + (currentTime - previousTime);
                     }
@@ -2485,12 +2518,12 @@ class Player {
 
                     // Still not paused after the waiting period, try force it again.
                     if (playerContext.millisecondsSinceCorrectingToPaused >= frequencyToTryGetIntoTheSameState) {
-                        //console.log(`Trying to correct the current state to pause!`);
+                        console.log(`Trying to correct the current state to pause!`);
                         // Restart time since last tried to pause.
                         playerContext.millisecondsSinceCorrectingToPaused = 0;
                         playerContext.currentPlayer.pause();
                     } else {
-                        //console.log(`Waiting to try pause again...`);
+                        console.log(`Waiting to try pause again...`);
                         // Update time since last tried to pause.
                         playerContext.millisecondsSinceCorrectingToPaused = playerContext.millisecondsSinceCorrectingToPaused + (currentTime - previousTime);
                     }
@@ -2542,8 +2575,12 @@ class Player {
             // a music service isn't being loaded.
             // go to this.next().
             if ((percentage >= 1) && !playerContext.currentlyBusyWithLoadTrack && !playerContext.currentlyBusyWithLoad
-                && !playerContext.currentlyLoadingMusicService && !playerContext.currentlyDynamicallyChangingMusicServices) {
+                && !playerContext.currentlyLoadingMusicService && !playerContext.currentlyDynamicallyChangingMusicServices
+                && playerContext.automaticNextAllowed) {
+
+                playerContext.automaticNextAllowed = false;
                 playerContext.next();
+
             }
 
         });

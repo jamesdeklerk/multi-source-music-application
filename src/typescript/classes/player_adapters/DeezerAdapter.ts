@@ -114,6 +114,7 @@ class DeezerAdapter implements IPlayerAdapter {
     }
 
     public play(): void {
+        this.trackEnd = false;
         window.DZ.player.play();
     }
 

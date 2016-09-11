@@ -27,7 +27,6 @@ interface IPlayerAdapter {
 
     /**
      * Loads the specified track.
-     * It is very important that the track is paused at the beginning of the track (i.e. 0% progress).
      * 
      * @param track The track to be played.
      * @return A promise which tells when the track is loaded or if it gave an error.
