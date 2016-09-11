@@ -2381,10 +2381,20 @@ class Player {
          * The frequency with which to check if the paused state is correct.
          * And if not, correct it.
          */
-        let frequencyToVerifyPausedState = 500; // in milliseconds
+        let frequencyToVerifyPausedState = 150; // in milliseconds
+        let frequencyToTryGetIntoTheSameState = 2000; // If the player state was corrected to paused, but still isn't paused, when do we try again.
+        let millisecondsSinceCorrectingToPlaying = 0; // Set to 0 because we haven't tried to corrent the state.
+        let millisecondsSinceCorrectingToPaused = 0; // Set to 0 because we haven't tried to corrent the state.
+
+        // Parameters for timer.
+        let previousTime = Date.now();
+        let currentTime: number;
 
         let currentContext = this;
         function verifyPausedState() {
+
+            // Update the current time.
+            currentTime = Date.now();
 
             // If the current player exists, check the paused state.
             if (currentContext.currentPlayer && !currentContext.currentlyLoadingTrack && !currentContext.currentlyDynamicallyChangingMusicServices && !currentContext.currentlyLoadingMusicService) {
@@ -2392,17 +2402,61 @@ class Player {
                 // If the player is supposed to be playing but it's not, play the track.
                 if ((!currentContext.isPaused) && currentContext.currentPlayer.getPaused()) {
 
-                    currentContext.currentPlayer.play();
+                    // Reset time since last tried to pause.
+                    millisecondsSinceCorrectingToPaused = Number.MAX_VALUE;
+
+                    // Still not playing after the waiting period, try force it again.
+                    if (millisecondsSinceCorrectingToPlaying >= frequencyToTryGetIntoTheSameState) {
+                        console.log(`Trying to correct the current state to playing!`);
+                        // Restart time since last tried to play.
+                        millisecondsSinceCorrectingToPlaying = 0;
+                        currentContext.currentPlayer.play();
+                    } else {
+                        console.log(`Waiting to try play again...`);
+                        // Update time since last tried to play.
+                        millisecondsSinceCorrectingToPlaying = millisecondsSinceCorrectingToPlaying + (currentTime - previousTime);
+                    }
+
 
                 } else if (currentContext.isPaused && (!currentContext.currentPlayer.getPaused())) {
 
-                    // Else if the player is supposed to be paused but it's not, pause it.
-                    currentContext.currentPlayer.pause();
+                    // Reset time since last tried to play.
+                    millisecondsSinceCorrectingToPlaying = Number.MAX_VALUE;
+
+                    // Still not paused after the waiting period, try force it again.
+                    if (millisecondsSinceCorrectingToPaused >= frequencyToTryGetIntoTheSameState) {
+                        console.log(`Trying to correct the current state to pause!`);
+                        // Restart time since last tried to pause.
+                        millisecondsSinceCorrectingToPaused = 0;
+                        currentContext.currentPlayer.pause();
+                    } else {
+                        console.log(`Waiting to try pause again...`);
+                        // Update time since last tried to pause.
+                        millisecondsSinceCorrectingToPaused = millisecondsSinceCorrectingToPaused + (currentTime - previousTime);
+                    }
+
+                } else {
+
+                    // Else we're in the correct state,
+                    // so reset time since last tried to pause and play.
+                    millisecondsSinceCorrectingToPlaying = Number.MAX_VALUE;
+                    millisecondsSinceCorrectingToPaused = Number.MAX_VALUE;
 
                 }
 
+            } else {
+
+                // Else we've tried to change services or tracks,
+                // so reset time since last tried to pause and play.
+                millisecondsSinceCorrectingToPlaying = Number.MAX_VALUE;
+                millisecondsSinceCorrectingToPaused = Number.MAX_VALUE;
+
             }
 
+            // Update the previous time.
+            previousTime = currentTime;
+
+            // Set delay before calling the verifyPausedState function again.
             setTimeout(verifyPausedState, frequencyToVerifyPausedState);
 
         }

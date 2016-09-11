@@ -99,9 +99,8 @@ class DeezerAdapter implements IPlayerAdapter {
                             setTimeout(keepTrying, 150);
                         } else {
 
-                            // The track is now playable, so pause it (as per specification)
-                            // and resolve the promise.
-                            currentContext.pause();
+                            // The track is now playable,
+                            // so resolve the promise.
                             resolve();
                         }
                     }
