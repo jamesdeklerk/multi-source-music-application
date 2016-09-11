@@ -75,8 +75,6 @@ class YouTubeAdapter implements IPlayerAdapter {
     public load(track: ITrack): Promise<{}> {
         return new Promise((resolve, reject) => {
 
-            let currentContext = this;
-
             function onStateChangeHandler(e: any) {
                 // If the state changes to playing (i.e. 1),
                 // then from the YouTube API we know it's the track is loaded.
@@ -87,39 +85,9 @@ class YouTubeAdapter implements IPlayerAdapter {
                     // We're done with the onErrorHandler, so get rid of it.
                     publisher.unsubscribe(`youtube-onError`, onErrorHandler);
 
-                    // Keep trying to pause the video.
-                    let millisecondsTried = 0;
-                    let millisecondsToTryFor = 7000; // i.e. 7 seconds
-                    let previousTime = Date.now();
-                    let currentTime: number;
-
-                    function keepTrying() {
-
-                        currentTime = Date.now();
-                        millisecondsTried = millisecondsTried + (currentTime - previousTime);
-                        previousTime = currentTime;
-
-                        if (millisecondsTried > millisecondsToTryFor) {
-
-                            reject(`Could not get the YouTube player into the paused state.`);
-
-                        } else if (currentContext.youtubePlayer.getPlayerState() !== 2) { // If the youtube players state isn't paused, keep trying to pause it.
-
-                            currentContext.youtubePlayer.pauseVideo();
-
-                            // try every 150 milliseconds.
-                            setTimeout(keepTrying, 150);
-
-                        } else {
-
-                            // The track is now playable, and paused as per interface specification,
-                            // and resolve the promise.
-                            resolve();
-
-                        }
-                    }
-                    // Initialize the keep trying loop.
-                    keepTrying();
+                    // The track is now playable,
+                    // so resolve the promise.
+                    resolve();
 
                 }
             }
@@ -131,7 +99,7 @@ class YouTubeAdapter implements IPlayerAdapter {
                 // We're done with the onErrorHandler, so get rid of it.
                 publisher.unsubscribe(`youtube-onError`, onErrorHandler);
 
-                reject();
+                reject(e);
             }
 
             publisher.subscribe(`youtube-onStateChange`, onStateChangeHandler);
