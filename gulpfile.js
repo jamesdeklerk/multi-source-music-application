@@ -64,14 +64,15 @@ gulp.task('recompile', [
 gulp.task('browsersync', function () {
     browsersync({
         server: {
-            baseDir: "./" // setting the base directory
+            baseDir: "./", // setting the base directory
+            online: true,
         }
     });
 });
 
 // Reload HTML
 gulp.task('reload:html', function () {
-    gulp.src(htmlDirectory + '**/*.html')
+    gulp.src([htmlDirectory + '**/*.html', '!node_modules/**', '!.git/**'])
         .pipe(reload({
             stream: true
         }));
@@ -95,7 +96,7 @@ gulp.task('reload:javascript', function () {
 
 // Reload watch task - watches for files to reload
 gulp.task('reload:watch', function () {
-    gulp.watch(htmlDirectory + '**/*.html', ['reload:html']);
+    gulp.watch([htmlDirectory + '**/*.html', '!node_modules/**', '!.git/**'], ['reload:html']);
     gulp.watch(cssDirectory + '**/*.css', ['reload:css']);
     // gulp.watch(javascriptDirectory + '**/*.js', ['reload:javascript']);
 });
