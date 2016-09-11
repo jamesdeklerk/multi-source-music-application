@@ -158,6 +158,18 @@ class Player {
      */
     private isPaused = this.DEFAULTS.PAUSED;
     /**
+     * The number of milliseconds since we last tried to correct
+     * the state to be playing when it was supposed to be playing.
+     * Set to 0 because we haven't tried to corrent the state.
+     */
+    private millisecondsSinceCorrectingToPlaying = 0;
+    /**
+     * The number of milliseconds since we last tried to correct
+     * the state to be paused when it was supposed to be paused.
+     * Set to 0 because we haven't tried to corrent the state.
+     */
+    private millisecondsSinceCorrectingToPaused = 0;
+    /**
      * The players paused state after clicking previous or next.
      */
     private pausedStateAfterPreviousOrNext = this.DEFAULTS.PAUSED_STATE_AFTER_PREVIOUS_OR_NEXT;
@@ -467,13 +479,13 @@ class Player {
         let publishedBufferingEvent = false;
         let publishedFinishedBufferingEvent = false;
         let lastTime: number = 0;
-        let currentContext = this;
+        let playerContext = this;
         function timeUpdated() {
 
-            currentTime = currentContext.getCurrentTime();
-            currentDuration = currentContext.getDuration();
+            currentTime = playerContext.getCurrentTime();
+            currentDuration = playerContext.getDuration();
             currentPercentage = (currentTime / currentDuration) || 0;
-            currentPercentageLoaded = currentContext.getPercentageLoaded();
+            currentPercentageLoaded = playerContext.getPercentageLoaded();
 
             // Check if the player is still loading.
             if (currentPercentageLoaded < currentPercentage) {
@@ -483,7 +495,7 @@ class Player {
 
                 // If it has, check that we've published a buffering event.
                 if (!publishedBufferingEvent) {
-                    publisher.publish(currentContext.EVENTS.ON_TRACK_BUFFERING);
+                    publisher.publish(playerContext.EVENTS.ON_TRACK_BUFFERING);
                     publishedBufferingEvent = true;
                 }
 
@@ -494,7 +506,7 @@ class Player {
 
                 // Else check that we've published a finished buffering event.
                 if (!publishedFinishedBufferingEvent) {
-                    publisher.publish(currentContext.EVENTS.ON_TRACK_FINISHED_BUFFERING);
+                    publisher.publish(playerContext.EVENTS.ON_TRACK_FINISHED_BUFFERING);
                     publishedFinishedBufferingEvent = true;
                 }
 
@@ -505,17 +517,17 @@ class Player {
                 lastTime = currentPercentage;
 
                 // If the player is currently trying to seek to a percentage, publish that.
-                if (currentContext.currentlySeekingToPercentage !== -1) {
-                    publisher.publish(currentContext.EVENTS.ON_TIME_UPDATE, currentTime, currentDuration, currentContext.currentlySeekingToPercentage, currentPercentageLoaded);
+                if (playerContext.currentlySeekingToPercentage !== -1) {
+                    publisher.publish(playerContext.EVENTS.ON_TIME_UPDATE, currentTime, currentDuration, playerContext.currentlySeekingToPercentage, currentPercentageLoaded);
                 } else {
                     // Else publish the actual percentage.
-                    publisher.publish(currentContext.EVENTS.ON_TIME_UPDATE, currentTime, currentDuration, currentPercentage, currentPercentageLoaded);
+                    publisher.publish(playerContext.EVENTS.ON_TIME_UPDATE, currentTime, currentDuration, currentPercentage, currentPercentageLoaded);
                 }
 
             }
 
             // Check if the time has changed every couple milliseconds.
-            setTimeout(timeUpdated, currentContext.updateTimeoutFrequency);
+            setTimeout(timeUpdated, playerContext.updateTimeoutFrequency);
         }
         // Start the timeUpdated recursive loop.
         timeUpdated();
@@ -577,19 +589,19 @@ class Player {
             let promiseResolvedOrRejected = false;
 
             // Create a timer for the track.
-            let currentContext = this;
+            let playerContext = this;
             function isTimeOver() {
 
                 currentTime = Date.now();
                 millisecondsTried = millisecondsTried + (currentTime - previousTime);
                 previousTime = currentTime;
 
-                if (millisecondsTried > currentContext.millisecondsToTryFor) {
+                if (millisecondsTried > playerContext.millisecondsToTryFor) {
                     console.log(`The changing music service timed out.`);
-                    currentContext.currentlyLoadingMusicService = false;
+                    playerContext.currentlyLoadingMusicService = false;
                     reject(`The changing music service timed out.`);
                 } else if (!promiseResolvedOrRejected) {
-                    setTimeout(isTimeOver, currentContext.updateTimeoutFrequency);
+                    setTimeout(isTimeOver, playerContext.updateTimeoutFrequency);
                 }
 
             }
@@ -767,7 +779,7 @@ class Player {
                 let currentTime: number;
 
                 // Create a timer for the track.
-                let currentContext = this;
+                let playerContext = this;
                 function isTimeOver() {
 
                     currentTime = Date.now();
@@ -776,18 +788,18 @@ class Player {
 
                     // If the time isn't over, and this.currentlySeekingToPercentage hasn't changed,
                     // keep trying to set the seek position.
-                    if (millisecondsTried <= currentContext.millisecondsToTrySeekFor && currentContext.currentlySeekingToPercentage === percentage) {
+                    if (millisecondsTried <= playerContext.millisecondsToTrySeekFor && playerContext.currentlySeekingToPercentage === percentage) {
 
                         // If it still isn't in the correct seek position, try set the seek position.
-                        if (Math.abs(timeToSeekTo - currentContext.getCurrentTime()) > acceptableSeekErrorInMilliseconds) {
+                        if (Math.abs(timeToSeekTo - playerContext.getCurrentTime()) > acceptableSeekErrorInMilliseconds) {
 
-                            currentContext.currentPlayer.seekToPercentage(currentContext.currentlySeekingToPercentage);
-                            setTimeout(isTimeOver, currentContext.seekUpdateTimeoutFrequency);
+                            playerContext.currentPlayer.seekToPercentage(playerContext.currentlySeekingToPercentage);
+                            setTimeout(isTimeOver, playerContext.seekUpdateTimeoutFrequency);
 
                         } else {
 
                             console.log(`Has seeked to the correct position, now resuming play/pause state!!!!.`);
-                            currentContext.currentlySeekingToPercentage = -1;
+                            playerContext.currentlySeekingToPercentage = -1;
 
                             // Else the player is at the correct seek position so
                             // resolve the promise.
@@ -799,7 +811,7 @@ class Player {
 
                         // Else the time is up or this.currentlySeekingToPercentage has changed,
                         // so just resolve the promise.
-                        currentContext.currentlySeekingToPercentage = -1;
+                        playerContext.currentlySeekingToPercentage = -1;
                         reject(`Failed to seek to the correct position.`);
 
                     }
@@ -1595,7 +1607,7 @@ class Player {
             let promiseResolvedOrRejected = false;
 
             // Create a timer for the track.
-            let currentContext = this;
+            let playerContext = this;
             function isTimeOver() {
 
                 currentTime = Date.now();
@@ -1606,16 +1618,16 @@ class Player {
                     console.log(`Delt with the promise already.`);
                 }
 
-                if (millisecondsTried > currentContext.millisecondsToTryFor) {
+                if (millisecondsTried > playerContext.millisecondsToTryFor) {
 
                     console.log(`Loading track timed out.`);
-                    publisher.publish(currentContext.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, currentMusicServiceName);
-                    currentContext.currentlyLoadingTrack = false;
+                    publisher.publish(playerContext.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, currentMusicServiceName);
+                    playerContext.currentlyLoadingTrack = false;
                     reject(`The loading of ${trackBeingLoaded.title} timed out.`);
 
                 } else if (!promiseResolvedOrRejected) {
 
-                    setTimeout(isTimeOver, currentContext.updateTimeoutFrequency);
+                    setTimeout(isTimeOver, playerContext.updateTimeoutFrequency);
 
                 }
 
@@ -2143,6 +2155,12 @@ class Player {
 
         if (this.currentPlayer) {
 
+            // Reset time since last tried to pause.
+            this.millisecondsSinceCorrectingToPaused = Number.MAX_VALUE;
+
+            // Restart time since last tried to play.
+            this.millisecondsSinceCorrectingToPlaying = 0;
+
             this.isPaused = false;
             this.currentPlayer.play();
             publisher.publish(this.EVENTS.ON_PLAY_PAUSE, this.isPaused);
@@ -2157,6 +2175,12 @@ class Player {
     public pause(): void {
 
         if (this.currentPlayer) {
+
+            // Reset time since last tried to play.
+            this.millisecondsSinceCorrectingToPlaying = Number.MAX_VALUE;
+
+            // Restart time since last tried to pause.
+            this.millisecondsSinceCorrectingToPaused = 0;
 
             this.isPaused = true;
             this.currentPlayer.pause();
@@ -2383,64 +2407,62 @@ class Player {
          */
         let frequencyToVerifyPausedState = 150; // in milliseconds
         let frequencyToTryGetIntoTheSameState = 2000; // If the player state was corrected to paused, but still isn't paused, when do we try again.
-        let millisecondsSinceCorrectingToPlaying = 0; // Set to 0 because we haven't tried to corrent the state.
-        let millisecondsSinceCorrectingToPaused = 0; // Set to 0 because we haven't tried to corrent the state.
 
         // Parameters for timer.
         let previousTime = Date.now();
         let currentTime: number;
 
-        let currentContext = this;
+        let playerContext = this;
         function verifyPausedState() {
 
             // Update the current time.
             currentTime = Date.now();
 
             // If the current player exists, check the paused state.
-            if (currentContext.currentPlayer && !currentContext.currentlyLoadingTrack && !currentContext.currentlyDynamicallyChangingMusicServices && !currentContext.currentlyLoadingMusicService) {
+            if (playerContext.currentPlayer && !playerContext.currentlyLoadingTrack && !playerContext.currentlyDynamicallyChangingMusicServices && !playerContext.currentlyLoadingMusicService) {
 
                 // If the player is supposed to be playing but it's not, play the track.
-                if ((!currentContext.isPaused) && currentContext.currentPlayer.getPaused()) {
+                if ((!playerContext.isPaused) && playerContext.currentPlayer.getPaused()) {
 
                     // Reset time since last tried to pause.
-                    millisecondsSinceCorrectingToPaused = Number.MAX_VALUE;
+                    playerContext.millisecondsSinceCorrectingToPaused = Number.MAX_VALUE;
 
                     // Still not playing after the waiting period, try force it again.
-                    if (millisecondsSinceCorrectingToPlaying >= frequencyToTryGetIntoTheSameState) {
+                    if (playerContext.millisecondsSinceCorrectingToPlaying >= frequencyToTryGetIntoTheSameState) {
                         console.log(`Trying to correct the current state to playing!`);
                         // Restart time since last tried to play.
-                        millisecondsSinceCorrectingToPlaying = 0;
-                        currentContext.currentPlayer.play();
+                        playerContext.millisecondsSinceCorrectingToPlaying = 0;
+                        playerContext.currentPlayer.play();
                     } else {
                         console.log(`Waiting to try play again...`);
                         // Update time since last tried to play.
-                        millisecondsSinceCorrectingToPlaying = millisecondsSinceCorrectingToPlaying + (currentTime - previousTime);
+                        playerContext.millisecondsSinceCorrectingToPlaying = playerContext.millisecondsSinceCorrectingToPlaying + (currentTime - previousTime);
                     }
 
 
-                } else if (currentContext.isPaused && (!currentContext.currentPlayer.getPaused())) {
+                } else if (playerContext.isPaused && (!playerContext.currentPlayer.getPaused())) {
 
                     // Reset time since last tried to play.
-                    millisecondsSinceCorrectingToPlaying = Number.MAX_VALUE;
+                    playerContext.millisecondsSinceCorrectingToPlaying = Number.MAX_VALUE;
 
                     // Still not paused after the waiting period, try force it again.
-                    if (millisecondsSinceCorrectingToPaused >= frequencyToTryGetIntoTheSameState) {
+                    if (playerContext.millisecondsSinceCorrectingToPaused >= frequencyToTryGetIntoTheSameState) {
                         console.log(`Trying to correct the current state to pause!`);
                         // Restart time since last tried to pause.
-                        millisecondsSinceCorrectingToPaused = 0;
-                        currentContext.currentPlayer.pause();
+                        playerContext.millisecondsSinceCorrectingToPaused = 0;
+                        playerContext.currentPlayer.pause();
                     } else {
                         console.log(`Waiting to try pause again...`);
                         // Update time since last tried to pause.
-                        millisecondsSinceCorrectingToPaused = millisecondsSinceCorrectingToPaused + (currentTime - previousTime);
+                        playerContext.millisecondsSinceCorrectingToPaused = playerContext.millisecondsSinceCorrectingToPaused + (currentTime - previousTime);
                     }
 
                 } else {
 
                     // Else we're in the correct state,
                     // so reset time since last tried to pause and play.
-                    millisecondsSinceCorrectingToPlaying = Number.MAX_VALUE;
-                    millisecondsSinceCorrectingToPaused = Number.MAX_VALUE;
+                    playerContext.millisecondsSinceCorrectingToPlaying = Number.MAX_VALUE;
+                    playerContext.millisecondsSinceCorrectingToPaused = Number.MAX_VALUE;
 
                 }
 
@@ -2448,8 +2470,8 @@ class Player {
 
                 // Else we've tried to change services or tracks,
                 // so reset time since last tried to pause and play.
-                millisecondsSinceCorrectingToPlaying = Number.MAX_VALUE;
-                millisecondsSinceCorrectingToPaused = Number.MAX_VALUE;
+                playerContext.millisecondsSinceCorrectingToPlaying = Number.MAX_VALUE;
+                playerContext.millisecondsSinceCorrectingToPaused = Number.MAX_VALUE;
 
             }
 
@@ -2474,9 +2496,8 @@ class Player {
 
     private subscribeToEvents(): void {
 
-        let playerContext = this;
-
         // Automatically go to the next track.
+        let playerContext = this;
         publisher.subscribe(this.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number, percentageLoaded: number) {
 
             // If percentage >= 1, a track isn't being loaded and
