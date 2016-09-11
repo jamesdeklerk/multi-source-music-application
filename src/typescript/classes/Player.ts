@@ -2476,7 +2476,6 @@ class Player {
         // (because this can cause two songs to start playing at once if the next song is only available on another service). 
         let timeTillTrackEnds: number;
         let boundToNotChangeToPlaying = 1500; // 1 second
-        let trackDuration: number;
 
         let playerContext = this;
         function verifyPausedState() {
