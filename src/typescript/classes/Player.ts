@@ -145,9 +145,13 @@ class Player {
      */
     private waitingToLoadIndex: number = undefined;
     /**
-     * Specifies if the player is currently loading a track.
+     * Specifies if the player is currently loading a track using the load method.
      */
-    private currentlyLoadingTrack: boolean = false;
+    private currentlyBusyWithLoad: boolean = false;
+    /**
+     * Specifies if the player is currently loading a track using the loadTrack method.
+     */
+    private currentlyBusyWithLoadTrack: boolean = false;
     /**
      * The amount of time after which this.previous()
      * won't go to the previous track, but rather restart the current track.
@@ -596,10 +600,18 @@ class Player {
                 millisecondsTried = millisecondsTried + (currentTime - previousTime);
                 previousTime = currentTime;
 
-                if (millisecondsTried > playerContext.millisecondsToTryFor) {
+                if (promiseResolvedOrRejected) {
+                    console.log(`Delt with the changeMusicService() promise already.`);
+                }
+
+                if (millisecondsTried > playerContext.millisecondsToTryFor && (promiseResolvedOrRejected === false)) {
+
                     console.log(`The changing music service timed out.`);
+                    publisher.publish(this.EVENTS.ON_MUSIC_SERVICE_LOAD_FAILED, musicServiceName);
                     playerContext.currentlyLoadingMusicService = false;
+                    promiseResolvedOrRejected = true;
                     reject(`The changing music service timed out.`);
+
                 } else if (!promiseResolvedOrRejected) {
                     setTimeout(isTimeOver, playerContext.updateTimeoutFrequency);
                 }
@@ -837,7 +849,7 @@ class Player {
 
         return new Promise((resolve, reject) => {
 
-            if ((this.currentlyDynamicallyChangingMusicServices && (recursiveCall !== undefined)) || this.currentlyLoadingTrack || this.currentlyLoadingMusicService) {
+            if ((this.currentlyDynamicallyChangingMusicServices && (recursiveCall !== undefined)) || this.currentlyBusyWithLoad || this.currentlyLoadingMusicService) {
 
                 console.log(`Already busy dynamically changing music services or loading a track.`);
                 reject(`Already busy dynamically changing music services or busy loading a track into a music service.`);
@@ -1615,14 +1627,15 @@ class Player {
                 previousTime = currentTime;
 
                 if (promiseResolvedOrRejected) {
-                    console.log(`Delt with the promise already.`);
+                    console.log(`Delt with the load() promise already.`);
                 }
 
-                if (millisecondsTried > playerContext.millisecondsToTryFor) {
+                if (millisecondsTried > playerContext.millisecondsToTryFor && (promiseResolvedOrRejected === false)) {
 
                     console.log(`Loading track timed out.`);
                     publisher.publish(playerContext.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, currentMusicServiceName);
-                    playerContext.currentlyLoadingTrack = false;
+                    promiseResolvedOrRejected = false;
+                    playerContext.currentlyBusyWithLoad = false;
                     reject(`The loading of ${trackBeingLoaded.title} timed out.`);
 
                 } else if (!promiseResolvedOrRejected) {
@@ -1645,15 +1658,15 @@ class Player {
             if (!this.currentPlayer) {
 
                 publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, currentMusicServiceName);
-                this.currentlyLoadingTrack = false;
                 promiseResolvedOrRejected = true;
+                this.currentlyBusyWithLoad = false;
                 reject(`No music service specified to play the track with.`);
 
-            } else if (this.currentlyLoadingTrack) {
+            } else if (this.currentlyBusyWithLoad) {
 
                 publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, currentMusicServiceName);
-                this.currentlyLoadingTrack = false;
                 promiseResolvedOrRejected = true;
+                this.currentlyBusyWithLoad = false;
                 reject(`The player hasn't finished loading the previous track.`);
 
             } else if (this.setCurrentIndex(index)) {
@@ -1664,7 +1677,9 @@ class Player {
 
                 // Publish the track loading event.
                 publisher.publish(this.EVENTS.ON_TRACK_LOADING, trackBeingLoaded, this.currentPlayer.name);
-                this.currentlyLoadingTrack = true;
+
+                // Set the currently loading track flag to true.
+                this.currentlyBusyWithLoad = true;
 
                 // Try and load the track.
                 this.currentPlayer.load(trackBeingLoaded).then(() => {
@@ -1677,8 +1692,8 @@ class Player {
                     // The track loaded successfully, publish the track loaded event and
                     // resolve the promise.
                     publisher.publish(this.EVENTS.ON_TRACK_LOADED, trackBeingLoaded, this.currentPlayer.name);
-                    this.currentlyLoadingTrack = false;
                     promiseResolvedOrRejected = true;
+                    this.currentlyBusyWithLoad = false;
                     resolve();
 
                 }).catch((error) => {
@@ -1687,7 +1702,7 @@ class Player {
                     // reject the promise.
                     publisher.publish(this.EVENTS.ON_TRACK_LOAD_FAILED, trackBeingLoaded, this.currentPlayer.name);
                     promiseResolvedOrRejected = true;
-                    this.currentlyLoadingTrack = false;
+                    this.currentlyBusyWithLoad = false;
                     reject(error);
 
                 });
@@ -1696,6 +1711,7 @@ class Player {
 
                 // Reject because it wasn't a valid index.
                 promiseResolvedOrRejected = true;
+                this.currentlyBusyWithLoad = false;
                 reject(`Reject because it wasn't a valid index.`);
 
             }
@@ -1785,7 +1801,7 @@ class Player {
 
         return new Promise((resolve, reject) => {
 
-            if (this.currentlyLoadingTrack) {
+            if (this.currentlyBusyWithLoad) {
 
                 reject(`The player hasn't finished loading the previous track.`);
 
@@ -2006,22 +2022,31 @@ class Player {
 
         return new Promise((resolve, reject) => {
 
+            // Set the currently loading track flag to true.
+            this.currentlyBusyWithLoadTrack = true;
+
             let currentQueue = this.getQueue();
 
             if (!this.isIndexInQueue(index, currentQueue)) {
 
+                // Set the currently loading track flag to false.
+                this.currentlyBusyWithLoadTrack = false;
                 reject(`The track requested isn't in the queue.`);
 
-            } else if (this.currentlyLoadingTrack) {
+            } else if (this.currentlyBusyWithLoad) {
 
                 // It's busy loading a track, but store the track to be loaded next.
                 this.waitingToLoadIndex = index;
                 console.log(`WAITING TO LOAD: ${(this.getQueue())[this.waitingToLoadIndex].title}`);
 
+                // Set the currently loading track flag to false.
+                this.currentlyBusyWithLoadTrack = false;
                 reject(`The player hasn't finished loading the previous track, the waitingToLoadIndex was updated though.`);
 
             } else if (this.checkIfAllTracksHaveBeenTried(tracksTried) || (currentQueue.length <= 0)) {
 
+                // Set the currently loading track flag to false.
+                this.currentlyBusyWithLoadTrack = false;
                 reject(`None of the tracks in the queue are available on any of the music services.`);
 
             } else {
@@ -2057,14 +2082,20 @@ class Player {
                         // But don't pass in tracksTried, hence setting it to undefined,
                         // because this essentially clears the tracksTried automatically.
                         this.loadTrack(waitingToLoadIndex, true).then(() => {
+                            // Set the currently loading track flag to false.
+                            this.currentlyBusyWithLoadTrack = false;
                             resolve();
                         }).catch((error) => {
+                            // Set the currently loading track flag to false.
+                            this.currentlyBusyWithLoadTrack = false;
                             reject(error);
                         });
 
                     } else {
 
                         // No track was waiting to be loaded, so resolve the promise.
+                        // Set the currently loading track flag to false.
+                        this.currentlyBusyWithLoadTrack = false;
                         resolve();
                     }
 
@@ -2087,8 +2118,12 @@ class Player {
                         // Here we must pass in tracks tried because the track that was just tried
                         // failed to play on all the music services, so we need to keep that information.
                         this.loadTrack(waitingToLoadIndex, true, tracksTried).then(() => {
+                            // Set the currently loading track flag to false.
+                            this.currentlyBusyWithLoadTrack = false;
                             resolve();
                         }).catch((e) => {
+                            // Set the currently loading track flag to false.
+                            this.currentlyBusyWithLoadTrack = false;
                             reject(e);
                         });
 
@@ -2098,6 +2133,8 @@ class Player {
                         // music services, so move onto the next track.
                         // Pass in the tracksTried so that when next calls loadTrack,
                         // it knows what tracks have been tried.
+                        // Set the currently loading track flag to false.
+                        this.currentlyBusyWithLoadTrack = false;
                         this.next(tracksTried);
 
                     }
@@ -2419,7 +2456,8 @@ class Player {
             currentTime = Date.now();
 
             // If the current player exists, check the paused state.
-            if (playerContext.currentPlayer && !playerContext.currentlyLoadingTrack && !playerContext.currentlyDynamicallyChangingMusicServices && !playerContext.currentlyLoadingMusicService) {
+            if (playerContext.currentPlayer && !playerContext.currentlyBusyWithLoadTrack && !playerContext.currentlyBusyWithLoad
+                && !playerContext.currentlyLoadingMusicService && !playerContext.currentlyDynamicallyChangingMusicServices) {
 
                 // If the player is supposed to be playing but it's not, play the track.
                 if ((!playerContext.isPaused) && playerContext.currentPlayer.getPaused()) {
@@ -2429,12 +2467,12 @@ class Player {
 
                     // Still not playing after the waiting period, try force it again.
                     if (playerContext.millisecondsSinceCorrectingToPlaying >= frequencyToTryGetIntoTheSameState) {
-                        console.log(`Trying to correct the current state to playing!`);
+                        //console.log(`Trying to correct the current state to playing!`);
                         // Restart time since last tried to play.
                         playerContext.millisecondsSinceCorrectingToPlaying = 0;
                         playerContext.currentPlayer.play();
                     } else {
-                        console.log(`Waiting to try play again...`);
+                        //console.log(`Waiting to try play again...`);
                         // Update time since last tried to play.
                         playerContext.millisecondsSinceCorrectingToPlaying = playerContext.millisecondsSinceCorrectingToPlaying + (currentTime - previousTime);
                     }
@@ -2447,12 +2485,12 @@ class Player {
 
                     // Still not paused after the waiting period, try force it again.
                     if (playerContext.millisecondsSinceCorrectingToPaused >= frequencyToTryGetIntoTheSameState) {
-                        console.log(`Trying to correct the current state to pause!`);
+                        //console.log(`Trying to correct the current state to pause!`);
                         // Restart time since last tried to pause.
                         playerContext.millisecondsSinceCorrectingToPaused = 0;
                         playerContext.currentPlayer.pause();
                     } else {
-                        console.log(`Waiting to try pause again...`);
+                        //console.log(`Waiting to try pause again...`);
                         // Update time since last tried to pause.
                         playerContext.millisecondsSinceCorrectingToPaused = playerContext.millisecondsSinceCorrectingToPaused + (currentTime - previousTime);
                     }
@@ -2503,7 +2541,8 @@ class Player {
             // If percentage >= 1, a track isn't being loaded and
             // a music service isn't being loaded.
             // go to this.next().
-            if ((percentage >= 1) && !playerContext.currentlyLoadingTrack && !playerContext.currentlyLoadingMusicService && !playerContext.currentlyDynamicallyChangingMusicServices) {
+            if ((percentage >= 1) && !playerContext.currentlyBusyWithLoadTrack && !playerContext.currentlyBusyWithLoad
+                && !playerContext.currentlyLoadingMusicService && !playerContext.currentlyDynamicallyChangingMusicServices) {
                 playerContext.next();
             }
 
