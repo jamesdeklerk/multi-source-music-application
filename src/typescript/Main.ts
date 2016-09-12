@@ -4,6 +4,7 @@
 class Main {
 
     private app: angular.IModule;
+    private appLoaded = false;
     private player = new Player();
 
     constructor() {
@@ -36,18 +37,59 @@ class Main {
     }
 
     /**
+     * Run the sign in check.
+     */
+    private signInCheck($location: any, user: any) {
+
+        let userUid: string;
+        if (user) {
+            userUid = user.uid;
+        }
+
+        if (!this.appLoaded) {
+
+            $location.path(`/loading`);
+
+        } else if (this.appLoaded && $location.path() === `/loading`) {
+
+            $location.path(`/`);
+
+        } else if ($location.path() === `/sign-up` || $location.path() === `/sign-in`) {
+
+            // Check if they're already signed in.
+            if (userUid) {
+                // If they are, redirect them to their library.
+                $location.path(`/`);
+            }
+
+        } else {
+
+            if (!userUid) {
+                // If a user doesn't exist, redirect to the sign in pages.
+                $location.path(`/sign-in`);
+            }
+
+        }
+    }
+
+    /**
      * Setting up routing for the SPA.
      */
     private setupAngularRouting(): void {
 
-        this.app.config(($routeProvider: any, $locationProvider: any) => {
+        this.app.config(($routeProvider: any) => {
 
-            let count = 0;
             let viewsDirectory = `src/html/views/`;
             let resolve = {
-                user: function () {
-                    count = count + 1;
-                    return `Nooice ${count}`;
+                database: () => {
+                    return firebase.database().ref();
+                },
+                user: (auth: any, $location: any) => {
+
+                    let user = auth.getUser();
+                    this.signInCheck($location, user);
+                    return user;
+
                 },
             };
 
@@ -58,10 +100,20 @@ class Main {
                     resolve: resolve,
                     templateUrl: viewsDirectory + `library.html`,
                 })
+                .when(`/loading`, {
+                    controller: `loading`,
+                    resolve: resolve,
+                    templateUrl: viewsDirectory + `loading.html`,
+                })
                 .when(`/sign-up`, {
                     controller: `signUp`,
                     resolve: resolve,
                     templateUrl: viewsDirectory + `sign-up.html`,
+                })
+                .when(`/sign-in`, {
+                    controller: `signIn`,
+                    resolve: resolve,
+                    templateUrl: viewsDirectory + `sign-in.html`,
                 })
                 .otherwise({
                     redirectTo: `/`,
@@ -79,10 +131,93 @@ class Main {
         /**
          * Authentication factory.
          */
-        this.app.factory(`auth`, () => {
+        this.app.factory(`auth`, ($firebaseObject: any, $location: any, $rootScope: any) => {
+
+            let usersRef = firebase.database().ref().child(`users`);
+            let user: any;
+
+            // If the auth state changes, update the user.
+            firebase.auth().onAuthStateChanged((result: any) => {
+                this.appLoaded = true;
+                user = result;
+                this.signInCheck($location, user);
+                $rootScope.$apply();
+            });
+
             return {
                 signUp: (email: string, password: string) => {
-                    
+
+                    return new Promise((resolve, reject) => {
+                        firebase.auth().createUserWithEmailAndPassword(email, password).then((data: any) => {
+
+                            usersRef.child(data.uid).set({
+                                details: {
+                                    email: data.email,
+                                },
+                            }).then(() => {
+                                // Add the new user.
+                                resolve(`User ${data.uid} successfully created.`);
+                            }).catch((error: any) => {
+                                reject(error);
+                            });
+
+                        }).catch((error: any) => {
+
+                            reject(error.message);
+
+                        });
+                    });
+
+                },
+                signIn: (email: string, password: string) => {
+
+                    console.log(firebase.auth());
+
+                    return new Promise((resolve, reject) => {
+
+                        firebase.auth().signInWithEmailAndPassword(email, password).then((data: any) => {
+
+                            console.log(`Sign in:`);
+                            console.log(data);
+                            resolve(data);
+
+                        }).catch((error: any) => {
+
+                            reject(error.message);
+
+                        });
+
+                    });
+
+                },
+                signOut: () => {
+
+                    return new Promise((resolve, reject) => {
+
+                        firebase.auth().signOut().then((data: any) => {
+
+                            console.log(`Sign out:`);
+                            console.log(data);
+                            resolve(data);
+
+                        }).catch((error: any) => {
+
+                            reject(error.message);
+
+                        });
+
+                    });
+
+                },
+                getUserUUID: function () {
+                    if (user) {
+                        return user.uid;
+                    } else {
+                        return;
+                    }
+                },
+                getUser: () => {
+                    return user;
                 },
             };
         });
@@ -94,17 +229,78 @@ class Main {
      */
     private setupAngularControllers(): void {
 
-        this.app.controller(`library`, ($scope: any) => {
-            let library = $scope;
+        /**
+         * Library
+         */
+        this.app.controller(`library`, ($scope: any, database: any, $firebaseObject: any) => {
+            let controller = $scope;
 
-            library.bob = `Wena Bob!`;
+            controller.bob = `Wena Bob!`;
 
         });
 
-        this.app.controller(`signUp`, ($scope: any, user: any) => {
-            let signUp = $scope;
+        /**
+         * Loading
+         */
+        this.app.controller(`loading`, () => {});
 
-            signUp.user = user;
+        /**
+         * Sign up
+         */
+        this.app.controller(`signUp`, ($scope: any, auth: any, $location: angular.ILocationService) => {
+            let controller = $scope;
+
+            controller.user = {};
+
+            controller.signUp = () => {
+
+                if (controller.user.email && controller.user.email.trim() === ``) {
+                    console.log(`Invalid email.`);
+                } else if (controller.user.password && (controller.user.password.trim() === `` || controller.user.password.length < 6)) {
+                    console.log(`Invalid password (must be at least 6 characters).`);
+                } else {
+                    auth.signUp(controller.user.email, controller.user.password).then(() => {
+                        // Go to the users library.
+                        $location.path(`/`);
+                        controller.$apply();
+                    }).catch((error: any) => {
+                        console.log(error);
+                    });
+                }
+
+            };
+
+        });
+
+        /**
+         * Sign in
+         */
+        this.app.controller(`signIn`, ($scope: any, auth: any, $location: angular.ILocationService) => {
+            let controller = $scope;
+
+            controller.user = {};
+
+            controller.signIn = () => {
+
+                if (controller.user.email && controller.user.email.trim() === ``) {
+                    console.log(`Invalid email.`);
+                } else if (controller.user.password && (controller.user.password.trim() === `` || controller.user.password.length < 6)) {
+                    console.log(`Invalid password (must be at least 6 characters).`);
+                } else {
+                    auth.signIn(controller.user.email, controller.user.password).then(() => {
+                        // Go to the users library.
+                        $location.path(`/`);
+                        controller.$apply();
+                    }).catch((error: any) => {
+                        console.log(error);
+                    });
+                }
+
+            };
+
+            controller.getUUID = function () {
+                console.log(auth.getUserUUID());
+            }
 
         });
 

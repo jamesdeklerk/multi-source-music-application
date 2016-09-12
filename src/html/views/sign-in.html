@@ -1,14 +1,18 @@
-<h1>Sign up</h1>
+<h1>Sign in</h1>
 
-<form ng-submit="signUp()">
+<form ng-submit="signIn()">
     <input type="email" ng-model="user.email" name="email" placeholder="Email" ng-class="emailError" autofocus>
     <br/>
     <br/>
     <input type="password" ng-model="user.password" name="password" placeholder="Password" ng-class="passwordError">
     <br/>
     <br/>
-    <input type="submit" class="next-icon" ng-hide="loading" value="Sign up">
+    <input type="submit" class="next-icon" ng-hide="loading" value="Sign in">
 </form>
 
 <br/>
-<a href="#/sign-in">Sign in</a>
+<a href="#/sign-up">Sign up</a>
+
+
+<br/>
+<button ng-click="getUUID()">Get UUID</button>
