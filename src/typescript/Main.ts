@@ -2,13 +2,226 @@
 // The main class starts the application
 // =======================================================
 class Main {
+
+    private app: angular.IModule;
+    private player = new Player();
+
     constructor() {
 
-        this.setupAngular();
+        // Attatch to the window object.
+        window.AP = this.player;
 
-        // Create a new player object.
-        let AP = new Player();
-        window.AP = AP;
+        this.testTracks();
+
+        // =======================================================
+        // Setting up AngularJS
+        // =======================================================
+
+        this.setupAngularApp();
+        this.setupAngularRouting();
+        this.setupAngularFactories();
+        this.setupAngularControllers();
+
+        // -------------------------------------------------------
+
+    }
+
+    /**
+     * Creating the Angular module.
+     */
+    private setupAngularApp(): void {
+
+        this.app = angular.module(`music-application`, [`ngRoute`, `firebase`]);
+
+    }
+
+    /**
+     * Setting up routing for the SPA.
+     */
+    private setupAngularRouting(): void {
+
+        this.app.config(($routeProvider: any, $locationProvider: any) => {
+
+            let count = 0;
+            let viewsDirectory = `src/html/views/`;
+            let resolve = {
+                user: function () {
+                    count = count + 1;
+                    return `Nooice ${count}`;
+                },
+            };
+
+            // Actual routes.
+            $routeProvider
+                .when(`/`, {
+                    controller: `library`,
+                    resolve: resolve,
+                    templateUrl: viewsDirectory + `library.html`,
+                })
+                .when(`/sign-up`, {
+                    controller: `signUp`,
+                    resolve: resolve,
+                    templateUrl: viewsDirectory + `sign-up.html`,
+                })
+                .otherwise({
+                    redirectTo: `/`,
+                });
+
+        });
+
+    }
+
+    /**
+     * Setting up the AngularJS factories.
+     */
+    private setupAngularFactories(): void {
+
+        /**
+         * Authentication factory.
+         */
+        this.app.factory(`auth`, () => {
+            return {
+                signUp: (email: string, password: string) => {
+                    
+                },
+            };
+        });
+
+    }
+
+    /**
+     * Setting up AngularJS controllers.
+     */
+    private setupAngularControllers(): void {
+
+        this.app.controller(`library`, ($scope: any) => {
+            let library = $scope;
+
+            library.bob = `Wena Bob!`;
+
+        });
+
+        this.app.controller(`signUp`, ($scope: any, user: any) => {
+            let signUp = $scope;
+
+            signUp.user = user;
+
+        });
+
+    }
+
+    private oldSetupAngular(): void {
+
+        angular.module("music-application", ["ngRoute", "firebase"])
+
+            .config(function ($routeProvider: any) {
+                let resolveProjects = {
+                    projects: function () {
+                        return "";
+                    }
+                };
+
+                $routeProvider
+                    .when('/', {
+                        controller: 'ProjectListController as projectList',
+                        templateUrl: 'src/html/pages/library.html',
+                        resolve: resolveProjects
+                    })
+                    .when('/edit/:projectId/', {
+                        controller: 'EditProjectController as editProject',
+                        templateUrl: 'src/html/pages/detail.html',
+                        resolve: resolveProjects
+                    })
+                    .when('/new', {
+                        controller: 'NewProjectController as editProject',
+                        templateUrl: 'src/html/pages/detail.html',
+                        resolve: resolveProjects
+                    })
+                    .when('/sign-up', {
+                        controller: 'SignUpController as SignUpController',
+                        templateUrl: 'src/html/pages/old-sign-up.html',
+                        resolve: resolveProjects
+                    })
+                    .otherwise({
+                        redirectTo: '/'
+                    });
+            })
+
+            .controller('ProjectListController', function (projects: any) {
+                this.controller = "ProjectListController";
+            })
+
+            .controller('SignUpController', function ($scope: any, projects: any, $firebaseObject: any, $firebaseArray: any) {
+
+                let controller = $scope;
+                let ref = firebase.database().ref().child("data");
+
+                // Download the data into a local object.
+                let syncObject = $firebaseObject(ref);
+
+                // Synchronize the object with a three-way data binding.
+                syncObject.$bindTo($scope, "data");
+
+                ref = firebase.database().ref().child("array-test");
+
+                // create a synchronized array
+                $scope.messages = $firebaseArray(ref);
+
+                // add new items to the array
+                $scope.addMessage = function () {
+                    $scope.messages.$add({
+                        text: $scope.newMessageText,
+                    });
+                };
+
+                controller.user = {};
+
+                // controller.user = {};
+                // controller.emailError = "";
+                // controller.usernameError = "";
+                // controller.passwordError = "";
+                // controller.password2Error = "";
+
+                controller.bob = "sign up! now!";
+
+                controller.signUper = function (a) {
+                    console.log(a);
+
+                    if (!controller.user.email || !controller.user.password) {
+                        return;
+                    }
+
+                    firebase.auth().createUserWithEmailAndPassword(controller.user.email, controller.user.password).then((noice: any) => {
+                        console.log("yay, were signed up!");
+                        console.log(noice.email);
+                        console.log(noice.uid);
+                    }).catch(function (error: any) {
+                        // Handle Errors here.
+                        var errorCode = error.code;
+                        var errorMessage = error.message;
+                        // ...
+                        console.log(errorMessage);
+                    });
+                };
+
+                controller.signUper();
+
+            })
+
+            .controller('NewProjectController', function (projects: any) {
+                this.controller = "NewProjectController";
+            })
+
+            .controller('EditProjectController', function (projects: any, $routeParams: any) {
+                this.controller = "EditProjectController";
+                this.projectId = $routeParams.projectId;
+                this.search = $routeParams.search;
+                this.other = $routeParams.other;
+            });
+
+    }
+
+    private testTracks(): void {
 
         // Create some tracks.
         let track0: ITrack = {
@@ -166,7 +379,7 @@ class Main {
         };
 
         // Queue multiple tracks.
-        AP.queue([
+        this.player.queue([
             track0,
             track1,
             track2,
@@ -179,10 +392,10 @@ class Main {
         ]);
 
         // After this the queue should look like this [track3, track1, track3, track4]
-        console.log(AP.getQueue());
+        console.log(this.player.getQueue());
 
         // Set repeat to false (for testing cycling through all tracks causes an infinite loop).
-        AP.setRepeat(AP.REPEAT_STATES.OFF);
+        this.player.setRepeat(this.player.REPEAT_STATES.OFF);
 
         // Play the 2nd track in the queue, this should play track1. 
         //abstractPlayer.load(0);
@@ -194,6 +407,7 @@ class Main {
         };
 
         // Dealing with the seek bar
+        let appContext = this;
         let seekBar = <HTMLInputElement>document.getElementById(`seek-bar`);
         let bufferingBar = <HTMLInputElement>document.getElementById(`buffering-bar`);
         let userMovingSeekBar = false;
@@ -205,11 +419,11 @@ class Main {
         seekBar.addEventListener(`change`, function () {
             userMovingSeekBar = false;
 
-            AP.seekToPercentage(parseFloat(seekBar.value));
+            appContext.player.seekToPercentage(parseFloat(seekBar.value));
         });
 
         // tslint:disable-next-line
-        publisher.subscribe(AP.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number, percentageLoaded: number) {
+        publisher.subscribe(this.player.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number, percentageLoaded: number) {
             if (!userMovingSeekBar) {
                 seekBar.value = percentage.toString();
             }
@@ -217,136 +431,27 @@ class Main {
         });
 
         // Logging track status.
-        publisher.subscribe(AP.EVENTS.ON_TRACK_LOADING, function (track: ITrack, musicServiceName: string) {
+        publisher.subscribe(this.player.EVENTS.ON_TRACK_LOADING, function (track: ITrack, musicServiceName: string) {
             console.log(`LOADING (${musicServiceName}) - ${track.title}.`);
         });
-        publisher.subscribe(AP.EVENTS.ON_TRACK_LOADED, function (track: ITrack, musicServiceName: string) {
+        publisher.subscribe(this.player.EVENTS.ON_TRACK_LOADED, function (track: ITrack, musicServiceName: string) {
             console.log(`SUCCESS (${musicServiceName}) - ${track.title}.`);
         });
-        publisher.subscribe(AP.EVENTS.ON_TRACK_LOAD_FAILED, function (track: ITrack, musicServiceName: string) {
+        publisher.subscribe(this.player.EVENTS.ON_TRACK_LOAD_FAILED, function (track: ITrack, musicServiceName: string) {
             console.log(`FAILED (${musicServiceName}) - ${track.title}.`);
         });
 
         // Buffering events
-        publisher.subscribe(AP.EVENTS.ON_TRACK_BUFFERING, function () {
+        publisher.subscribe(this.player.EVENTS.ON_TRACK_BUFFERING, function () {
             console.log(`BUFFERING`);
         });
-        publisher.subscribe(AP.EVENTS.ON_TRACK_FINISHED_BUFFERING, function () {
+        publisher.subscribe(this.player.EVENTS.ON_TRACK_FINISHED_BUFFERING, function () {
             console.log(`FINISHED BUFFERING`);
         });
 
-    }
-
-    private setupAngular(): void {
-
-        angular.module("music-application", ["ngRoute", "firebase"])
-
-            .config(function ($routeProvider: any) {
-                var resolveProjects = {
-                    projects: function () {
-                        return "";
-                    }
-                };
-
-                $routeProvider
-                    .when('/', {
-                        controller: 'ProjectListController as projectList',
-                        templateUrl: 'src/html/pages/list.html',
-                        resolve: resolveProjects
-                    })
-                    .when('/edit/:projectId/', {
-                        controller: 'EditProjectController as editProject',
-                        templateUrl: 'src/html/pages/detail.html',
-                        resolve: resolveProjects
-                    })
-                    .when('/new', {
-                        controller: 'NewProjectController as editProject',
-                        templateUrl: 'src/html/pages/detail.html',
-                        resolve: resolveProjects
-                    })
-                    .when('/sign-up', {
-                        controller: 'SignUpController as SignUpController',
-                        templateUrl: 'src/html/pages/sign-up.html',
-                        resolve: resolveProjects
-                    })
-                    .otherwise({
-                        redirectTo: '/'
-                    });
-            })
-
-            .controller('ProjectListController', function (projects: any) {
-                this.controller = "ProjectListController";
-            })
-
-            .controller('SignUpController', function ($scope: any, projects: any, $firebaseObject: any, $firebaseArray: any) {
-
-                let controller = $scope;
-                let ref = firebase.database().ref().child("data");
-
-                // Download the data into a local object.
-                let syncObject = $firebaseObject(ref);
-
-                // Synchronize the object with a three-way data binding.
-                syncObject.$bindTo($scope, "data");
-
-                ref = firebase.database().ref().child("array-test");
-
-                // create a synchronized array
-                $scope.messages = $firebaseArray(ref);
-
-                // add new items to the array
-                $scope.addMessage = function () {
-                    $scope.messages.$add({
-                        text: $scope.newMessageText,
-                    });
-                };
-
-                controller.user = {};
-
-                // controller.user = {};
-                // controller.emailError = "";
-                // controller.usernameError = "";
-                // controller.passwordError = "";
-                // controller.password2Error = "";
-
-                controller.bob = "sign up! now!";
-
-                controller.signUper = function (a) {
-                    console.log(a);
-
-                    if (!controller.user.email || !controller.user.password) {
-                        return;
-                    }
-
-                    firebase.auth().createUserWithEmailAndPassword(controller.user.email, controller.user.password).then((noice: any) => {
-                        console.log("yay, were signed up!");
-                        console.log(noice.email);
-                        console.log(noice.uid);
-                    }).catch(function (error: any) {
-                        // Handle Errors here.
-                        var errorCode = error.code;
-                        var errorMessage = error.message;
-                        // ...
-                        console.log(errorMessage);
-                    });
-                };
-
-                controller.signUper();
-
-            })
-
-            .controller('NewProjectController', function (projects: any) {
-                this.controller = "NewProjectController";
-            })
-
-            .controller('EditProjectController', function (projects: any, $routeParams: any) {
-                this.controller = "EditProjectController";
-                this.projectId = $routeParams.projectId;
-                this.search = $routeParams.search;
-                this.other = $routeParams.other;
-            });
 
     }
+
 }
 
 // tslint:disable-next-line
