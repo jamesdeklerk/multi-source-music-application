@@ -496,7 +496,7 @@ class Player {
             currentPercentageLoaded = playerContext.getPercentageLoaded();
 
             // Check if the player is still loading.
-            if (currentPercentageLoaded < currentPercentage) {
+            if (currentPercentageLoaded <= currentPercentage) {
 
                 // It might finish buffering again in which case we haven't published an event.
                 publishedFinishedBufferingEvent = false;
