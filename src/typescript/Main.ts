@@ -230,12 +230,22 @@ class Main {
     private setupAngularControllers(): void {
 
         /**
+         * Master Page
+         */
+        this.app.controller(`master`, ($scope: any) => {
+            let controller = $scope;
+
+            controller.test = `tttttttttttttttttest`;
+        });
+
+        /**
          * Library
          */
         this.app.controller(`library`, ($scope: any, database: any, $firebaseObject: any) => {
             let controller = $scope;
 
             controller.bob = `Wena Bob!`;
+            controller.test = "aaaaaaa";
 
         });
 

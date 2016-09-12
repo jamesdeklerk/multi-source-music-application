@@ -2,13 +2,23 @@
 <html ng-app="music-application">
 
 <head>
-    <title>Page Title</title>
+    <!-- HTML information -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Music Application</title>
+    <meta name="description" content="Multi-source music application">
+    <meta name="keywords" content="music, multi-source, youtube, deezer, songs, track, video">
+
+    <!-- Custom Styles -->
     <link rel="stylesheet" type="text/css" href="build/css/styles.css">
 </head>
 
-<body>
+<body ng-controller="master">
 
-    <h2>JavaScript Projects</h2>
+    <h1>JavaScript Projects</h1>
+    <h2>{{test}}</h2>
+    Search: <input type="text" ng-model="search.text"/>
+
     <div ng-view></div>
 
     <div id="youtube-player"></div>

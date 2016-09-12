@@ -1,0 +1,39 @@
+#seek-bar {
+    width: 500px;
+}
+
+#buffering-bar {
+    width: 500px;
+}
+
+.hey {
+    height: 200px;
+    width: 500px;
+    background-color: #f3f3f3;
+}
+
+.there {
+    height: 200px;
+    width: 500px;
+    background-color: navy;
+}
+
+.you {
+    height: 200px;
+    width: 500px;
+    background-color: darkred;
+}
+
+.sign-up {
+    position: fixed;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    color: #f3f3f3;
+
+    background-color: navy;
+
+    overflow: auto;
+
+}
