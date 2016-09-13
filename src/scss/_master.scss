@@ -1,0 +1,37 @@
+.menu {
+    background-color: transparent;
+    border: none;
+    height: 38px;
+    margin: 16px;
+    width: 36px;
+}
+
+md-toolbar .search {
+    flex: 0.5;
+    text-align: center;
+
+    color: darkred;
+
+    
+}
+
+input {
+        // color: white;
+        border: 0px;
+        border-radius: 4px;
+        padding-left: 8px;
+        font-size: 16px;
+        
+        line-height: calc(6 * 8px);
+    }
+
+/* ====================================================
+ * Player container
+ * ==================================================== */
+
+.player-container {
+    background-color: deeppink;
+    height: 100px;
+}
+
+/* ---------------------------------------------------- */

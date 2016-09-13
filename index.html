@@ -12,6 +12,7 @@
     <title>Music Application</title>
 
     <!-- Angular Material -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="build/css/roboto-fonts.css">
     <link rel="stylesheet" href="build/css/angular-material.min.css">
 
@@ -19,7 +20,7 @@
     <link rel="stylesheet" type="text/css" href="build/css/styles.css">
 </head>
 
-<body ng-controller="master">
+<body ng-cloak layout="column" ng-controller="master">
 
 
 
@@ -40,24 +41,49 @@
 
 
 
+    <!-- Header container -->
+    <md-toolbar layout="row" class="md-toolbar-tools">
+        <md-button class="menu md-icon-button" ng-click="toggleMenu()" aria-label="Show menu">
+            <md-icon md-svg-icon="src/assets/svg/menu.svg"></md-icon>
+        </md-button>
+        <!-- Search -->
+        <md-input-container class="search" flex>
+            <input type="text" ng-model="search.text" placeholder="Search">
+            <md-icon md-svg-src="src/assets/svg/search.svg"></md-icon>
+        </md-input-container>
+    </md-toolbar>
 
-    <h1>JavaScript Projects</h1>
-    <h2>{{test}}</h2>
-    Search: <input type="text" ng-model="search.text" />
-
-    <div ng-view></div>
 
 
-    <br />
+    <!-- Main container -->
+    <div flex layout="row">
 
-    <button onclick="AP.playPause()">play/pause</button>
-    <button onclick="AP.previous()">previous</button>
-    <button onclick="AP.next()">next</button>
-    <br />
+        <!-- Menu container -->
+        <md-sidenav class="md-whiteframe-4dp" md-is-locked-open="$mdMedia('gt-sm')" md-component-id="left" ng-click="toggleMenu()">
 
-    <input type="range" step="any" min="0" max="1" id="seek-bar" value="0"></input>
-    <input type="range" step="any" min="0" max="1" id="buffering-bar" value="0"></input>
-    <md-progress-linear md-mode="buffer" class="md-warn" value="{{percentage}}" md-buffer-value="{{percentageLoaded}}"></md-progress-linear>
+        </md-sidenav>
+
+        <!-- Content container -->
+        <md-content flex id="content">
+            <div ng-view></div>
+        </md-content>
+
+    </div>
+
+    <!-- Player container -->
+    <div class="player-container" layout="row">
+
+
+        <button onclick="AP.playPause()">play/pause</button>
+        <button onclick="AP.previous()">previous</button>
+        <button onclick="AP.next()">next</button>
+        <br />
+
+        <input type="range" step="any" min="0" max="1" id="seek-bar" value="0"></input>
+        <md-progress-linear md-mode="buffer" class="md-warn" value="{{seek.percentageLoaded}}" md-buffer-value="{{percentageLoaded}}"></md-progress-linear>
+
+
+    </div>
 
     <!-- YouTube -->
     <div id="youtube-player"></div>

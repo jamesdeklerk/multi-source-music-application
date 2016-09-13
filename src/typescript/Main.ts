@@ -232,19 +232,53 @@ class Main {
         /**
          * Master Page
          */
-        this.app.controller(`master`, ($scope: any, $interval: angular.IIntervalService) => {
+        this.app.controller(`master`, ($scope: any, $mdSidenav: any, $interval: angular.IIntervalService) => {
             let controller = $scope;
 
-            controller.test = `tttttttttttttttttest`;
+            // 
+            let UPDATE_SEEKBAR_FREQUENCY = 300;
 
-            controller.percentage = 0;
-            controller.percentageLoaded = 0;
+            // Hide or show the menu
+            controller.toggleMenu = () => {
+                $mdSidenav(`left`).toggle();
+            };
 
-            $interval(() => {
-                controller.percentage = (this.player.getCurrentPercentage() * 100);
-                controller.percentageLoaded = (this.player.getPercentageLoaded() * 100);
+            // Dealing with the seek bar
+            let seekbar = <HTMLInputElement> document.getElementById(`seek-bar`);
+            let userMovingSeekBar = false;
+
+            controller.seek = {
+                percentage: 0,
+                percentageLoaded: 0,
+            };
+
+            seekbar.addEventListener(`mousedown`, () => {
+                userMovingSeekBar = true;
+            });
+
+            seekbar.addEventListener(`touchstart`, () => {
+                userMovingSeekBar = true;
+            });
+
+            seekbar.addEventListener(`change`, () => {
+                userMovingSeekBar = false;
+                this.player.seekToPercentage(parseFloat(seekbar.value));
+            });
+
+            publisher.subscribe(this.player.EVENTS.ON_TIME_UPDATE, (time: number, duration: number, percentage: number, percentageLoaded: number) => {
+                if (!userMovingSeekBar) {
+                    seekbar.value = percentage.toString();
+                }
+                controller.seek.percentageLoaded = percentageLoaded * 100;
                 controller.$digest();
-            }, 300, 0, false);
+            });
+
+            // Update the tracks progress every specified number of milliseconds.
+            $interval(() => {
+                // controller.seek.percentage = (this.player.getCurrentPercentage() * 100);
+                // controller.seek.percentageLoaded = (this.player.getPercentageLoaded() * 100);
+                // controller.$digest();
+            }, UPDATE_SEEKBAR_FREQUENCY, 0, false);
 
         });
 
@@ -297,6 +331,7 @@ class Main {
          */
         this.app.controller(`signIn`, ($scope: any, auth: any, $location: angular.ILocationService) => {
             let controller = $scope;
+            controller.loading = false;
 
             controller.user = {};
 
@@ -307,11 +342,13 @@ class Main {
                 } else if (controller.user.password && (controller.user.password.trim() === `` || controller.user.password.length < 6)) {
                     console.log(`Invalid password (must be at least 6 characters).`);
                 } else {
+                    controller.loading = true;
                     auth.signIn(controller.user.email, controller.user.password).then(() => {
                         // Go to the users library.
                         $location.path(`/`);
                         controller.$apply();
                     }).catch((error: any) => {
+                        controller.loading = false;
                         console.log(error);
                     });
                 }
@@ -621,30 +658,6 @@ class Main {
                 console.log(track.title);
             }
         };
-
-        // Dealing with the seek bar
-        let appContext = this;
-        let seekBar = <HTMLInputElement>document.getElementById(`seek-bar`);
-        let bufferingBar = <HTMLInputElement>document.getElementById(`buffering-bar`);
-        let userMovingSeekBar = false;
-
-        seekBar.addEventListener(`mousedown`, function () {
-            userMovingSeekBar = true;
-        });
-
-        seekBar.addEventListener(`change`, function () {
-            userMovingSeekBar = false;
-
-            appContext.player.seekToPercentage(parseFloat(seekBar.value));
-        });
-
-        // tslint:disable-next-line
-        publisher.subscribe(this.player.EVENTS.ON_TIME_UPDATE, function (time: number, duration: number, percentage: number, percentageLoaded: number) {
-            if (!userMovingSeekBar) {
-                seekBar.value = percentage.toString();
-            }
-            bufferingBar.value = percentageLoaded.toString();
-        });
 
         // Logging track status.
         publisher.subscribe(this.player.EVENTS.ON_TRACK_LOADING, function (track: ITrack, musicServiceName: string) {
