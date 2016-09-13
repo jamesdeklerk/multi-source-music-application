@@ -32,7 +32,7 @@ class Main {
      */
     private setupAngularApp(): void {
 
-        this.app = angular.module(`music-application`, [`ngRoute`, `firebase`]);
+        this.app = angular.module(`music-application`, [`ngMaterial` , `ngRoute`, `firebase`]);
 
     }
 

@@ -5,11 +5,15 @@
     <!-- HTML information -->
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <meta name="description" content="Multi-source music application">
     <meta name="keywords" content="music, multi-source, youtube, deezer, songs, track, video">
 
     <title>Music Application</title>
+
+    <!-- Angular Material -->
+    <link rel="stylesheet" href="build/css/roboto-fonts.css">
+    <link rel="stylesheet" href="build/css/angular-material.min.css">
 
     <!-- Custom Styles -->
     <link rel="stylesheet" type="text/css" href="build/css/styles.css">
@@ -17,13 +21,32 @@
 
 <body ng-controller="master">
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     <h1>JavaScript Projects</h1>
     <h2>{{test}}</h2>
-    Search: <input type="text" ng-model="search.text"/>
+    Search: <input type="text" ng-model="search.text" />
 
     <div ng-view></div>
 
-    <div id="youtube-player"></div>
 
     <br />
 
@@ -35,8 +58,23 @@
     <input type="range" step="any" min="0" max="1" id="seek-bar" value="0"></input>
     <input type="range" step="any" min="0" max="1" id="buffering-bar" value="0"></input>
 
-    <!-- Adding Deezer -->
+    <!-- YouTube -->
+    <div id="youtube-player"></div>
+    <!-- Deezer -->
     <div id="dz-root"></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -47,8 +85,14 @@
 
     <!-- AngularJS dependencies -->
     <script src="build/javascript/angular.min.js"></script>
+    <script src="build/javascript/angular-animate.min.js"></script>
+    <script src="build/javascript/angular-aria.min.js"></script>
+    <script src="build/javascript/angular-messages.min.js"></script>
     <script src="build/javascript/angular-resource.min.js"></script>
     <script src="build/javascript/angular-route.min.js"></script>
+
+    <!-- Angular Material Library -->
+    <script src="build/javascript/angular-material.min.js"></script>
 
     <!-- Firebase dependencies -->
     <script src="build/javascript/firebase.js"></script>
