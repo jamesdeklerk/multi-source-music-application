@@ -32,7 +32,7 @@ class Main {
      */
     private setupAngularApp(): void {
 
-        this.app = angular.module(`music-application`, [`ngMaterial` , `ngRoute`, `firebase`]);
+        this.app = angular.module(`music-application`, [`ngMaterial`, `ngRoute`, `firebase`]);
 
     }
 
@@ -232,10 +232,20 @@ class Main {
         /**
          * Master Page
          */
-        this.app.controller(`master`, ($scope: any) => {
+        this.app.controller(`master`, ($scope: any, $interval: angular.IIntervalService) => {
             let controller = $scope;
 
             controller.test = `tttttttttttttttttest`;
+
+            controller.percentage = 0;
+            controller.percentageLoaded = 0;
+
+            $interval(() => {
+                controller.percentage = (this.player.getCurrentPercentage() * 100);
+                controller.percentageLoaded = (this.player.getPercentageLoaded() * 100);
+                controller.$digest();
+            }, 300, 0, false);
+
         });
 
         /**
@@ -252,7 +262,7 @@ class Main {
         /**
          * Loading
          */
-        this.app.controller(`loading`, () => {});
+        this.app.controller(`loading`, () => { });
 
         /**
          * Sign up

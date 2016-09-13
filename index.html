@@ -57,6 +57,7 @@
 
     <input type="range" step="any" min="0" max="1" id="seek-bar" value="0"></input>
     <input type="range" step="any" min="0" max="1" id="buffering-bar" value="0"></input>
+    <md-progress-linear md-mode="buffer" class="md-warn" value="{{percentage}}" md-buffer-value="{{percentageLoaded}}"></md-progress-linear>
 
     <!-- YouTube -->
     <div id="youtube-player"></div>
