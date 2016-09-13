@@ -47,10 +47,9 @@
             <md-icon md-svg-icon="src/assets/svg/menu.svg"></md-icon>
         </md-button>
         <!-- Search -->
-        <md-input-container class="search" flex>
-            <input type="text" ng-model="search.text" placeholder="Search">
-            <md-icon md-svg-src="src/assets/svg/search.svg"></md-icon>
-        </md-input-container>
+        <div class="search" flex>
+            <input layout-align="center center" type="text" ng-model="search.text" placeholder="Search">
+        </div>
     </md-toolbar>
 
 
@@ -71,24 +70,43 @@
     </div>
 
     <!-- Player container -->
-    <div class="player-container" layout="row">
+    <div class="player-container" layout="column">
 
+        <!-- Seekbar -->
+        <div class="seekbar" layout="column">
+            <input type="range" step="any" min="0" max="1" id="seek-bar" value="0"></input>
+            <md-progress-linear md-mode="buffer" class="md-accent" value="{{seek.percentage}}" md-buffer-value="{{seek.percentageLoaded}}"></md-progress-linear>
+        </div>
 
-        <button onclick="AP.playPause()">play/pause</button>
-        <button onclick="AP.previous()">previous</button>
-        <button onclick="AP.next()">next</button>
-        <br />
+        <!-- Elements below seekbar -->
+        <div class="player-elements" layout="row" md-swipe-right="previous()" md-swipe-left="next()">
 
-        <input type="range" step="any" min="0" max="1" id="seek-bar" value="0"></input>
-        <md-progress-linear md-mode="buffer" class="md-warn" value="{{seek.percentageLoaded}}" md-buffer-value="{{percentageLoaded}}"></md-progress-linear>
+            <div class="player-image">
+                <!-- YouTube -->
+                <div id="youtube-player"></div>
+                <!-- Deezer -->
+                <div id="dz-root"></div>
+            </div>
 
+            <div flex>
+
+                <div class="buttons">
+                    <md-button class="md-icon-button" aria-label="previous" ng-click="previous()">
+                        <md-icon md-svg-icon="src/assets/svg/previous.svg"></md-icon>
+                    </md-button>
+                    <md-button class="md-fab" aria-label="play" ng-click="play()">
+                        <md-icon md-svg-src="src/assets/svg/play.svg"></md-icon>
+                    </md-button>
+                    <md-button class="md-icon-button" aria-label="next" ng-click="next()">
+                        <md-icon md-svg-icon="src/assets/svg/next.svg"></md-icon>
+                    </md-button>
+                </div>
+
+            </div>
+
+        </div>
 
     </div>
-
-    <!-- YouTube -->
-    <div id="youtube-player"></div>
-    <!-- Deezer -->
-    <div id="dz-root"></div>
 
 
 

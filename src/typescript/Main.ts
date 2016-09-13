@@ -32,7 +32,17 @@ class Main {
      */
     private setupAngularApp(): void {
 
-        this.app = angular.module(`music-application`, [`ngMaterial`, `ngRoute`, `firebase`]);
+        this.app = angular.module(`music-application`, [`ngMaterial`, `ngRoute`, `firebase`])
+            .config(function ($mdThemingProvider: any) {
+
+                $mdThemingProvider.theme(`default`)
+                    .primaryPalette(`pink`)
+                    .accentPalette(`orange`);
+
+                // Making the URL on mobile devices the same color as the theme.
+                $mdThemingProvider.enableBrowserColor(`default`);
+
+            });
 
     }
 
@@ -232,7 +242,7 @@ class Main {
         /**
          * Master Page
          */
-        this.app.controller(`master`, ($scope: any, $mdSidenav: any, $interval: angular.IIntervalService) => {
+        this.app.controller(`master`, ($scope: any, $mdSidenav: any) => {
             let controller = $scope;
 
             // 
@@ -241,6 +251,22 @@ class Main {
             // Hide or show the menu
             controller.toggleMenu = () => {
                 $mdSidenav(`left`).toggle();
+            };
+
+            // Player buttons
+            controller.previous = () => {
+                controller.bob = `previous`;
+                this.player.previous();
+            };
+
+            controller.play = () => {
+                controller.bob = `play`;
+                console.log(this.player.playPause());
+            };
+
+            controller.next = () => {
+                controller.bob = `next`;
+                this.player.next();
             };
 
             // Dealing with the seek bar
@@ -269,16 +295,10 @@ class Main {
                 if (!userMovingSeekBar) {
                     seekbar.value = percentage.toString();
                 }
+                controller.seek.percentage = percentage * 100;
                 controller.seek.percentageLoaded = percentageLoaded * 100;
                 controller.$digest();
             });
-
-            // Update the tracks progress every specified number of milliseconds.
-            $interval(() => {
-                // controller.seek.percentage = (this.player.getCurrentPercentage() * 100);
-                // controller.seek.percentageLoaded = (this.player.getPercentageLoaded() * 100);
-                // controller.$digest();
-            }, UPDATE_SEEKBAR_FREQUENCY, 0, false);
 
         });
 
@@ -287,9 +307,6 @@ class Main {
          */
         this.app.controller(`library`, ($scope: any, database: any, $firebaseObject: any) => {
             let controller = $scope;
-
-            controller.bob = `Wena Bob!`;
-            controller.test = "aaaaaaa";
 
         });
 

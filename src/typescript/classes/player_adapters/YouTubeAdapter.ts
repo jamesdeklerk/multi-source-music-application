@@ -57,7 +57,7 @@ class YouTubeAdapter implements IPlayerAdapter {
                     },
                     height: `300`,
                     playerVars: {
-                        "controls": 1,
+                        "controls": 0,
                     },
                     videoId: ``, // Set as none to start.
                     width: `600`,
