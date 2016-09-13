@@ -38,15 +38,25 @@ md-toolbar .search {
 
 $player-container-color: deeppink;
 
+$player-container-height: 100px;
+
 $seekbar-width: 100%;
 $seekbar-height: 5px;
-$seekbar-thumb-color: purple;
+$seekbar-thumb-color: black;
 $seekbar-thumb-size: 20px;
 $seekbar-loaded-color: blue;
 $seekbar-buffering-color: red;
 
+$player-elements-height: 100px - $seekbar-height;
+
+$player-element-image-width: $player-elements-height * (16 / 9);
+
+.off {
+    opacity: 0.3;
+}
+
 .player-container {
-    height: 100px;
+    height: $player-container-height;
 }
 
 .seekbar {
@@ -80,6 +90,9 @@ $seekbar-buffering-color: red;
 }
 
 .player-elements {
+    height: $player-elements-height;
+    overflow: hidden;
+
     .buttons {
         text-align: center;
     }
@@ -92,8 +105,8 @@ $seekbar-buffering-color: red;
 }
 
 #youtube-player {
-    height: calc(12 * 8px);
-    width: calc((12 * 8px) * (16 / 9));
+    height: $player-elements-height;
+    width: $player-element-image-width;
     background-color: indianred;
 }
 

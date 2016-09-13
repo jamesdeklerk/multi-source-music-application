@@ -88,18 +88,70 @@
                 <div id="dz-root"></div>
             </div>
 
-            <div flex>
+            <div flex layout="row">
+
+                <div class="text">
+                    Artist - Name
+                </div>
 
                 <div class="buttons">
                     <md-button class="md-icon-button" aria-label="previous" ng-click="previous()">
                         <md-icon md-svg-icon="src/assets/svg/previous.svg"></md-icon>
                     </md-button>
-                    <md-button class="md-fab" aria-label="play" ng-click="play()">
-                        <md-icon md-svg-src="src/assets/svg/play.svg"></md-icon>
+                    <md-button class="md-fab" aria-label="play or pause" ng-click="playPause()">
+                        <md-icon ng-hide="paused" md-svg-src="src/assets/svg/play.svg"></md-icon>
+                        <md-icon ng-show="paused" md-svg-src="src/assets/svg/pause.svg"></md-icon>
                     </md-button>
                     <md-button class="md-icon-button" aria-label="next" ng-click="next()">
                         <md-icon md-svg-icon="src/assets/svg/next.svg"></md-icon>
                     </md-button>
+                </div>
+
+                <div class="settings">
+
+                    <!-- Music service -->
+                    <md-menu>
+                        <md-button class="md-icon-button" aria-label="volume" ng-click="$mdOpenMenu($event)">
+                            <md-icon ng-show="musicService === 'Deezer'" md-svg-icon="src/assets/svg/deezer-logo.svg"></md-icon>
+                            <md-icon ng-show="musicService === 'YouTube'" md-svg-icon="src/assets/svg/youtube-logo.svg"></md-icon>
+                        </md-button>
+                        <md-menu-content>
+                            <md-button ng-click="dynamicallyChangeMusicService('Deezer')">
+                                <md-icon md-svg-icon="src/assets/svg/deezer-logo.svg"></md-icon>
+                            </md-button>
+                            <md-button ng-click="dynamicallyChangeMusicService('YouTube')">
+                                <md-icon md-svg-icon="src/assets/svg/youtube-logo.svg"></md-icon>
+                            </md-button>
+                        </md-menu-content>
+                    </md-menu>
+
+                    <!-- Repeat -->
+                    <md-button class="md-icon-button" aria-label="repeat" ng-click="toggleRepeat()">
+                        <md-icon ng-class="repeatOff ? 'off' : ''" ng-hide="repeatOne" ng-disabled="true" md-svg-icon="src/assets/svg/repeat.svg"></md-icon>
+                        <md-icon ng-show="repeatOne" md-svg-icon="src/assets/svg/repeat-one.svg"></md-icon>
+                    </md-button>
+
+                    <!-- Shuffle -->
+                    <md-button class="md-icon-button" aria-label="shuffle" ng-click="toggleShuffle()">
+                        <md-icon ng-class="shuffle ? '' : 'off'" md-svg-icon="src/assets/svg/shuffle.svg"></md-icon>
+                    </md-button>
+
+                    <!-- Volume -->
+                    <md-menu>
+                        <md-button class="md-icon-button" aria-label="volume" ng-click="$mdOpenMenu($event)">
+                            <md-icon ng-hide="volumeOff" md-svg-icon="src/assets/svg/volume.svg"></md-icon>
+                            <md-icon ng-show="volumeOff" md-svg-icon="src/assets/svg/volume-off.svg"></md-icon>
+                        </md-button>
+                        <md-menu-content>
+                            <md-slider-container flex>
+                                <md-slider ng-change="setVolume(volume)" md-discrete ng-model="volume" min="0" max="100" step="1" aria-label="volume" class="md-primary"
+                                    md-vertical></md-slider>
+                                <h5>Volume</h5>
+                            </md-slider-container>
+                        </md-menu-content>
+                    </md-menu>
+
+
                 </div>
 
             </div>

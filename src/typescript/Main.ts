@@ -37,7 +37,7 @@ class Main {
 
                 $mdThemingProvider.theme(`default`)
                     .primaryPalette(`pink`)
-                    .accentPalette(`orange`);
+                    .accentPalette(`red`);
 
                 // Making the URL on mobile devices the same color as the theme.
                 $mdThemingProvider.enableBrowserColor(`default`);
@@ -245,8 +245,20 @@ class Main {
         this.app.controller(`master`, ($scope: any, $mdSidenav: any) => {
             let controller = $scope;
 
-            // 
+            // Setting up defaults.
             let UPDATE_SEEKBAR_FREQUENCY = 300;
+            controller.loadingTrack = false;
+            controller.paused = this.player.getPaused();
+            controller.volume = this.player.getVolume() * 100;
+            controller.repeatOne = this.player.getRepeat() === this.player.REPEAT_STATES.ONE;
+            controller.repeatOff = this.player.getRepeat() === this.player.REPEAT_STATES.OFF;
+            controller.shuffle = this.player.getShuffle();
+            controller.musicService = this.player.musicServices[this.player.getCurrentMusicServiceIndex()].name;
+            controller.volumeOff = false;
+            controller.seek = {
+                percentage: 0,
+                percentageLoaded: 0,
+            };
 
             // Hide or show the menu
             controller.toggleMenu = () => {
@@ -259,9 +271,13 @@ class Main {
                 this.player.previous();
             };
 
-            controller.play = () => {
-                controller.bob = `play`;
-                console.log(this.player.playPause());
+            controller.playPause = () => {
+                if (this.player.getPaused()) {
+                    controller.paused = true;
+                } else {
+                    controller.paused = false;
+                }
+                this.player.playPause();
             };
 
             controller.next = () => {
@@ -269,14 +285,40 @@ class Main {
                 this.player.next();
             };
 
-            // Dealing with the seek bar
-            let seekbar = <HTMLInputElement> document.getElementById(`seek-bar`);
-            let userMovingSeekBar = false;
-
-            controller.seek = {
-                percentage: 0,
-                percentageLoaded: 0,
+            controller.setVolume = (volume: number) => {
+                if (volume <= 0) {
+                    controller.volumeOff = true;
+                } else {
+                    controller.volumeOff = false;
+                }
+                this.player.setVolume(volume / 100);
             };
+
+            controller.toggleRepeat = () => {
+                this.player.cycleRepeat();
+                controller.repeatOne = this.player.getRepeat() === this.player.REPEAT_STATES.ONE;
+                controller.repeatOff = this.player.getRepeat() === this.player.REPEAT_STATES.OFF;
+            };
+
+            controller.toggleShuffle = () => {
+                this.player.toggleShuffle();
+                controller.shuffle = this.player.getShuffle();
+            };
+
+            controller.dynamicallyChangeMusicService = (musicService: string) => {
+                controller.musicService = musicService;
+                this.player.dynamicallyChangeMusicService(musicService);
+            };
+
+            // Causes dynamicallyChangeMusicService to fail???????????????????????
+            // publisher.subscribe(this.player.EVENTS.ON_MUSIC_SERVICE_CHANGE, (previousMusicServiceName: string, currentMusicServiceName: string) => {
+            //     controller.musicService = currentMusicServiceName;
+            //     controller.$digest();
+            // });
+
+            // Dealing with the seek bar
+            let seekbar = <HTMLInputElement>document.getElementById(`seek-bar`);
+            let userMovingSeekBar = false;
 
             seekbar.addEventListener(`mousedown`, () => {
                 userMovingSeekBar = true;
