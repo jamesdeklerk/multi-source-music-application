@@ -19,14 +19,14 @@ interface ITrack {
     duration: number;
 
     /**
-     * Artist object.
+     * Artist object uuid reference.
      */
-    artist: IArtist;
+    artist?: string;
 
     /**
-     * Album object.
+     * Album object uuid reference.
      */
-    album?: IAlbum;
+    album?: string;
 
     /**
      * Object containing the appropriate track properties

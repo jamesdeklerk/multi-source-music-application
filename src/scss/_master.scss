@@ -31,6 +31,12 @@ md-toolbar .search {
     }
 }
 
+#content {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
 
 /* ====================================================
  * Player container
@@ -93,8 +99,26 @@ $player-element-image-width: $player-elements-height * (16 / 9);
     height: $player-elements-height;
     overflow: hidden;
 
-    .buttons {
-        text-align: center;
+    .player-details {
+        display: flex;
+        flex-flow: row;
+        height: 100%;
+        width: calc(100% - #{$player-element-image-width});
+        align-items: center;
+
+        .text {
+            margin: auto;
+            margin-left: 36px;
+        }
+
+        .buttons {
+            margin: auto;
+        }
+
+        .settings {
+            margin: auto;
+            margin-right: 36px;
+        }
     }
 }
 

@@ -12,7 +12,7 @@ class Main {
         // Attatch to the window object.
         window.AP = this.player;
 
-        this.testTracks();
+        // this.testTracks();
 
         // =======================================================
         // Setting up AngularJS
@@ -36,8 +36,8 @@ class Main {
             .config(function ($mdThemingProvider: any) {
 
                 $mdThemingProvider.theme(`default`)
-                    .primaryPalette(`pink`)
-                    .accentPalette(`red`);
+                    .primaryPalette(`red`)
+                    .accentPalette(`deep-orange`);
 
                 // Making the URL on mobile devices the same color as the theme.
                 $mdThemingProvider.enableBrowserColor(`default`);
@@ -219,7 +219,7 @@ class Main {
                     });
 
                 },
-                getUserUUID: function () {
+                getUserUid: function () {
                     if (user) {
                         return user.uid;
                     } else {
@@ -229,6 +229,180 @@ class Main {
                 getUser: () => {
                     return user;
                 },
+            };
+        });
+
+        /**
+         * Data manager factory
+         */
+        this.app.factory(`dataManager`, (auth: any, $firebaseObject: any, $firebaseArray: any) => {
+
+            // User:        users/uid
+            // Track:       tracks/uid
+            // Library:     playlists/uid
+            // Playlist:    playlists/uid
+
+            let trackExample: ITrack = {
+                album: `uid`,
+                artist: `uid`,
+                duration: 3 * 60 * 1000,
+                services: {},
+                title: `title`,
+                uuid: `uid`,
+            };
+
+            let playlistExample: IPlaylist = {
+                name: `Playlist Name`,
+                owner: `uid`,
+                tracks: [],
+                uuid: `uid`,
+            };
+
+            // The users library is just another playlist.
+            // Deleting a song from a playlist doesn't delete it from
+            // the users library and vice versa,
+            // Adding a song to a playlist does however add it to the users library.
+            let playlistsTracks: any = {};
+            let playlistsDetails: any = {};
+
+            // Local copy of the references
+            let tracks: any = {};
+
+            let USERS_REF = firebase.database().ref().child(`users`);
+            let TRACKS_REF = firebase.database().ref().child(`tracks`);
+            let PLAYLISTS_DETAILS_REF = firebase.database().ref().child(`playlists-details`);
+            let PLAYLISTS_TRACKS_REF = firebase.database().ref().child(`playlists-tracks`);
+
+
+            function createTrack(track: ITrack): Promise<any> {
+                return new Promise((resolve, reject) => {
+                    TRACKS_REF.push(track).then((data: any) => {
+                        resolve(data);
+                    }).catch((error: any) => {
+                        reject(error);
+                    });
+                });
+            }
+
+            function deleteTrack(trackUid: string): Promise<any> {
+                return new Promise((resolve, reject) => {
+                    TRACKS_REF.child(trackUid).remove().then(() => {
+                        resolve(`Track removed.`);
+                    }).catch(() => {
+                        reject(`Failed to remove track.`);
+                    });
+                });
+            }
+
+            function getTrack(trackUid: string): Promise<any> {
+                return new Promise((resolve, reject) => {
+                    // If we don't have a local copy of it, make one.
+                    if (!tracks[trackUid]) {
+                        TRACKS_REF.child(trackUid).then((snapshot: any) => {
+                            tracks[trackUid] = snapshot.val();
+                            resolve(tracks[trackUid]);
+                        }).catch(() => {
+                            reject(undefined);
+                        });
+                    } else {
+                        resolve(tracks[trackUid]);
+                    }
+                });
+            }
+
+            function createPlaylist(playlist: IPlaylist): Promise<any> {
+                return new Promise((resolve, reject) => {
+
+                    // Set it so that the current user is the owner.
+                    playlist.owner = auth.getUserUid();
+
+                    PLAYLISTS_DETAILS_REF.push(playlist).then((data: any) => {
+                        let playlistUid = data.key;
+                        // Created the new playlist, now add it to the users playlists.
+                        USERS_REF.child(playlist.owner).child(`playlists`).push(playlistUid).then(() => {
+                            resolve(`Successfully created playlist.`);
+                        }).catch(() => {
+                            reject(`Failed to create playlist.`);
+                        });
+                    }).catch(() => {
+                        reject(`Failed to create playlist.`);
+                    });
+                });
+            }
+
+            function addTrackToPlaylist(playlistUid: string, trackUid: string): Promise<any> {
+                return new Promise((resolve, reject) => {
+
+                    let getDetails = getPlaylistDetails(playlistUid);
+                    let getTracks = getPlaylistTracks(playlistUid);
+
+                    Promise.all([getDetails, getTracks]).then((values: any) => {
+                        let userUid = auth.getUserUid();
+                        let ownerUid = values[0].owner;
+
+                        // Check that they own the playlist.
+                        if (ownerUid === userUid) {
+                            values[1].$add(trackUid).then((data: any) => {
+                                resolve(`Track added to playlist.`);
+                            }).catch((error: any) => {
+                                reject(error);
+                            });
+                        } else {
+                            reject(`Can't add track, you aren't the owner.`);
+                        }
+                    }).catch(() => {
+                        reject(`Something went wrong, adding failed.`);
+                    });
+
+                });
+            }
+
+            function getPlaylistDetails(playlistUid: string): Promise<any> {
+
+                return new Promise((resolve, reject) => {
+                    // If we don't have a local reference to it, make one.
+                    if (!playlistsDetails[playlistUid]) {
+                        $firebaseObject(PLAYLISTS_DETAILS_REF.child(playlistUid)).$loaded().then((playlistDetails: any) => {
+                            playlistsDetails[playlistUid] = playlistDetails;
+                            resolve(playlistsDetails[playlistUid]);
+                        }).catch(() => {
+                            reject();
+                        });
+                    } else {
+                        resolve(playlistsDetails[playlistUid]);
+                    }
+                });
+            }
+
+            /**
+             * Just the ids of the tracks.
+             */
+            function getPlaylistTracks(playlistUid: string): Promise<any> {
+
+                return new Promise((resolve, reject) => {
+                    // If we don't have a local reference to it, make one.
+                    if (!playlistsTracks[playlistUid]) {
+                        $firebaseArray(PLAYLISTS_TRACKS_REF.child(playlistUid)).$loaded().then((data: any) => {
+                            playlistsTracks[playlistUid] = data;
+                            resolve(playlistsTracks[playlistUid]);
+                        }).catch(() => {
+                            reject();
+                        });
+                    } else {
+                        resolve(playlistsTracks[playlistUid]);
+                    }
+                });
+            }
+
+
+
+            return {
+                addTrackToPlaylist: addTrackToPlaylist,
+                createPlaylist: createPlaylist,
+                createTrack: createTrack,
+                getPlaylistDetails: getPlaylistDetails,
+                getPlaylistTracks: getPlaylistTracks,
+                getTrack: getTrack,
             };
         });
 
@@ -245,6 +419,19 @@ class Main {
         this.app.controller(`master`, ($scope: any, $mdSidenav: any) => {
             let controller = $scope;
 
+            // Hide or show the menu
+            controller.toggleMenu = () => {
+                $mdSidenav(`left`).toggle();
+            };
+
+        });
+
+        /**
+         * Player
+         */
+        this.app.controller(`player`, ($scope: any, $interval: angular.IIntervalService) => {
+            let controller = $scope;
+
             // Setting up defaults.
             let UPDATE_SEEKBAR_FREQUENCY = 300;
             controller.loadingTrack = false;
@@ -258,11 +445,6 @@ class Main {
             controller.seek = {
                 percentage: 0,
                 percentageLoaded: 0,
-            };
-
-            // Hide or show the menu
-            controller.toggleMenu = () => {
-                $mdSidenav(`left`).toggle();
             };
 
             // Player buttons
@@ -306,15 +488,8 @@ class Main {
             };
 
             controller.dynamicallyChangeMusicService = (musicService: string) => {
-                controller.musicService = musicService;
                 this.player.dynamicallyChangeMusicService(musicService);
             };
-
-            // Causes dynamicallyChangeMusicService to fail???????????????????????
-            // publisher.subscribe(this.player.EVENTS.ON_MUSIC_SERVICE_CHANGE, (previousMusicServiceName: string, currentMusicServiceName: string) => {
-            //     controller.musicService = currentMusicServiceName;
-            //     controller.$digest();
-            // });
 
             // Dealing with the seek bar
             let seekbar = <HTMLInputElement>document.getElementById(`seek-bar`);
@@ -333,22 +508,108 @@ class Main {
                 this.player.seekToPercentage(parseFloat(seekbar.value));
             });
 
-            publisher.subscribe(this.player.EVENTS.ON_TIME_UPDATE, (time: number, duration: number, percentage: number, percentageLoaded: number) => {
+            // Update the player UI.
+            $interval(() => {
+                controller.paused = this.player.getPaused();
+                controller.musicService = this.player.musicServices[this.player.getCurrentMusicServiceIndex()].name;
+                controller.seek.percentage = this.player.getCurrentPercentage() * 100;
+                controller.seek.percentageLoaded = this.player.getPercentageLoaded() * 100;
                 if (!userMovingSeekBar) {
-                    seekbar.value = percentage.toString();
+                    seekbar.value = (controller.seek.percentage / 100).toString();
                 }
-                controller.seek.percentage = percentage * 100;
-                controller.seek.percentageLoaded = percentageLoaded * 100;
                 controller.$digest();
-            });
+            }, 300, 0, false);
 
         });
 
         /**
          * Library
          */
-        this.app.controller(`library`, ($scope: any, database: any, $firebaseObject: any) => {
+        this.app.controller(`library`, ($scope: any, user: any, database: any, dataManager: any, $mdToast: any) => {
             let controller = $scope;
+
+            controller.userEmail = user.email;
+            controller.trackUid = `-KRdV8p1jCr0Lmt-8KGo`;
+            controller.track = {};
+            controller.playlistUid = `-KRdbqiRr6CzgrecE912`;
+            controller.playlist = {
+                name: ``,
+                owner: ``,
+                uuid: `not important`,
+            };
+            controller.playlistTracks = [];
+
+            controller.createTrack = () => {
+                let newTrack: ITrack = {
+                    duration: 12369,
+                    services: {
+                        "Deezer": 1,
+                        "SoundCloud": 3,
+                        "YouTube": 2,
+                    },
+                    title: controller.track.title,
+                    uuid: `something`,
+                };
+                dataManager.createTrack(newTrack).then((data: any) => {
+                    console.log(data);
+                });
+            };
+
+            controller.getTrack = () => {
+                console.log(`controller.track`);
+                controller.track = dataManager.getTrack(controller.trackUid);
+                console.log(controller.track);
+            };
+
+            controller.createPlaylist = () => {
+                let newPlaylist = {
+                    name: controller.playlist.name,
+                    owner: controller.playlist.owner,
+                    uuid: `Playlist uuid? No need...`,
+                };
+                dataManager.createPlaylist(newPlaylist).then((data: any) => {
+                    console.log(data);
+                });
+            };
+
+            controller.addTrackToPlaylist = () => {
+                dataManager.addTrackToPlaylist(controller.playlistUid, controller.trackUid).then((message: string) => {
+                    controller.showToast(message);
+                }).catch((message: string) => {
+                    controller.showToast(message);
+                });
+            };
+
+            controller.getPlaylistDetails = () => {
+                console.log(`getPlaylistDetails start`);
+                dataManager.getPlaylistDetails(controller.playlistUid).then((data: any) => {
+                    console.log(`getPlaylistDetails finish`);
+                    controller.playlist = data;
+                    console.log(data);
+                });
+            };
+
+            controller.getPlaylistTracks = () => {
+                controller.playlistTracks = dataManager.getPlaylistTracks(controller.playlistUid);
+            };
+
+            controller.showToast = function (message: string) {
+                $mdToast.show(
+                    $mdToast.simple()
+                        .textContent(message)
+                        .position(`bottom right`)
+                        .hideDelay(1500)
+                );
+            };
+
+        });
+
+        /**
+         * Playlist
+         */
+        this.app.controller(`playlist`, ($scope: any) => {
+            let controller = $scope;
+
 
         });
 
@@ -413,10 +674,6 @@ class Main {
                 }
 
             };
-
-            controller.getUUID = function () {
-                console.log(auth.getUserUUID());
-            }
 
         });
 

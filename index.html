@@ -63,14 +63,14 @@
         </md-sidenav>
 
         <!-- Content container -->
-        <md-content flex id="content">
-            <div ng-view></div>
+        <md-content flex>
+            <div ng-view id="content"></div>
         </md-content>
 
     </div>
 
     <!-- Player container -->
-    <div class="player-container" layout="column">
+    <div class="player-container" layout="column" ng-controller="player">
 
         <!-- Seekbar -->
         <div class="seekbar" layout="column">
@@ -88,21 +88,22 @@
                 <div id="dz-root"></div>
             </div>
 
-            <div flex layout="row">
+            <div layout="row" class="player-details" >
 
                 <div class="text">
                     Artist - Name
                 </div>
 
+                <!-- Next, play and previous buttons -->
                 <div class="buttons">
-                    <md-button class="md-icon-button" aria-label="previous" ng-click="previous()">
+                    <md-button hide-xs hide-sm class="md-icon-button" aria-label="previous" ng-click="previous()">
                         <md-icon md-svg-icon="src/assets/svg/previous.svg"></md-icon>
                     </md-button>
                     <md-button class="md-fab" aria-label="play or pause" ng-click="playPause()">
-                        <md-icon ng-hide="paused" md-svg-src="src/assets/svg/play.svg"></md-icon>
-                        <md-icon ng-show="paused" md-svg-src="src/assets/svg/pause.svg"></md-icon>
+                        <md-icon ng-show="paused" md-svg-src="src/assets/svg/play.svg"></md-icon>
+                        <md-icon ng-hide="paused" md-svg-src="src/assets/svg/pause.svg"></md-icon>
                     </md-button>
-                    <md-button class="md-icon-button" aria-label="next" ng-click="next()">
+                    <md-button hide-xs hide-sm class="md-icon-button" aria-label="next" ng-click="next()">
                         <md-icon md-svg-icon="src/assets/svg/next.svg"></md-icon>
                     </md-button>
                 </div>
@@ -116,28 +117,28 @@
                             <md-icon ng-show="musicService === 'YouTube'" md-svg-icon="src/assets/svg/youtube-logo.svg"></md-icon>
                         </md-button>
                         <md-menu-content>
-                            <md-button ng-click="dynamicallyChangeMusicService('Deezer')">
+                            <md-button aria-label="change to Deezer" ng-click="dynamicallyChangeMusicService('Deezer')">
                                 <md-icon md-svg-icon="src/assets/svg/deezer-logo.svg"></md-icon>
                             </md-button>
-                            <md-button ng-click="dynamicallyChangeMusicService('YouTube')">
+                            <md-button aria-label="change to YouTube" ng-click="dynamicallyChangeMusicService('YouTube')">
                                 <md-icon md-svg-icon="src/assets/svg/youtube-logo.svg"></md-icon>
                             </md-button>
                         </md-menu-content>
                     </md-menu>
 
                     <!-- Repeat -->
-                    <md-button class="md-icon-button" aria-label="repeat" ng-click="toggleRepeat()">
+                    <md-button hide-xs hide-sm class="md-icon-button" aria-label="repeat" ng-click="toggleRepeat()">
                         <md-icon ng-class="repeatOff ? 'off' : ''" ng-hide="repeatOne" ng-disabled="true" md-svg-icon="src/assets/svg/repeat.svg"></md-icon>
                         <md-icon ng-show="repeatOne" md-svg-icon="src/assets/svg/repeat-one.svg"></md-icon>
                     </md-button>
 
                     <!-- Shuffle -->
-                    <md-button class="md-icon-button" aria-label="shuffle" ng-click="toggleShuffle()">
+                    <md-button hide-xs hide-sm class="md-icon-button" aria-label="shuffle" ng-click="toggleShuffle()">
                         <md-icon ng-class="shuffle ? '' : 'off'" md-svg-icon="src/assets/svg/shuffle.svg"></md-icon>
                     </md-button>
 
                     <!-- Volume -->
-                    <md-menu>
+                    <md-menu hide-xs hide-sm>
                         <md-button class="md-icon-button" aria-label="volume" ng-click="$mdOpenMenu($event)">
                             <md-icon ng-hide="volumeOff" md-svg-icon="src/assets/svg/volume.svg"></md-icon>
                             <md-icon ng-show="volumeOff" md-svg-icon="src/assets/svg/volume-off.svg"></md-icon>

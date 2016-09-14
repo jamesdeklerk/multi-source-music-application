@@ -1,9 +1,36 @@
-<div class="you">
-
-    <div>{{bob}}</div>
-    <div>{{test}}</div>
-    Inner test: <input type="text" ng-model="search.text"/>
-
-    <a ng-href="#/sign-up">Go to sign up page!</a>
+<div class="container-block">
+    Current user email: {{userEmail}}
+    <br>
+    <br>
+    <br>
+    Track uid:<input type="text" ng-model="trackUid" name="trackUid"><br>
+    Track title:<input type="text" ng-model="track.title" name="trackTitle"><br>
+    <br>
+    <md-button ng-click="createTrack()" class="md-raised md-primary">Create Track {{trackTitle}} - {{trackUid}}</md-button>
+    <md-button ng-click="getTrack()" class="md-raised md-primary">Get Track {{trackUid}}</md-button>
+    <br>
+    <br>
+    Playlist uid:<input type="text" ng-model="playlistUid" name="playlistUid"><br>
+    Playlist owner:<input type="text" ng-model="playlist.owner" name="playlistOwner"><br>
+    Playlist name:<input type="text" ng-model="playlist.name" name="playlistName"><br>
+    <br>
+    <md-button ng-click="createPlaylist()" class="md-raised md-primary">Create Playlist {{playlist.name}} - {{playlistUid}}</md-button>
+    <br>
+    <md-button ng-click="addTrackToPlaylist()" class="md-raised md-primary">Add Track to Playlist {{playlist.name}}</md-button>
+    <br>
+    <md-button ng-click="getPlaylistDetails()" class="md-raised md-primary">Get Playlist Details {{playlistUid}}</md-button>
+    <br>
+    <md-button ng-click="getPlaylistTracks()" class="md-raised md-primary">Get Playlist Tracks {{playlistUid}}</md-button>
+    <br>
+    <md-button ng-click="showToast('Simple Toast!')" class="md-raised md-primary">Show toast</md-button>
+    <br>
+    <br>
+    <br>
+    Tracks in {{playlistName}}:
+    <ul>
+        <li ng-repeat="track in playlistTracks">
+            Track: {{track.title}}
+        </li>
+    </ul>
 
 </div>
