@@ -252,6 +252,9 @@ class Main {
 
                         firebase.auth().signOut().then((data: any) => {
 
+                            // Stop the player.
+                            this.player.dequeueAll();
+
                             console.log(`Sign out:`);
                             console.log(data);
                             resolve(`Signed out.`);
