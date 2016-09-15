@@ -269,11 +269,25 @@ class Main {
             // Local copy of the references
             let tracks: any = {};
 
+            /**
+             * The playlist UUID of the current user.
+             */
+            let usersLibrary: string;
+
+            /**
+             * An array of the users playlists (details only).
+             * i.e. [{ name: string, owner: string, uuid: string }]
+             */
+            let usersPlaylists: any;
+
             let USERS_REF = firebase.database().ref().child(`users`);
             let TRACKS_REF = firebase.database().ref().child(`tracks`);
             let PLAYLISTS_DETAILS_REF = firebase.database().ref().child(`playlists-details`);
             let PLAYLISTS_TRACKS_REF = firebase.database().ref().child(`playlists-tracks`);
 
+            function clone(object: any): any {
+                return JSON.parse(JSON.stringify(object));
+            }
 
             function createTrack(track: ITrack): Promise<any> {
                 return new Promise((resolve, reject) => {
@@ -397,8 +411,8 @@ class Main {
                             PLAYLISTS_TRACKS_REF.child(playlistUUID).push(track.uuid).then(() => {
 
                                 // Maintain the local playlists
-                                playlists[playlistUUID].tracks.push(track);
-                                playlistsTracks[playlistUUID].push(track.uuid);
+                                playlists[playlistUUID].tracks.push(clone(track));
+                                playlistsTracks[playlistUUID].push(clone(track.uuid));
 
                                 resolve(`Track added to playlist.`);
                             }).catch((error: any) => {
@@ -485,6 +499,7 @@ class Main {
 
                             // Create an array of promises
                             let promiseTracks: Promise<any>[] = [];
+                            // tslint:disable-next-line
                             for (let i = 0, trackUUID: any; trackUUID = arrayOfTrackUUIDs[i]; i = i + 1) {
                                 promiseTracks.push(getTrack(trackUUID));
                             }
@@ -502,7 +517,8 @@ class Main {
                                 // Push each track onto the playlist.
                                 // tslint:disable-next-line
                                 for (let i = 0, track: any; track = tracksValues[i]; i = i + 1) {
-                                    playlist.tracks.push(track);
+                                    // You have to clone the track otherwise angular isn't happy when using ng-repeat
+                                    playlist.tracks.push(clone(track));
                                 }
 
                                 // Create the local copy of the playlist.
@@ -520,6 +536,33 @@ class Main {
                     } else {
                         console.log(`Got the local copy of the playlist.`);
                         resolve(playlists[playlistUUID]);
+                    }
+
+                });
+            }
+
+            function getUsersPlaylists(): Promise<any> {
+                return new Promise((resolve, reject) => {
+
+                    let userUUID = auth.getUserUid();
+
+                    if (usersPlaylists === undefined) {
+
+                        // Get the users playlist UUIDs
+                        USERS_REF.child(userUUID).child(`playlists`).once(`value`).then((retrievedPlaylists: any) => {
+
+                            let retrievedPlaylistsWithDetails: any = [];
+                            // tslint:disable-next-line
+                            for (let i = 0, playlist: any; playlist = retrievedPlaylists[i]; i = i + 1) {
+                                retrievedPlaylistsWithDetails 
+                            }
+
+                        }).catch(() => {
+                            reject(`Failed to get users playlists.`);
+                        });
+
+                    } else {
+                        resolve(usersPlaylists);
                     }
 
                 });
@@ -667,7 +710,7 @@ class Main {
             let controller = $scope;
 
             controller.userEmail = user.email;
-            controller.trackUUID = `-KRhKauQO940DtA1_5iF`;
+            controller.trackUUID = `-KRhQqbs0G8ra1c4xjJ5`;
             controller.track = {};
             controller.playlist = {
                 name: ``,
