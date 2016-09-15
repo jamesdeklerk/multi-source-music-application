@@ -2210,7 +2210,7 @@ class Player {
      */
     public play(): void {
 
-        if (this.currentPlayer) {
+        if (this.currentPlayer && (this.currentTrackIndex >= 0)) {
 
             // Reset time since last tried to pause.
             this.millisecondsSinceCorrectingToPaused = Number.MAX_VALUE;
@@ -2231,7 +2231,7 @@ class Player {
      */
     public pause(): void {
 
-        if (this.currentPlayer) {
+        if (this.currentPlayer && (this.currentTrackIndex >= 0)) {
 
             // Reset time since last tried to play.
             this.millisecondsSinceCorrectingToPlaying = Number.MAX_VALUE;
@@ -2399,7 +2399,7 @@ class Player {
 
                 reject(`The percentage given was not between 0 and 1.`);
 
-            } else if (this.currentPlayer) {
+            } else if (this.currentPlayer && (this.currentTrackIndex >= 0)) {
 
                 this.currentPlayer.seekToPercentage(percentage);
                 this.currentlySeekingToPercentage = -1;
