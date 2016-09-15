@@ -97,7 +97,7 @@ class Main {
                 user: (auth: any, $location: any) => {
 
                     let user = auth.getUser();
-                    this.signInCheck($location, user);
+                    // this.signInCheck($location, user);
                     return user;
 
                 },
@@ -124,6 +124,11 @@ class Main {
                     controller: `signIn`,
                     resolve: resolve,
                     templateUrl: viewsDirectory + `sign-in.html`,
+                })
+                .when(`/playlist/:playlistUUID`, {
+                    controller: `playlist`,
+                    resolve: resolve,
+                    templateUrl: viewsDirectory + `playlist.html`,
                 })
                 .otherwise({
                     redirectTo: `/`,
@@ -194,36 +199,15 @@ class Main {
             }
 
             return {
-                signUp: (email: string, password: string) => {
-
-                    return new Promise((resolve, reject) => {
-                        firebase.auth().createUserWithEmailAndPassword(email, password).then((data: any) => {
-
-                            // Add the new user.
-                            USERS_REF.child(data.uid).set({
-                                details: {
-                                    email: data.email,
-                                },
-                            }).then(() => {
-
-                                // Create the library (a library is just another playlist)
-                                createLibrary(data.uid).then(() => {
-                                    resolve(`Signed up successfully.`)
-                                }).catch(() => {
-                                    reject(`Failed to sign up.`);
-                                });
-
-                            }).catch(() => {
-                                reject(`Failed to sign up.`);
-                            });
-
-                        }).catch((error: any) => {
-
-                            reject(error.message);
-
-                        });
-                    });
-
+                getUser: () => {
+                    return user;
+                },
+                getUserUid: function () {
+                    if (user) {
+                        return user.uid;
+                    } else {
+                        return;
+                    }
                 },
                 signIn: (email: string, password: string) => {
 
@@ -268,15 +252,36 @@ class Main {
                     });
 
                 },
-                getUserUid: function () {
-                    if (user) {
-                        return user.uid;
-                    } else {
-                        return;
-                    }
-                },
-                getUser: () => {
-                    return user;
+                signUp: (email: string, password: string) => {
+
+                    return new Promise((resolve, reject) => {
+                        firebase.auth().createUserWithEmailAndPassword(email, password).then((data: any) => {
+
+                            // Add the new user.
+                            USERS_REF.child(data.uid).set({
+                                details: {
+                                    email: data.email,
+                                },
+                            }).then(() => {
+
+                                // Create the library (a library is just another playlist)
+                                createLibrary(data.uid).then(() => {
+                                    resolve(`Signed up successfully.`);
+                                }).catch(() => {
+                                    reject(`Failed to sign up.`);
+                                });
+
+                            }).catch(() => {
+                                reject(`Failed to sign up.`);
+                            });
+
+                        }).catch((error: any) => {
+
+                            reject(error.message);
+
+                        });
+                    });
+
                 },
             };
         });
@@ -320,6 +325,16 @@ class Main {
 
             function clone(object: any): any {
                 return JSON.parse(JSON.stringify(object));
+            }
+
+            function getUsersDetails(userUUID: string): Promise<any> {
+                return new Promise((resolve, reject) => {
+                    USERS_REF.child(userUUID).child(`details`).once(`value`).then((snapshot: any) => {
+                        resolve(snapshot.val());
+                    }).catch(() => {
+                        reject(undefined);
+                    });
+                });
             }
 
             function createTrack(track: ITrack): Promise<any> {
@@ -722,6 +737,7 @@ class Main {
                 getPlaylistDetails: getPlaylistDetails,
                 getPlaylistTracksUUIDs: getPlaylistTracksUUIDs,
                 getTrack: getTrack,
+                getUsersDetails: getUsersDetails,
                 getUsersLibraryUUID: getUsersLibraryUUID,
                 getUsersPlaylists: getUsersPlaylists,
                 isTrackInPlaylist: isTrackInPlaylist,
@@ -990,9 +1006,69 @@ class Main {
         /**
          * Playlist
          */
-        this.app.controller(`playlist`, ($scope: any) => {
+        this.app.controller(`playlist`, ($scope: any, $location: any, $routeParams: any, dataManager: any, $mdToast: any, $mdDialog: any, user: any) => {
             let controller = $scope;
 
+            // Start off loading.
+            controller.loading = true;
+
+            // Setup defaults.
+            controller.thisUsersPlaylist = true;
+
+            // Setup toasts
+            controller.showToast = function (message: string) {
+                $mdToast.show(
+                    $mdToast.simple()
+                        .textContent(message)
+                        .position(`bottom right`)
+                        .hideDelay(1500)
+                );
+            };
+
+            controller.showPrompt = function(ev) {
+                // Appending dialog to document.body to cover sidenav in docs app
+                var confirm = $mdDialog.prompt()
+                    .title('What would you name your dog?')
+                    .textContent('Bowser is a common name.')
+                    .placeholder('Dog name')
+                    .ariaLabel('Dog name')
+                    .initialValue('Buddy')
+                    .targetEvent(ev)
+                    .ok('Okay!')
+                    .cancel('I\'m a cat person');
+
+                $mdDialog.show(confirm).then(function(result) {
+                    $scope.status = 'You decided to name your dog ' + result + '.';
+                }, function() {
+                    $scope.status = 'You didn\'t name your dog.';
+                });
+            };
+
+            // Get the current playlist.
+            controller.playlistUUID = $routeParams.playlistUUID;
+
+            // Get the current playlist.
+            dataManager.getPlaylist(controller.playlistUUID).then((playlist) => {
+                controller.playlist = playlist;
+                controller.loading = false;
+
+                // Check if the current user is the owner of the playlist.
+                if (playlist.owner === user.uid) {
+                    controller.thisUsersPlaylist = true;
+                } else {
+                    controller.thisUsersPlaylist = false;
+                    // Get the owners details.
+                    dataManager.getUsersDetails(playlist.owner).then((owner) => {
+                        controller.owner = owner.email;
+                        controller.$digest();
+                    });
+                }
+
+                controller.$digest();
+            }).catch((message) => {
+                controller.showToast(message);
+                $location.path(`/`);
+            });
 
         });
 
@@ -1059,117 +1135,6 @@ class Main {
             };
 
         });
-
-    }
-
-    private oldSetupAngular(): void {
-
-        angular.module("music-application", ["ngRoute", "firebase"])
-
-            .config(function ($routeProvider: any) {
-                let resolveProjects = {
-                    projects: function () {
-                        return "";
-                    }
-                };
-
-                $routeProvider
-                    .when('/', {
-                        controller: 'ProjectListController as projectList',
-                        templateUrl: 'src/html/pages/library.html',
-                        resolve: resolveProjects
-                    })
-                    .when('/edit/:projectId/', {
-                        controller: 'EditProjectController as editProject',
-                        templateUrl: 'src/html/pages/detail.html',
-                        resolve: resolveProjects
-                    })
-                    .when('/new', {
-                        controller: 'NewProjectController as editProject',
-                        templateUrl: 'src/html/pages/detail.html',
-                        resolve: resolveProjects
-                    })
-                    .when('/sign-up', {
-                        controller: 'SignUpController as SignUpController',
-                        templateUrl: 'src/html/pages/old-sign-up.html',
-                        resolve: resolveProjects
-                    })
-                    .otherwise({
-                        redirectTo: '/'
-                    });
-            })
-
-            .controller('ProjectListController', function (projects: any) {
-                this.controller = "ProjectListController";
-            })
-
-            .controller('SignUpController', function ($scope: any, projects: any, $firebaseObject: any, $firebaseArray: any) {
-
-                let controller = $scope;
-                let ref = firebase.database().ref().child("data");
-
-                // Download the data into a local object.
-                let syncObject = $firebaseObject(ref);
-
-                // Synchronize the object with a three-way data binding.
-                syncObject.$bindTo($scope, "data");
-
-                ref = firebase.database().ref().child("array-test");
-
-                // create a synchronized array
-                $scope.messages = $firebaseArray(ref);
-
-                // add new items to the array
-                $scope.addMessage = function () {
-                    $scope.messages.$add({
-                        text: $scope.newMessageText,
-                    });
-                };
-
-                controller.user = {};
-
-                // controller.user = {};
-                // controller.emailError = "";
-                // controller.usernameError = "";
-                // controller.passwordError = "";
-                // controller.password2Error = "";
-
-                controller.bob = "sign up! now!";
-
-                controller.signUper = function (a) {
-                    console.log(a);
-
-                    if (!controller.user.email || !controller.user.password) {
-                        return;
-                    }
-
-                    firebase.auth().createUserWithEmailAndPassword(controller.user.email, controller.user.password).then((noice: any) => {
-                        console.log("yay, were signed up!");
-                        console.log(noice.email);
-                        console.log(noice.uid);
-                    }).catch(function (error: any) {
-                        // Handle Errors here.
-                        var errorCode = error.code;
-                        var errorMessage = error.message;
-                        // ...
-                        console.log(errorMessage);
-                    });
-                };
-
-                controller.signUper();
-
-            })
-
-            .controller('NewProjectController', function (projects: any) {
-                this.controller = "NewProjectController";
-            })
-
-            .controller('EditProjectController', function (projects: any, $routeParams: any) {
-                this.controller = "EditProjectController";
-                this.projectId = $routeParams.projectId;
-                this.search = $routeParams.search;
-                this.other = $routeParams.other;
-            });
 
     }
 

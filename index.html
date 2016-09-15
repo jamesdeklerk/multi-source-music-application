@@ -52,7 +52,7 @@
         </div>
         <!-- Login details -->
         <div class="user">
-            {{user.email}}
+            <span hide-xs hide-sm>{{user.email}}</span>
             <!-- Sign out menu -->
             <md-menu>
                 <md-button class="md-icon-button" aria-label="sign out menu" ng-click="$mdOpenMenu($event)">
@@ -74,7 +74,9 @@
 
         <!-- Menu container -->
         <md-sidenav class="md-whiteframe-4dp" md-is-locked-open="$mdMedia('gt-sm')" md-component-id="left" ng-click="toggleMenu()">
-
+            <a href="#/playlist/-KRiSs-DC15v9HZILASW">Library</a><br>
+            <a href="#/playlist/-KRiTnSnsx1j2-k2yyz-">My playlist</a><br>
+            <a href="#/playlist/-KRi3vqSIK5W9hcU0Lwt">Other persons playlist</a><br>
         </md-sidenav>
 
         <!-- Content container -->

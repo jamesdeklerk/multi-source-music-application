@@ -1,0 +1,18 @@
+<div class="fill-block">
+
+    {{owner}}
+
+    <md-button class="md-primary md-raised" ng-click="showAdvanced($event)">
+        Custom Dialog
+    </md-button>
+
+    <br>
+    <br>
+    <br> Tracks in {{playlist.name}}:
+    <ul>
+        <li ng-repeat="track in playlist.tracks | filter: { title: search.text }">
+            {{$index}} Track: {{track.title}} Date added: {{track.dateAdded}}
+        </li>
+    </ul>
+
+</div>
