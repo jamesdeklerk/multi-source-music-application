@@ -31,6 +31,15 @@ md-toolbar .search {
     }
 }
 
+md-toolbar .user {
+    font-size: 14px;
+    padding-left: 14px;
+
+    md-icon {
+        color: red;
+    }
+}
+
 #content {
     display: flex;
     height: 100%;

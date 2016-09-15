@@ -50,6 +50,21 @@
         <div class="search" flex>
             <input layout-align="center center" type="text" ng-model="search.text" placeholder="Search">
         </div>
+        <!-- Login details -->
+        <div class="user">
+            {{user.email}}
+            <!-- Sign out menu -->
+            <md-menu>
+                <md-button class="md-icon-button" aria-label="sign out menu" ng-click="$mdOpenMenu($event)">
+                    <md-icon md-svg-icon="src/assets/svg/more_vertical.svg"></md-icon>
+                </md-button>
+                <md-menu-content flex>
+                    <md-menu-item>
+                        <md-button ng-click="signOut()">Sign out</md-button>
+                    </md-menu-item>
+                </md-menu-content>
+            </md-menu>
+        </div>
     </md-toolbar>
 
 
@@ -88,7 +103,7 @@
                 <div id="dz-root"></div>
             </div>
 
-            <div layout="row" class="player-details" >
+            <div layout="row" class="player-details">
 
                 <div class="text">
                     Artist - Name

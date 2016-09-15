@@ -500,10 +500,16 @@ class Main {
                                                 addTrackToPlaylist(libraryUUID, trackUUID);
                                             }
                                         });
+
+                                        resolve(`Track added to playlist.`);
+                                    } else {
+                                        resolve(`Track added to library.`);
                                     }
+
+                                }).catch(() => {
+                                    resolve(`Track added to playlist.`);
                                 });
 
-                                resolve(`Track added to playlist.`);
                             }).catch((error: any) => {
                                 reject(error);
                             });
@@ -732,12 +738,42 @@ class Main {
         /**
          * Master Page
          */
-        this.app.controller(`master`, ($scope: any, $mdSidenav: any) => {
+        this.app.controller(`master`, ($scope: any, $mdSidenav: any, auth: any) => {
             let controller = $scope;
 
             // Hide or show the menu
             controller.toggleMenu = () => {
                 $mdSidenav(`left`).toggle();
+            };
+
+
+            // While there isn't a user, keep checking to see if that changes.
+            controller.user = undefined;
+            let noUser = () => {
+
+                controller.user = auth.getUser();
+
+                if (controller.user) {
+                    userFound();
+                    controller.$digest();
+                } else {
+                    // Still no user, check again.
+                    setTimeout(noUser, 500);
+                }
+
+            };
+            noUser();
+
+            let userFound = () => {
+
+                controller.search = {
+                    text: ``,
+                };
+
+                controller.signOut = () => {
+                    auth.signOut();
+                };
+
             };
 
         });
