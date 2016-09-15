@@ -97,7 +97,7 @@ class Main {
                 user: (auth: any, $location: any) => {
 
                     let user = auth.getUser();
-                    // this.signInCheck($location, user);
+                    this.signInCheck($location, user);
                     return user;
 
                 },
@@ -296,10 +296,10 @@ class Main {
             // Library:     playlists/uid
             // Playlist:    playlists/uid
 
-            // The users library is just another playlist.
-            // Deleting a song from a playlist doesn't delete it from
-            // the users library and vice versa,
-            // Adding a song to a playlist does however add it to the users library.
+            // playlistsTracks = {
+            //     "playlistUUID1": [{ trackUUID: string, uuidInPlaylist: string }],
+            //     "playlistUUID2": [{ trackUUID: string, uuidInPlaylist: string }],
+            // }
             let playlistsTracks: any = {};
             let playlistsDetails: any = {};
             let playlists: any = {};
@@ -341,13 +341,15 @@ class Main {
                 return new Promise((resolve, reject) => {
                     TRACKS_REF.push(track).then((data: any) => {
 
-                        track.uuid = data.key;
-                        track.owner = auth.getUserUid();
+                        let clonedTrack = clone(track);
 
-                        TRACKS_REF.child(track.uuid).update({ owner: track.owner, uuid: track.uuid }).then(() => {
+                        clonedTrack.uuid = data.key;
+                        clonedTrack.owner = auth.getUserUid();
+
+                        TRACKS_REF.child(clonedTrack.uuid).update({ owner: clonedTrack.owner, uuid: clonedTrack.uuid }).then(() => {
 
                             // Update local copy.
-                            tracks[track.uuid] = track;
+                            tracks[clonedTrack.uuid] = clonedTrack;
 
                             resolve(`Track created.`);
                         }).catch(() => {
@@ -388,20 +390,39 @@ class Main {
                 });
             }
 
-            function getTrack(trackUUID: string): Promise<any> {
+            function getTrack(trackUUID: string, uuidInPlaylist?: string): Promise<any> {
                 return new Promise((resolve, reject) => {
                     // If we don't have a local copy of it, make one.
                     if (!tracks[trackUUID]) {
                         TRACKS_REF.child(trackUUID).once(`value`).then((snapshot: any) => {
                             // Update the local copy of the track.
                             tracks[trackUUID] = snapshot.val();
-                            resolve(tracks[trackUUID]);
+
+                            // If there is a uuidInPlaylist, that means it is a track
+                            // for a specific playlist, so we must clone the track
+                            // and append its uuidInPlaylist.
+                            if (uuidInPlaylist) {
+                                let clonedTrack = clone(tracks[trackUUID]);
+                                clonedTrack.uuidInPlaylist = uuidInPlaylist;
+                                resolve(clonedTrack);
+                            } else {
+                                resolve(tracks[trackUUID]);
+                            }
                         }).catch(() => {
                             reject(undefined);
                         });
                     } else {
                         console.log(`Got the local copy of the track.`);
-                        resolve(tracks[trackUUID]);
+                        // If there is a uuidInPlaylist, that means it is a track
+                        // for a specific playlist, so we must clone the track
+                        // and append its uuidInPlaylist.
+                        if (uuidInPlaylist) {
+                            let clonedTrack = clone(tracks[trackUUID]);
+                            clonedTrack.uuidInPlaylist = uuidInPlaylist;
+                            resolve(clonedTrack);
+                        } else {
+                            resolve(tracks[trackUUID]);
+                        }
                     }
                 });
             }
@@ -456,14 +477,14 @@ class Main {
                 return new Promise((resolve, reject) => {
 
                     // Make sure we have the latest list of track uuids for the given playlist.
-                    getPlaylistTracksUUIDs(playlistUUID).then((playlistsTracksResolved) => {
+                    getPlaylistTracksUUIDs(playlistUUID).then((playlistsTracksUUIDsResolved) => {
 
                         let foundTrack = false;
 
                         // The uuids of all the tracks.
                         // tslint:disable-next-line
-                        for (let i = 0, resolvedTrackUUID: any; resolvedTrackUUID = playlistsTracksResolved[i]; i = i + 1) {
-                            if (resolvedTrackUUID === trackUUID) {
+                        for (let i = 0, resolvedTrack: any; resolvedTrack = playlistsTracksUUIDsResolved[i]; i = i + 1) {
+                            if (resolvedTrack.trackUUID === trackUUID) {
                                 foundTrack = true;
                                 break;
                             }
@@ -494,12 +515,20 @@ class Main {
                         // Check that they own the playlist.
                         if (playlist.owner === userUid) {
                             // Add track.
-                            PLAYLISTS_TRACKS_REF.child(playlistUUID).push(track.uuid).then(() => {
+                            PLAYLISTS_TRACKS_REF.child(playlistUUID).push(trackUUID).then((data: any) => {
+
+                                let clonedTrack = clone(track);
+                                // Only cloned tracks have a reference to where they
+                                // are in the playlist, i.e. a uuidInPlaylist
+                                clonedTrack.uuidInPlaylist = data.key;
 
                                 // Maintain the local playlists
                                 // Have to clone track for ng-repeat
-                                playlists[playlistUUID].tracks.push(clone(track));
-                                playlistsTracks[playlistUUID].push(track.uuid);
+                                playlists[playlistUUID].tracks.push(clonedTrack);
+                                playlistsTracks[playlistUUID].push({
+                                    trackUUID: trackUUID,
+                                    uuidInPlaylist: data.key,
+                                });
 
                                 // Add the track to the users library.
                                 getUsersLibraryUUID().then((libraryUUID) => {
@@ -569,12 +598,15 @@ class Main {
                             let playlistTracksUUIDs = snapshot.val();
                             let arrayOfTrackUUIDs: any = [];
 
-                            if (playlistsTracks) {
+                            if (playlistTracksUUIDs) {
 
                                 // Make the object into an array.
-                                for (let trackUUID in playlistTracksUUIDs) {
-                                    if (playlistTracksUUIDs.hasOwnProperty(trackUUID)) {
-                                        arrayOfTrackUUIDs.push(playlistTracksUUIDs[trackUUID]);
+                                for (let uuidInPlaylist in playlistTracksUUIDs) {
+                                    if (playlistTracksUUIDs.hasOwnProperty(uuidInPlaylist)) {
+                                        arrayOfTrackUUIDs.push({
+                                            trackUUID: playlistTracksUUIDs[uuidInPlaylist],
+                                            uuidInPlaylist: uuidInPlaylist,
+                                        });
                                     }
                                 }
 
@@ -610,8 +642,11 @@ class Main {
                             // Create an array of promises
                             let promiseTracks: Promise<any>[] = [];
                             // tslint:disable-next-line
-                            for (let i = 0, trackUUID: any; trackUUID = arrayOfTrackUUIDs[i]; i = i + 1) {
-                                promiseTracks.push(getTrack(trackUUID));
+                            for (let i = 0, track: any; track = arrayOfTrackUUIDs[i]; i = i + 1) {
+                                // Getting the tracks like this means it'll create a clone of the local copy of the track,
+                                // and append the uuidInPlaylist to that clone.
+                                // You have to clone the track otherwise angular isn't happy when using ng-repeat
+                                promiseTracks.push(getTrack(track.trackUUID, track.uuidInPlaylist));
                             }
 
                             // Get each of the tracks.
@@ -627,8 +662,7 @@ class Main {
                                 // Push each track onto the playlist.
                                 // tslint:disable-next-line
                                 for (let i = 0, track: any; track = tracksValues[i]; i = i + 1) {
-                                    // You have to clone the track otherwise angular isn't happy when using ng-repeat
-                                    playlist.tracks.push(clone(track));
+                                    playlist.tracks.push(track);
                                 }
 
                                 // Create the local copy of the playlist.
@@ -926,7 +960,8 @@ class Main {
 
             controller.getTrack = () => {
                 dataManager.getTrack(controller.trackUUID).then((track: any) => {
-                    controller.track = track;
+                    // IF YOU DON'T CLONE YOU WILL BE EDITING THE LOCAL COPY!!!!!!!!!!
+                    controller.track = JSON.parse(JSON.stringify(track));
                     console.log(track);
                     controller.$digest();
                 });
@@ -1025,7 +1060,7 @@ class Main {
                 );
             };
 
-            controller.showPrompt = function(ev) {
+            controller.showPrompt = function (ev) {
                 // Appending dialog to document.body to cover sidenav in docs app
                 var confirm = $mdDialog.prompt()
                     .title('What would you name your dog?')
@@ -1037,9 +1072,9 @@ class Main {
                     .ok('Okay!')
                     .cancel('I\'m a cat person');
 
-                $mdDialog.show(confirm).then(function(result) {
+                $mdDialog.show(confirm).then(function (result) {
                     $scope.status = 'You decided to name your dog ' + result + '.';
-                }, function() {
+                }, function () {
                     $scope.status = 'You didn\'t name your dog.';
                 });
             };
