@@ -34,4 +34,9 @@ interface ITrack {
      */
     services: any;
 
+    /**
+     * A timestamp of when the track was added.
+     */
+    dateAdded: number;
+
 }

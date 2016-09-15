@@ -331,6 +331,7 @@ class Main {
                     // If we don't have a local copy of it, make one.
                     if (!tracks[trackUUID]) {
                         TRACKS_REF.child(trackUUID).once(`value`).then((snapshot: any) => {
+                            // Update the local copy of the track.
                             tracks[trackUUID] = snapshot.val();
                             resolve(tracks[trackUUID]);
                         }).catch(() => {
@@ -395,8 +396,9 @@ class Main {
                         if (playlist.owner === userUid) {
                             PLAYLISTS_TRACKS_REF.child(playlistUUID).push(track.uuid).then(() => {
 
-                                // Maintain the local playlists @NB maybe change to playlists[playlistUUID]
-                                playlist.tracks.push(track);
+                                // Maintain the local playlists
+                                playlists[playlistUUID].tracks.push(track);
+                                playlistsTracks[playlistUUID].push(track.uuid);
 
                                 resolve(`Track added to playlist.`);
                             }).catch((error: any) => {
@@ -434,13 +436,29 @@ class Main {
             /**
              * Just the ids of the tracks.
              */
-            function getPlaylistTracks(playlistUUID: string): Promise<any> {
+            function getPlaylistTracksUUIDs(playlistUUID: string): Promise<any> {
 
                 return new Promise((resolve, reject) => {
                     // If we don't have a local reference to it, make one.
                     if (!playlistsTracks[playlistUUID]) {
                         PLAYLISTS_TRACKS_REF.child(playlistUUID).once(`value`).then((snapshot: any) => {
-                            playlistsTracks[playlistUUID] = snapshot.val() || [];
+                            let playlistTracksUUIDs = snapshot.val();
+                            let arrayOfTrackUUIDs: any = [];
+
+                            if (playlistsTracks) {
+
+                                // Make the object into an array.
+                                for (let trackUUID in playlistTracksUUIDs) {
+                                    if (playlistTracksUUIDs.hasOwnProperty(trackUUID)) {
+                                        arrayOfTrackUUIDs.push(playlistTracksUUIDs[trackUUID]);
+                                    }
+                                }
+
+                            }
+
+                            // Create a local reference to the array.
+                            playlistsTracks[playlistUUID] = arrayOfTrackUUIDs;
+
                             resolve(playlistsTracks[playlistUUID]);
                         }).catch(() => {
                             reject(undefined);
@@ -458,26 +476,27 @@ class Main {
                     // If there isn't a local copy, create one.
                     if (!playlists[playlistUUID]) {
                         let promiseDetails = getPlaylistDetails(playlistUUID);
-                        let promiseListOftrackUUIDs = getPlaylistTracks(playlistUUID);
+                        let promiseListOftrackUUIDs = getPlaylistTracksUUIDs(playlistUUID);
 
                         // Get the playlist details and the list of track ids.
                         Promise.all([promiseDetails, promiseListOftrackUUIDs]).then((values) => {
                             let details = values[0];
-                            let listOftrackUUIDs = values[1];
+                            let arrayOfTrackUUIDs = values[1];
 
                             // Create an array of promises
-                            let getTracks: Promise<any>[] = [];
-                            for (let i = 0, trackUUID: any; trackUUID = listOftrackUUIDs[i]; i = i + 1) {
-                                getTracks.push(getTrack(trackUUID));
+                            let promiseTracks: Promise<any>[] = [];
+                            for (let i = 0, trackUUID: any; trackUUID = arrayOfTrackUUIDs[i]; i = i + 1) {
+                                promiseTracks.push(getTrack(trackUUID));
                             }
 
                             // Get each of the tracks.
-                            Promise.all(getTracks).then((tracksValues) => {
+                            Promise.all(promiseTracks).then((tracksValues) => {
 
                                 let playlist: IPlaylist = {
                                     name: details.name,
                                     owner: details.owner,
                                     tracks: [],
+                                    uuid: details.uuid,
                                 };
 
                                 // Push each track onto the playlist.
@@ -518,8 +537,9 @@ class Main {
                 addTrackToPlaylist: addTrackToPlaylist,
                 createPlaylist: createPlaylist,
                 createTrack: createTrack,
+                getPlaylist: getPlaylist,
                 getPlaylistDetails: getPlaylistDetails,
-                getPlaylistTracks: getPlaylistTracks,
+                getPlaylistTracksUUIDs: getPlaylistTracksUUIDs,
                 getTrack: getTrack,
             };
         });
@@ -647,17 +667,18 @@ class Main {
             let controller = $scope;
 
             controller.userEmail = user.email;
-            controller.trackUUID = `-KRh2jfsMLbwNKTMxKoc`;
+            controller.trackUUID = `-KRhKauQO940DtA1_5iF`;
             controller.track = {};
             controller.playlist = {
                 name: ``,
                 owner: ``,
                 tracks: [],
-                uuid: `-KRh2dYOuUqCSVtafnBY`,
+                uuid: `-KRhLDP-vfnYDqTRpEZR`,
             };
 
             controller.createTrack = () => {
                 let newTrack: ITrack = {
+                    dateAdded: Date.now(),
                     duration: 12369,
                     services: {
                         "Deezer": 1,
@@ -707,9 +728,18 @@ class Main {
                 });
             };
 
-            controller.getPlaylistTracks = () => {
-                dataManager.getPlaylistTracks(controller.playlist.uuid).then((tracks: any) => {
-                    console.log(tracks);
+            controller.getPlaylistTracksUUIDs = () => {
+                dataManager.getPlaylistTracksUUIDs(controller.playlist.uuid).then((tracksUUIDS: any) => {
+                    console.log(tracksUUIDS);
+                });
+            };
+
+            controller.getPlaylist = () => {
+                dataManager.getPlaylist(controller.playlist.uuid).then((playlist: any) => {
+                    controller.playlist = playlist;
+                    controller.playlist.name = playlist.name;
+                    controller.$digest();
+                    console.log(playlist);
                 });
             };
 

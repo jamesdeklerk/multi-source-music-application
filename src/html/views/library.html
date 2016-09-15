@@ -20,16 +20,19 @@
     <br>
     <md-button ng-click="getPlaylistDetails()" class="md-raised md-primary">Get Playlist Details {{playlistUid}}</md-button>
     <br>
-    <md-button ng-click="getPlaylistTracks()" class="md-raised md-primary">Get Playlist Tracks {{playlistUid}}</md-button>
+    <md-button ng-click="getPlaylistTracksUUIDs()" class="md-raised md-primary">Get Playlist Tracks UUIDs {{playlistUid}}</md-button>
+    <br>
+    <md-button ng-click="getPlaylist()" class="md-raised md-primary">Get Playlist {{playlistUid}}</md-button>
     <br>
     <md-button ng-click="showToast('Simple Toast!')" class="md-raised md-primary">Show toast</md-button>
     <br>
     <br>
     <br>
-    Tracks in {{playlistName}}:
+    Tracks in {{playlist.name}}:
     <ul>
-        <li ng-repeat="track in playlistTracks">
+        <li ng-repeat="track in playlist.tracks">
             Track: {{track.title}}
+            Date added: {{track.dateAdded}}
         </li>
     </ul>
 
