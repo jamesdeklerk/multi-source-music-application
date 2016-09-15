@@ -264,6 +264,7 @@ class Main {
             // Adding a song to a playlist does however add it to the users library.
             let playlistsTracks: any = {};
             let playlistsDetails: any = {};
+            let playlists: any = {};
 
             // Local copy of the references
             let tracks: any = {};
@@ -277,16 +278,47 @@ class Main {
             function createTrack(track: ITrack): Promise<any> {
                 return new Promise((resolve, reject) => {
                     TRACKS_REF.push(track).then((data: any) => {
-                        resolve(data);
-                    }).catch((error: any) => {
-                        reject(error);
+
+                        let trackUUID = data.key;
+
+                        TRACKS_REF.child(trackUUID).update({ uuid: trackUUID }).then(() => {
+
+                            // Update local copy.
+                            track.uuid = trackUUID;
+                            tracks[trackUUID] = track;
+
+                            resolve(`Track created.`);
+                        }).catch(() => {
+                            reject(`Failed to create track.`);
+                        });
+
+                    }).catch(() => {
+                        reject(`Failed to create track.`);
                     });
                 });
             }
 
-            function deleteTrack(trackUid: string): Promise<any> {
+            // function updateTrack(trackUUID: string, infoToUpdate: any): Promise<any> {
+            //     return new Promise((resolve, reject) => {
+            //         TRACKS_REF.child(trackUUID).update(infoToUpdate).then((data: any) => {
+
+            //             // check if this is the updated track.
+            //             console.log(data);
+
+            //             // Update local copy.
+            //             if (infoToUpdate.title)............
+            //             tracks[trackUUID] = track;
+
+            //             resolve(`Track updated.`);
+            //         }).catch(() => {
+            //             reject(`Failed to update track.`);
+            //         });
+            //     });
+            // }
+
+            function deleteTrack(trackUUID: string): Promise<any> {
                 return new Promise((resolve, reject) => {
-                    TRACKS_REF.child(trackUid).remove().then(() => {
+                    TRACKS_REF.child(trackUUID).remove().then(() => {
                         resolve(`Track removed.`);
                     }).catch(() => {
                         reject(`Failed to remove track.`);
@@ -294,18 +326,19 @@ class Main {
                 });
             }
 
-            function getTrack(trackUid: string): Promise<any> {
+            function getTrack(trackUUID: string): Promise<any> {
                 return new Promise((resolve, reject) => {
                     // If we don't have a local copy of it, make one.
-                    if (!tracks[trackUid]) {
-                        TRACKS_REF.child(trackUid).then((snapshot: any) => {
-                            tracks[trackUid] = snapshot.val();
-                            resolve(tracks[trackUid]);
+                    if (!tracks[trackUUID]) {
+                        TRACKS_REF.child(trackUUID).once(`value`).then((snapshot: any) => {
+                            tracks[trackUUID] = snapshot.val();
+                            resolve(tracks[trackUUID]);
                         }).catch(() => {
                             reject(undefined);
                         });
                     } else {
-                        resolve(tracks[trackUid]);
+                        console.log(`Got the local copy of the track.`);
+                        resolve(tracks[trackUUID]);
                     }
                 });
             }
@@ -317,32 +350,54 @@ class Main {
                     playlist.owner = auth.getUserUid();
 
                     PLAYLISTS_DETAILS_REF.push(playlist).then((data: any) => {
-                        let playlistUid = data.key;
-                        // Created the new playlist, now add it to the users playlists.
-                        USERS_REF.child(playlist.owner).child(`playlists`).push(playlistUid).then(() => {
-                            resolve(`Successfully created playlist.`);
+                        let playlistUUID = data.key;
+
+                        // The new playlist was successfully created,
+                        // now update its uuid.
+                        PLAYLISTS_DETAILS_REF.child(playlistUUID).update({ uuid: playlistUUID }).then(() => {
+
+                            // The new playlist uuid was successfully updated,
+                            // now add it to the users playlists.
+                            USERS_REF.child(playlist.owner).child(`playlists`).push(playlistUUID).then(() => {
+
+                                // Update the local copy.
+                                playlist.uuid = playlistUUID;
+                                playlists[playlistUUID] = playlist;
+
+                                resolve(`Successfully created playlist.`);
+                            }).catch(() => {
+                                reject(`Failed to create playlist.`);
+                            });
+
                         }).catch(() => {
                             reject(`Failed to create playlist.`);
                         });
+
                     }).catch(() => {
                         reject(`Failed to create playlist.`);
                     });
                 });
             }
 
-            function addTrackToPlaylist(playlistUid: string, trackUid: string): Promise<any> {
+            function addTrackToPlaylist(playlistUUID: string, trackUUID: string): Promise<any> {
                 return new Promise((resolve, reject) => {
 
-                    let getDetails = getPlaylistDetails(playlistUid);
-                    let getTracks = getPlaylistTracks(playlistUid);
+                    let userUid = auth.getUserUid();
 
-                    Promise.all([getDetails, getTracks]).then((values: any) => {
-                        let userUid = auth.getUserUid();
-                        let ownerUid = values[0].owner;
+                    let promisePlaylist = getPlaylist(playlistUUID);
+                    let promiseTrack = getTrack(trackUUID);
+
+                    Promise.all([promisePlaylist, promiseTrack]).then((values) => {
+                        let playlist: IPlaylist = values[0];
+                        let track: ITrack = values[1];
 
                         // Check that they own the playlist.
-                        if (ownerUid === userUid) {
-                            values[1].$add(trackUid).then((data: any) => {
+                        if (playlist.owner === userUid) {
+                            PLAYLISTS_TRACKS_REF.child(playlistUUID).push(track.uuid).then(() => {
+
+                                // Maintain the local playlists @NB maybe change to playlists[playlistUUID]
+                                playlist.tracks.push(track);
+
                                 resolve(`Track added to playlist.`);
                             }).catch((error: any) => {
                                 reject(error);
@@ -350,6 +405,7 @@ class Main {
                         } else {
                             reject(`Can't add track, you aren't the owner.`);
                         }
+
                     }).catch(() => {
                         reject(`Something went wrong, adding failed.`);
                     });
@@ -357,19 +413,20 @@ class Main {
                 });
             }
 
-            function getPlaylistDetails(playlistUid: string): Promise<any> {
+            function getPlaylistDetails(playlistUUID: string): Promise<any> {
 
                 return new Promise((resolve, reject) => {
                     // If we don't have a local reference to it, make one.
-                    if (!playlistsDetails[playlistUid]) {
-                        $firebaseObject(PLAYLISTS_DETAILS_REF.child(playlistUid)).$loaded().then((playlistDetails: any) => {
-                            playlistsDetails[playlistUid] = playlistDetails;
-                            resolve(playlistsDetails[playlistUid]);
+                    if (!playlistsDetails[playlistUUID]) {
+                        PLAYLISTS_DETAILS_REF.child(playlistUUID).once(`value`).then((snapshot: any) => {
+                            playlistsDetails[playlistUUID] = snapshot.val();
+                            resolve(playlistsDetails[playlistUUID]);
                         }).catch(() => {
-                            reject();
+                            reject(undefined);
                         });
                     } else {
-                        resolve(playlistsDetails[playlistUid]);
+                        console.log(`Got the local copy of the playlists details.`);
+                        resolve(playlistsDetails[playlistUUID]);
                     }
                 });
             }
@@ -377,22 +434,83 @@ class Main {
             /**
              * Just the ids of the tracks.
              */
-            function getPlaylistTracks(playlistUid: string): Promise<any> {
+            function getPlaylistTracks(playlistUUID: string): Promise<any> {
 
                 return new Promise((resolve, reject) => {
                     // If we don't have a local reference to it, make one.
-                    if (!playlistsTracks[playlistUid]) {
-                        $firebaseArray(PLAYLISTS_TRACKS_REF.child(playlistUid)).$loaded().then((data: any) => {
-                            playlistsTracks[playlistUid] = data;
-                            resolve(playlistsTracks[playlistUid]);
+                    if (!playlistsTracks[playlistUUID]) {
+                        PLAYLISTS_TRACKS_REF.child(playlistUUID).once(`value`).then((snapshot: any) => {
+                            playlistsTracks[playlistUUID] = snapshot.val() || [];
+                            resolve(playlistsTracks[playlistUUID]);
                         }).catch(() => {
-                            reject();
+                            reject(undefined);
                         });
                     } else {
-                        resolve(playlistsTracks[playlistUid]);
+                        console.log(`Got the local copy of the playlists tracks.`);
+                        resolve(playlistsTracks[playlistUUID]);
                     }
                 });
             }
+
+            function getPlaylist(playlistUUID: string): Promise<any> {
+                return new Promise((resolve, reject) => {
+
+                    // If there isn't a local copy, create one.
+                    if (!playlists[playlistUUID]) {
+                        let promiseDetails = getPlaylistDetails(playlistUUID);
+                        let promiseListOftrackUUIDs = getPlaylistTracks(playlistUUID);
+
+                        // Get the playlist details and the list of track ids.
+                        Promise.all([promiseDetails, promiseListOftrackUUIDs]).then((values) => {
+                            let details = values[0];
+                            let listOftrackUUIDs = values[1];
+
+                            // Create an array of promises
+                            let getTracks: Promise<any>[] = [];
+                            for (let i = 0, trackUUID: any; trackUUID = listOftrackUUIDs[i]; i = i + 1) {
+                                getTracks.push(getTrack(trackUUID));
+                            }
+
+                            // Get each of the tracks.
+                            Promise.all(getTracks).then((tracksValues) => {
+
+                                let playlist: IPlaylist = {
+                                    name: details.name,
+                                    owner: details.owner,
+                                    tracks: [],
+                                };
+
+                                // Push each track onto the playlist.
+                                // tslint:disable-next-line
+                                for (let i = 0, track: any; track = tracksValues[i]; i = i + 1) {
+                                    playlist.tracks.push(track);
+                                }
+
+                                // Create the local copy of the playlist.
+                                playlists[playlistUUID] = playlist;
+
+                                resolve(playlists[playlistUUID]);
+
+                            }).catch(() => {
+                                reject(`Failed to get playlist.`);
+                            });
+
+                        }).catch(() => {
+                            reject(`Failed to get playlist.`);
+                        });
+                    } else {
+                        console.log(`Got the local copy of the playlist.`);
+                        resolve(playlists[playlistUUID]);
+                    }
+
+                });
+            }
+
+            // function getTracks(playlistUUID: string): Promise<any> {
+            //     // get each track in getPlaylistTracks(playlistUUID: string) tracks.
+
+            //     // Promise.all() - for getting all the tracks in the playlist
+            // }
 
 
 
@@ -529,15 +647,14 @@ class Main {
             let controller = $scope;
 
             controller.userEmail = user.email;
-            controller.trackUid = `-KRdV8p1jCr0Lmt-8KGo`;
+            controller.trackUUID = `-KRh2jfsMLbwNKTMxKoc`;
             controller.track = {};
-            controller.playlistUid = `-KRdbqiRr6CzgrecE912`;
             controller.playlist = {
                 name: ``,
                 owner: ``,
-                uuid: `not important`,
+                tracks: [],
+                uuid: `-KRh2dYOuUqCSVtafnBY`,
             };
-            controller.playlistTracks = [];
 
             controller.createTrack = () => {
                 let newTrack: ITrack = {
@@ -556,24 +673,27 @@ class Main {
             };
 
             controller.getTrack = () => {
-                console.log(`controller.track`);
-                controller.track = dataManager.getTrack(controller.trackUid);
-                console.log(controller.track);
+                dataManager.getTrack(controller.trackUUID).then((track: any) => {
+                    controller.track = track;
+                    console.log(track);
+                    controller.$digest();
+                });
             };
 
             controller.createPlaylist = () => {
-                let newPlaylist = {
+                let newPlaylist: IPlaylist = {
                     name: controller.playlist.name,
                     owner: controller.playlist.owner,
-                    uuid: `Playlist uuid? No need...`,
+                    tracks: [],
+                    uuid: `this will be autogenerated`,
                 };
-                dataManager.createPlaylist(newPlaylist).then((data: any) => {
-                    console.log(data);
+                dataManager.createPlaylist(newPlaylist).then((message: string) => {
+                    console.log(message);
                 });
             };
 
             controller.addTrackToPlaylist = () => {
-                dataManager.addTrackToPlaylist(controller.playlistUid, controller.trackUid).then((message: string) => {
+                dataManager.addTrackToPlaylist(controller.playlist.uuid, controller.trackUUID).then((message: string) => {
                     controller.showToast(message);
                 }).catch((message: string) => {
                     controller.showToast(message);
@@ -581,16 +701,16 @@ class Main {
             };
 
             controller.getPlaylistDetails = () => {
-                console.log(`getPlaylistDetails start`);
-                dataManager.getPlaylistDetails(controller.playlistUid).then((data: any) => {
-                    console.log(`getPlaylistDetails finish`);
-                    controller.playlist = data;
-                    console.log(data);
+                dataManager.getPlaylistDetails(controller.playlist.uuid).then((playlist: IPlaylist) => {
+                    controller.playlist = playlist;
+                    console.log(playlist);
                 });
             };
 
             controller.getPlaylistTracks = () => {
-                controller.playlistTracks = dataManager.getPlaylistTracks(controller.playlistUid);
+                dataManager.getPlaylistTracks(controller.playlist.uuid).then((tracks: any) => {
+                    console.log(tracks);
+                });
             };
 
             controller.showToast = function (message: string) {
