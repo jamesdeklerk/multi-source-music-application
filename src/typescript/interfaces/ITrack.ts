@@ -39,4 +39,9 @@ interface ITrack {
      */
     dateAdded: number;
 
+    /**
+     * The owner of the tracks uuid.
+     */
+    owner: string;
+
 }
