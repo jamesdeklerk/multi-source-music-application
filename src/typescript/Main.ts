@@ -434,6 +434,33 @@ class Main {
                 });
             }
 
+            function isTrackInPlaylist(playlistUUID: string, trackUUID: string): Promise<any> {
+                return new Promise((resolve, reject) => {
+
+                    // Make sure we have the latest list of track uuids for the given playlist.
+                    getPlaylistTracksUUIDs(playlistUUID).then((playlistsTracksResolved) => {
+
+                        let foundTrack = false;
+
+                        // The uuids of all the tracks.
+                        // tslint:disable-next-line
+                        for (let i = 0, resolvedTrackUUID: any; resolvedTrackUUID = playlistsTracksResolved[i]; i = i + 1) {
+                            if (resolvedTrackUUID === trackUUID) {
+                                foundTrack = true;
+                                break;
+                            }
+                        }
+
+                        resolve(foundTrack);
+
+                    }).catch(() => {
+                        // Just assume it isn't if we fail.
+                        resolve(false);
+                    });
+
+                });
+            }
+
             function addTrackToPlaylist(playlistUUID: string, trackUUID: string): Promise<any> {
                 return new Promise((resolve, reject) => {
 
@@ -671,6 +698,7 @@ class Main {
                 getTrack: getTrack,
                 getUsersLibraryUUID: getUsersLibraryUUID,
                 getUsersPlaylists: getUsersPlaylists,
+                isTrackInPlaylist: isTrackInPlaylist,
             };
         });
 
@@ -883,6 +911,12 @@ class Main {
             controller.getUsersLibraryUUID = () => {
                 dataManager.getUsersLibraryUUID().then((libraryUUID: any) => {
                     console.log(libraryUUID);
+                });
+            };
+
+            controller.isTrackInPlaylist = () => {
+                dataManager.isTrackInPlaylist(controller.playlist.uuid, controller.trackUUID).then((isIt: boolean) => {
+                    controller.showToast(isIt);
                 });
             };
 
