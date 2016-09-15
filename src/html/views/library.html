@@ -4,9 +4,11 @@
     <br>
     <br>
     Track uid:<input type="text" ng-model="trackUUID" name="trackUid"><br>
+    Track uuidInPlaylist:<input type="text" ng-model="uuidInPlaylist" name="trackUid"><br>
     Track title:<input type="text" ng-model="track.title" name="trackTitle"><br>
     <br>
     <md-button ng-click="createTrack()" class="md-raised md-primary">Create Track {{trackTitle}} - {{trackUid}}</md-button>
+    <md-button ng-click="deleteTrackFromPlaylist()" class="md-raised md-primary">Delete Track {{trackTitle}} from playlist!</md-button>
     <md-button ng-click="getTrack()" class="md-raised md-primary">Get Track {{trackUid}}</md-button>
     <br>
     <br>

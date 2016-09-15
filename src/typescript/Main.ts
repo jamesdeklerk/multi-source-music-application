@@ -568,6 +568,45 @@ class Main {
                 });
             }
 
+            function deleteTrackFromPlaylist(playlistUUID: string, uuidInPlaylist: string): Promise<any> {
+                return new Promise((resolve, reject) => {
+                    PLAYLISTS_TRACKS_REF.child(playlistUUID).child(uuidInPlaylist).remove().then(() => {
+
+                        // Remove it from the local copy of the playlist.
+                        // If there is a playlist
+                        if (playlists[playlistUUID]) {
+                            // And if that playlist has tracks
+                            if (playlists[playlistUUID].tracks) {
+                                // tslint:disable-next-line
+                                for (let i = 0, track: any; track = playlists[playlistUUID].tracks[i]; i = i + 1) {
+                                    // If we've found the track, remove it.
+                                    if (track.uuidInPlaylist === uuidInPlaylist) {
+                                        playlists[playlistUUID].tracks.splice(i, 1);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Do the same for playlistsTracks
+                        if (playlistsTracks[playlistUUID]) {
+                            // tslint:disable-next-line
+                            for (let i = 0, track: any; track = playlistsTracks[playlistUUID][i]; i = i + 1) {
+                                // If we've found the track, remove it.
+                                if (track.uuidInPlaylist === uuidInPlaylist) {
+                                    playlistsTracks[playlistUUID].splice(i, 1);
+                                    break;
+                                }
+                            }
+                        }
+
+                        resolve(`Track removed from playlist.`);
+                    }).catch(() => {
+                        reject(`Failed to remove track from playlist.`);
+                    });
+                });
+            }
+
             function getPlaylistDetails(playlistUUID: string): Promise<any> {
 
                 return new Promise((resolve, reject) => {
@@ -767,6 +806,7 @@ class Main {
                 addTrackToPlaylist: addTrackToPlaylist,
                 createPlaylist: createPlaylist,
                 createTrack: createTrack,
+                deleteTrackFromPlaylist: deleteTrackFromPlaylist,
                 getPlaylist: getPlaylist,
                 getPlaylistDetails: getPlaylistDetails,
                 getPlaylistTracksUUIDs: getPlaylistTracksUUIDs,
@@ -930,6 +970,15 @@ class Main {
         this.app.controller(`library`, ($scope: any, user: any, database: any, dataManager: any, $mdToast: any) => {
             let controller = $scope;
 
+            controller.showToast = function (message: string) {
+                $mdToast.show(
+                    $mdToast.simple()
+                        .textContent(message)
+                        .position(`bottom right`)
+                        .hideDelay(1500)
+                );
+            };
+
             controller.userEmail = user.email;
             controller.trackUUID = `-KRhQqbs0G8ra1c4xjJ5`;
             controller.track = {};
@@ -1027,13 +1076,14 @@ class Main {
                 });
             };
 
-            controller.showToast = function (message: string) {
-                $mdToast.show(
-                    $mdToast.simple()
-                        .textContent(message)
-                        .position(`bottom right`)
-                        .hideDelay(1500)
-                );
+            controller.deleteTrackFromPlaylist = () => {
+                dataManager.deleteTrackFromPlaylist(controller.playlist.uuid, controller.uuidInPlaylist).then((message: string) => {
+                    console.log(message);
+                    controller.showToast(message);
+                }).catch((message: string) => {
+                    console.log(message);
+                    controller.showToast(message);
+                });
             };
 
         });
