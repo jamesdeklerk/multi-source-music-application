@@ -379,12 +379,17 @@ class Main {
              * The playlist UUID of the current user.
              */
             let usersLibraryUUID: string;
+            /**
+             * Only used for getting the correct users library.
+             */
+            let currentUserUUID: string;
 
             /**
              * An array of the users playlists (details only).
              * i.e. [{ name: string, owner: string, uuid: string }]
              */
             let usersPlaylists: any;
+
 
             let USERS_REF = firebase.database().ref().child(`users`);
             let TRACKS_REF = firebase.database().ref().child(`tracks`);
@@ -826,11 +831,11 @@ class Main {
                                 resolve(usersPlaylists);
 
                             }).catch(() => {
-                                reject(`2 Failed to get users playlists.`);
+                                reject(`Failed to get users playlists.`);
                             });
 
                         }).catch(() => {
-                            reject(`1 Failed to get users playlists.`);
+                            reject(`Failed to get users playlists.`);
                         });
 
                     } else {
@@ -847,7 +852,17 @@ class Main {
 
                     let userUUID = auth.getUserUid();
 
-                    if (!usersLibraryUUID) {
+                    let correctUsersLibraryCached = false;
+                    if (currentUserUUID === undefined) {
+                        correctUsersLibraryCached = true;
+                    } else if (currentUserUUID === userUUID) {
+                        correctUsersLibraryCached = true;
+                    }
+
+                    // Update the current users UUID.
+                    currentUserUUID = userUUID;
+
+                    if (!usersLibraryUUID || !correctUsersLibraryCached) {
                         USERS_REF.child(userUUID).child(`library`).once(`value`).then((snapshot: any) => {
                             let libraryUUID = snapshot.val();
 
