@@ -47,42 +47,6 @@ class Main {
     }
 
     /**
-     * Run the sign in check.
-     */
-    private signInCheck($location: any, user: any) {
-
-        let userUid: string;
-        if (user) {
-            userUid = user.uid;
-        }
-
-        if (!this.appLoaded) {
-
-            $location.path(`/loading`);
-
-        } else if (this.appLoaded && $location.path() === `/loading`) {
-
-            $location.path(`/`);
-
-        } else if ($location.path() === `/sign-up` || $location.path() === `/sign-in`) {
-
-            // Check if they're already signed in.
-            if (userUid) {
-                // If they are, redirect them to their library.
-                $location.path(`/`);
-            }
-
-        } else {
-
-            if (!userUid) {
-                // If a user doesn't exist, redirect to the sign in pages.
-                $location.path(`/sign-in`);
-            }
-
-        }
-    }
-
-    /**
      * Setting up routing for the SPA.
      */
     private setupAngularRouting(): void {
@@ -94,11 +58,10 @@ class Main {
                 database: () => {
                     return firebase.database().ref();
                 },
-                user: (auth: any, $location: any) => {
+                user: (auth: any, stateCorrector: any) => {
 
-                    let user = auth.getUser();
-                    this.signInCheck($location, user);
-                    return user;
+                    stateCorrector.correctState(auth.getUserUid());
+                    return auth.getUser();
 
                 },
             };
@@ -144,9 +107,120 @@ class Main {
     private setupAngularFactories(): void {
 
         /**
+         * State corrector - corrects the current route.
+         */
+        this.app.factory(`stateCorrector`, ($location: any) => {
+
+            /**
+             * Specifies if it's the first time loading the page.
+             */
+            let firstPageLoad = true;
+
+            /**
+             * Specifies if the original route has been restored.
+             */
+            let routeRestored = false;
+
+            let pathsNotAllowedForRestore = [`/loading`, `/sign-in`, `/sign-up`];
+            let defaultRoute = `/`;
+
+            // The route waiting to be restored.
+            // Can't be loading, sign-in or sign-up.
+            let route = defaultRoute;
+
+            function isValidRestorePath(path: string): boolean {
+                // Checks if the given path is found in the list of paths
+                // not allowed for restoring.
+                return (pathsNotAllowedForRestore.indexOf(path) === -1);
+            }
+
+            function restoreRoute() {
+                if (!routeRestored) {
+
+                    routeRestored = true;
+
+                    // If it isn't on the correct route,
+                    // restore it to the correct route.
+                    if ($location.path() !== route) {
+                        $location.path(route);
+                    }
+                }
+            }
+
+            /**
+             * @return True if finished signing in, else false.
+             */
+            let correctState = (userUUID: any) => {
+
+                // If it's the first time loading the page, store the route
+                // to be restored.
+                if (firstPageLoad) {
+                    route = $location.path();
+
+                    // If it's not an allowed restore route,
+                    // just set the restore route to the default.
+                    if (!isValidRestorePath(route)) {
+                        route = defaultRoute;
+                        console.log(`NOT AN ALLOWED RESTORE ROUTE!`);
+                    }
+
+                    firstPageLoad = false;
+                }
+
+                if (!this.appLoaded) {
+
+                    $location.path(`/loading`);
+
+                } else if ($location.path() === `/loading`) {
+
+                    // Check if they're already signed in.
+                    if (userUUID) {
+
+                        if (routeRestored) {
+                            $location.path(defaultRoute);
+                        } else {
+                            restoreRoute();
+                        }
+
+                    } else {
+                        // If a user doesn't exist, redirect to the sign in page.
+                        $location.path(`/sign-in`);
+                    }
+
+                } else if (($location.path() === `/sign-in`) || ($location.path() === `/sign-up`)) {
+
+                    // If we're on the sign-in or sign-up page,
+                    // make sure the user isn't already signed in.
+                    if (userUUID) {
+                        if (routeRestored) {
+                            $location.path(defaultRoute);
+                        } else {
+                            restoreRoute();
+                        }
+                    }
+
+                } else {
+
+                    if (!userUUID) {
+                        // If a user doesn't exist, redirect to the sign in page.
+                        $location.path(`/sign-in`);
+                    } else {
+                        restoreRoute();
+                    }
+
+                }
+            };
+
+            return {
+                correctState: correctState,
+            };
+
+        });
+
+        /**
          * Authentication factory.
          */
-        this.app.factory(`auth`, ($firebaseObject: any, $location: any, $rootScope: any) => {
+        this.app.factory(`auth`, ($firebaseObject: any, $location: any, $rootScope: any, stateCorrector: any) => {
 
             let USERS_REF = firebase.database().ref().child(`users`);
             let PLAYLISTS_DETAILS_REF = firebase.database().ref().child(`playlists-details`);
@@ -157,7 +231,11 @@ class Main {
             firebase.auth().onAuthStateChanged((result: any) => {
                 this.appLoaded = true;
                 user = result;
-                this.signInCheck($location, user);
+                if (user) {
+                    stateCorrector.correctState(user.uid);
+                } else {
+                    stateCorrector.correctState(undefined);
+                }
                 $rootScope.$apply();
             });
 
@@ -211,20 +289,12 @@ class Main {
                 },
                 signIn: (email: string, password: string) => {
 
-                    console.log(firebase.auth());
-
                     return new Promise((resolve, reject) => {
 
                         firebase.auth().signInWithEmailAndPassword(email, password).then((data: any) => {
-
-                            console.log(`Sign in:`);
-                            console.log(data);
-                            resolve(`Signed in.`);
-
+                            resolve(data.uid);
                         }).catch((error: any) => {
-
                             reject(error.message);
-
                         });
 
                     });
@@ -234,13 +304,11 @@ class Main {
 
                     return new Promise((resolve, reject) => {
 
-                        firebase.auth().signOut().then((data: any) => {
+                        firebase.auth().signOut().then(() => {
 
                             // Stop the player.
                             this.player.dequeueAll();
 
-                            console.log(`Sign out:`);
-                            console.log(data);
                             resolve(`Signed out.`);
 
                         }).catch((error: any) => {
@@ -266,7 +334,7 @@ class Main {
 
                                 // Create the library (a library is just another playlist)
                                 createLibrary(data.uid).then(() => {
-                                    resolve(`Signed up successfully.`);
+                                    resolve(data.uid);
                                 }).catch(() => {
                                     reject(`Failed to sign up.`);
                                 });
@@ -1165,7 +1233,7 @@ class Main {
         /**
          * Sign up
          */
-        this.app.controller(`signUp`, ($scope: any, auth: any, $location: angular.ILocationService) => {
+        this.app.controller(`signUp`, ($scope: any, auth: any, $location: angular.ILocationService, stateCorrector: any) => {
             let controller = $scope;
 
             controller.user = {};
@@ -1177,9 +1245,9 @@ class Main {
                 } else if (controller.user.password && (controller.user.password.trim() === `` || controller.user.password.length < 6)) {
                     console.log(`Invalid password (must be at least 6 characters).`);
                 } else {
-                    auth.signUp(controller.user.email, controller.user.password).then(() => {
-                        // Go to the users library.
-                        $location.path(`/`);
+                    auth.signUp(controller.user.email, controller.user.password).then((userUUID: string) => {
+                        // Restore state.
+                        stateCorrector.correctState(userUUID);
                         controller.$apply();
                     }).catch((error: any) => {
                         console.log(error);
@@ -1193,7 +1261,7 @@ class Main {
         /**
          * Sign in
          */
-        this.app.controller(`signIn`, ($scope: any, auth: any, $location: angular.ILocationService) => {
+        this.app.controller(`signIn`, ($scope: any, auth: any, $location: angular.ILocationService, stateCorrector: any) => {
             let controller = $scope;
             controller.loading = false;
 
@@ -1207,9 +1275,9 @@ class Main {
                     console.log(`Invalid password (must be at least 6 characters).`);
                 } else {
                     controller.loading = true;
-                    auth.signIn(controller.user.email, controller.user.password).then(() => {
-                        // Go to the users library.
-                        $location.path(`/`);
+                    auth.signIn(controller.user.email, controller.user.password).then((userUUID: string) => {
+                        // Restore state.
+                        stateCorrector.correctState(userUUID);
                         controller.$apply();
                     }).catch((error: any) => {
                         controller.loading = false;
