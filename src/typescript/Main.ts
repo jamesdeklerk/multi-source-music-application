@@ -14,6 +14,8 @@ class Main {
 
         // this.testTracks();
 
+        this.registerEvents();
+
         // =======================================================
         // Setting up AngularJS
         // =======================================================
@@ -24,6 +26,15 @@ class Main {
         this.setupAngularControllers();
 
         // -------------------------------------------------------
+
+    }
+
+    /**
+     * Registering events.
+     */
+    private registerEvents(): void {
+
+        publisher.register(`new-user`, []);
 
     }
 
@@ -233,8 +244,10 @@ class Main {
                 user = result;
                 if (user) {
                     stateCorrector.correctState(user.uid);
+                    publisher.publish(`new-user`);
                 } else {
                     stateCorrector.correctState(undefined);
+                    publisher.publish(`new-user`);
                 }
                 $rootScope.$apply();
             });
@@ -680,20 +693,39 @@ class Main {
                 });
             }
 
-            function getPlaylistDetails(playlistUUID: string): Promise<any> {
+            function getPlaylistDetails(playlistUUID: string, uuidInUsersPlaylists?: string): Promise<any> {
 
                 return new Promise((resolve, reject) => {
                     // If we don't have a local reference to it, make one.
                     if (!playlistsDetails[playlistUUID]) {
                         PLAYLISTS_DETAILS_REF.child(playlistUUID).once(`value`).then((snapshot: any) => {
                             playlistsDetails[playlistUUID] = snapshot.val();
-                            resolve(playlistsDetails[playlistUUID]);
+
+                            // If there is a uuidInUsersPlaylists, that means it is a playlist
+                            // for a specific user, so we must clone the playlist
+                            // and append its uuidInUsersPlaylists.
+                            if (uuidInUsersPlaylists) {
+                                let clonedPlaylistDetails = clone(playlistsDetails[playlistUUID]);
+                                clonedPlaylistDetails.uuidInUsersPlaylists = uuidInUsersPlaylists;
+                                resolve(clonedPlaylistDetails);
+                            } else {
+                                resolve(playlistsDetails[playlistUUID]);
+                            }
                         }).catch(() => {
                             reject(undefined);
                         });
                     } else {
                         console.log(`Got the local copy of the playlists details.`);
-                        resolve(playlistsDetails[playlistUUID]);
+                        // If there is a uuidInUsersPlaylists, that means it is a playlist
+                        // for a specific user, so we must clone the playlist
+                        // and append its uuidInUsersPlaylists.
+                        if (uuidInUsersPlaylists) {
+                            let clonedPlaylistDetails = clone(playlistsDetails[playlistUUID]);
+                            clonedPlaylistDetails.uuidInUsersPlaylists = uuidInUsersPlaylists;
+                            resolve(clonedPlaylistDetails);
+                        } else {
+                            resolve(playlistsDetails[playlistUUID]);
+                        }
                     }
                 });
             }
@@ -813,7 +845,8 @@ class Main {
                             // Create an array of promises that will get playlist details.
                             for (let key in retrievedPlaylists) {
                                 if (retrievedPlaylists.hasOwnProperty(key)) {
-                                    promisePlaylistDetails.push(getPlaylistDetails(retrievedPlaylists[key]));
+                                    console.log(key);
+                                    promisePlaylistDetails.push(getPlaylistDetails(retrievedPlaylists[key], key));
                                 }
                             }
 
@@ -911,42 +944,40 @@ class Main {
         /**
          * Master Page
          */
-        this.app.controller(`master`, ($scope: any, $mdSidenav: any, auth: any) => {
+        this.app.controller(`master`, ($scope: any, $mdSidenav: any, auth: any, dataManager: any) => {
             let controller = $scope;
+            controller.master = {};
 
             // Hide or show the menu
             controller.toggleMenu = () => {
                 $mdSidenav(`left`).toggle();
             };
 
-
-            // While there isn't a user, keep checking to see if that changes.
-            controller.user = undefined;
-            let noUser = () => {
-
+            publisher.subscribe(`new-user`, () => {
                 controller.user = auth.getUser();
 
-                if (controller.user) {
-                    userFound();
+                // Update the users library.
+                dataManager.getUsersLibraryUUID().then((libraryUUID: string) => {
+
+                    // Now that we have the users library UUID,
+                    // we can get its details.
+                    dataManager.getPlaylistDetails(libraryUUID).then((libraryDetails: any) => {
+                        controller.library = libraryDetails;
+                        controller.$digest();
+                    });
+
+                });
+
+                // Update the users playlists
+                dataManager.getUsersPlaylists().then((playlists: any) => {
+                    controller.playlists = playlists;
                     controller.$digest();
-                } else {
-                    // Still no user, check again.
-                    setTimeout(noUser, 500);
-                }
+                });
 
-            };
-            noUser();
+            });
 
-            let userFound = () => {
-
-                controller.search = {
-                    text: ``,
-                };
-
-                controller.signOut = () => {
-                    auth.signOut();
-                };
-
+            controller.signOut = () => {
+                auth.signOut();
             };
 
         });

@@ -77,6 +77,15 @@
             <a href="#/playlist/-KRiSs-DC15v9HZILASW">Library</a><br>
             <a href="#/playlist/-KRiTnSnsx1j2-k2yyz-">My playlist</a><br>
             <a href="#/playlist/-KRi3vqSIK5W9hcU0Lwt">Other persons playlist</a><br>
+            <br><br>
+
+            Library<br>
+            <a href="#/playlist/{{library.uuid}}">{{library.name}}</a><br>
+            <br><br>
+
+            Playlists<br>
+            <a ng-repeat="playlist in playlists" href="#/playlist/{{playlist.uuid}}">{{playlist.name}}</a><br>
+
         </md-sidenav>
 
         <!-- Content container -->
