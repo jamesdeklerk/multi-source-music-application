@@ -1233,24 +1233,34 @@ class Main {
         /**
          * Sign up
          */
-        this.app.controller(`signUp`, ($scope: any, auth: any, $location: angular.ILocationService, stateCorrector: any) => {
+        this.app.controller(`signUp`, ($scope: any, auth: any, $location: angular.ILocationService, stateCorrector: any, $mdToast: any) => {
             let controller = $scope;
+
+            // Setup toasts
+            controller.showToast = function (message: string) {
+                $mdToast.show(
+                    $mdToast.simple()
+                        .textContent(message)
+                        .position(`bottom right`)
+                        .hideDelay(1500)
+                );
+            };
 
             controller.user = {};
 
             controller.signUp = () => {
 
-                if (controller.user.email && controller.user.email.trim() === ``) {
-                    console.log(`Invalid email.`);
-                } else if (controller.user.password && (controller.user.password.trim() === `` || controller.user.password.length < 6)) {
-                    console.log(`Invalid password (must be at least 6 characters).`);
+                if (!(controller.user.email) || controller.user.email.trim() === ``) {
+                    controller.showToast(`Invalid email.`);
+                } else if (!(controller.user.password) || (controller.user.password.trim() === `` || controller.user.password.length < 6)) {
+                    controller.showToast(`Invalid password (must be at least 6 characters).`);
                 } else {
                     auth.signUp(controller.user.email, controller.user.password).then((userUUID: string) => {
                         // Restore state.
                         stateCorrector.correctState(userUUID);
                         controller.$apply();
                     }).catch((error: any) => {
-                        console.log(error);
+                        controller.showToast(error);
                     });
                 }
 
@@ -1261,18 +1271,28 @@ class Main {
         /**
          * Sign in
          */
-        this.app.controller(`signIn`, ($scope: any, auth: any, $location: angular.ILocationService, stateCorrector: any) => {
+        this.app.controller(`signIn`, ($scope: any, auth: any, $location: angular.ILocationService, stateCorrector: any, $mdToast: any) => {
             let controller = $scope;
             controller.loading = false;
+
+            // Setup toasts
+            controller.showToast = function (message: string) {
+                $mdToast.show(
+                    $mdToast.simple()
+                        .textContent(message)
+                        .position(`bottom right`)
+                        .hideDelay(1500)
+                );
+            };
 
             controller.user = {};
 
             controller.signIn = () => {
 
-                if (controller.user.email && controller.user.email.trim() === ``) {
-                    console.log(`Invalid email.`);
-                } else if (controller.user.password && (controller.user.password.trim() === `` || controller.user.password.length < 6)) {
-                    console.log(`Invalid password (must be at least 6 characters).`);
+                if (!(controller.user.email) || controller.user.email.trim() === ``) {
+                    controller.showToast(`Invalid email.`);
+                } else if (!(controller.user.password) || (controller.user.password.trim() === `` || controller.user.password.length < 6)) {
+                    controller.showToast(`Invalid password (must be at least 6 characters).`);
                 } else {
                     controller.loading = true;
                     auth.signIn(controller.user.email, controller.user.password).then((userUUID: string) => {
@@ -1281,7 +1301,7 @@ class Main {
                         controller.$apply();
                     }).catch((error: any) => {
                         controller.loading = false;
-                        console.log(error);
+                        controller.showToast(error);
                     });
                 }
 
