@@ -13,6 +13,7 @@
     <br>
     <br>
     Playlist uid:<input type="text" ng-model="playlist.uuid" name="playlistUid"><br>
+    Playlist uuidInUsersPlaylists:<input type="text" ng-model="playlist.uuidInUsersPlaylists" name="playlistUid"><br>
     Playlist owner:<input type="text" ng-model="playlist.owner" name="playlistOwner"><br>
     Playlist name:<input type="text" ng-model="playlist.name" name="playlistName"><br>
     <br>
@@ -31,6 +32,8 @@
     <md-button ng-click="getUsersLibraryUUID()" class="md-raised md-primary">Get Users Library UUID</md-button>
     <br>
     <md-button ng-click="isTrackInPlaylist()" class="md-raised md-primary">Check if track is in playlist</md-button>
+    <br>
+    <md-button ng-click="deletePlaylist()" class="md-raised md-primary">Delete playlist</md-button>
     <br>
     <br>
     <br>

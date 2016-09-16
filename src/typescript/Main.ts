@@ -618,10 +618,12 @@ class Main {
 
                                 // Add the track to the users library.
                                 getUsersLibraryUUID().then((libraryUUID) => {
+                                    console.log(`hmmmmmmmmmmmmmmmmmmm`);
                                     // We managed to get the users libraryUUID.
                                     // Only if we are not currently on the users library
                                     // should we consider add it to their library.
                                     if (playlistUUID !== libraryUUID) {
+                                        console.log(`hmmmmmmmmmmmmmmmmmmm 2`);
                                         // But before we add it, we must make sure it isn't already added.
                                         isTrackInPlaylist(libraryUUID, trackUUID).then((itIs) => {
                                             console.log(`It is in the library: ${itIs}`);
@@ -879,6 +881,28 @@ class Main {
                 });
             }
 
+            function deletePlaylist(playlistUUID: string, uuidInUsersPlaylists: string): Promise<any> {
+
+                let userUUID = auth.getUserUid();
+
+                // Delete playlist from users playlists.
+                // If this completes successfully, then it is considered as completed.
+                return new Promise((resolve, reject) => {
+                    USERS_REF.child(userUUID).child(`playlists`).child(uuidInUsersPlaylists).remove().then(() => {
+
+                        // Delete the actual playlist details.
+                        PLAYLISTS_DETAILS_REF.child(playlistUUID).remove();
+
+                        // Delete the actual playlist tracks.
+                        PLAYLISTS_TRACKS_REF.child(playlistUUID).remove();
+
+                        resolve(`Playlist removed.`);
+                    }).catch(() => {
+                        reject(`Failed to remove playlist.`);
+                    });
+                });
+            }
+
             function getUsersLibraryUUID(): Promise<any> {
                 // usersLibrary
                 return new Promise((resolve, reject) => {
@@ -922,6 +946,7 @@ class Main {
                 addTrackToPlaylist: addTrackToPlaylist,
                 createPlaylist: createPlaylist,
                 createTrack: createTrack,
+                deletePlaylist: deletePlaylist,
                 deleteTrackFromPlaylist: deleteTrackFromPlaylist,
                 getPlaylist: getPlaylist,
                 getPlaylistDetails: getPlaylistDetails,
@@ -1100,7 +1125,7 @@ class Main {
                 name: ``,
                 owner: ``,
                 tracks: [],
-                uuid: `-KRiTnSnsx1j2-k2yyz-`,
+                uuid: `-KRnsMRMEy09mH2d5rC5`,
             };
 
             controller.createTrack = () => {
@@ -1196,6 +1221,14 @@ class Main {
                     controller.showToast(message);
                 }).catch((message: string) => {
                     console.log(message);
+                    controller.showToast(message);
+                });
+            };
+
+            controller.deletePlaylist = () => {
+                dataManager.deletePlaylist(controller.playlist.uuid, controller.playlist.uuidInUsersPlaylists).then((message: string) => {
+                    controller.showToast(message);
+                }).catch((message: string) => {
                     controller.showToast(message);
                 });
             };
