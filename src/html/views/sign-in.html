@@ -1,18 +1,21 @@
-<h1>Sign in</h1>
+<div class="fill-screen sign-in">
 
-<form ng-submit="signIn()">
-    <input type="email" ng-model="user.email" name="email" placeholder="Email" ng-class="emailError" autofocus>
-    <br/>
-    <br/>
-    <input type="password" ng-model="user.password" name="password" placeholder="Password" ng-class="passwordError">
-    <br/>
-    <br/>
-    <input type="submit" class="next-icon" ng-hide="loading" value="Sign in">
-</form>
+    <div class="center">
 
-<br/>
-<a href="#/sign-up">Sign up</a>
+        <h1 class="horizontal-center">Sign in</h1>
 
+        <form ng-submit="signIn()">
+            <input type="email" ng-model="user.email" name="email" placeholder="Email" ng-class="emailError" autofocus>
+            <input type="password" ng-model="user.password" name="password" placeholder="Password" ng-class="passwordError">
+            <div class="horizontal-center">
+                <input type="submit" ng-hide="loading" value="Sign in">
+            </div>
+        </form>
 
-<br/>
-<button ng-click="getUUID()">Get UUID</button>
+        <a href="#/sign-up">Sign up</a>
+
+        <md-progress-circular class="horizontal-center" md-mode="indeterminate"></md-progress-circular>
+
+    </div>
+
+</div>

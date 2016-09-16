@@ -43,7 +43,7 @@ class Main {
      */
     private setupAngularApp(): void {
 
-        this.app = angular.module(`music-application`, [`ngMaterial`, `ngRoute`, `firebase`])
+        this.app = angular.module(`music-application`, [`ngMaterial`, `ngRoute`, `firebase`, `ngAnimate`])
             .config(function ($mdThemingProvider: any) {
 
                 $mdThemingProvider.theme(`default`)

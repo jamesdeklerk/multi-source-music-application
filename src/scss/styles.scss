@@ -1,13 +1,10 @@
-// Order of elements (z-index)
-$top-z-index: 1000000;
-
-
-
 /* ====================================================
  * Importing
  * ==================================================== */
 
+@import 'variables';
 @import 'hackery';
+@import 'sign-in';
 @import 'boilerplate';
 @import 'master';
 @import 'library';
@@ -26,12 +23,12 @@ $top-z-index: 1000000;
     right: 0px;
     bottom: 0px;
     left: 0px;
-    background-color: blue;
-    z-index: $top-z-index;
+    z-index: $z-index-10;
 }
 
 .fill-block {
     // background-color: yellow;
+    // display: flex;
     width: 100%;
     height: 100%;
 }

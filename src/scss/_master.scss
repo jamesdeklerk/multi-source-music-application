@@ -1,5 +1,12 @@
-// z-index
-$seekbar-z-index: 100;
+/* ====================================================
+ * Importing
+ * ==================================================== */
+
+@import 'variables';
+
+/* ---------------------------------------------------- */
+
+
 
 $search-background-color: #f3f3f3;
 $search-font-color: black;
@@ -80,7 +87,7 @@ $player-element-image-width: $player-elements-height * (16 / 9);
 
 #seek-bar {
     position: absolute;
-    z-index: $seekbar-z-index;
+    z-index: $z-index-5;
     width: 100%;
     padding: 0px;
     margin: 0px;

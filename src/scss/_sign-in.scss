@@ -1,0 +1,16 @@
+.sign-in {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f3f3f3;
+
+    .center {
+        background-color: orangered;
+            // align-self: center;
+
+        .horizontal-center {
+            text-align: center;
+            margin: auto;
+        }
+    }
+}
