@@ -1318,6 +1318,7 @@ class Main {
          */
         this.app.controller(`signUp`, ($scope: any, auth: any, $location: angular.ILocationService, stateCorrector: any, $mdToast: any) => {
             let controller = $scope;
+            controller.loading = false;
 
             // Setup toasts
             controller.showToast = function (message: string) {
@@ -1338,11 +1339,13 @@ class Main {
                 } else if (!(controller.user.password) || (controller.user.password.trim() === `` || controller.user.password.length < 6)) {
                     controller.showToast(`Invalid password (must be at least 6 characters).`);
                 } else {
+                    controller.loading = true;
                     auth.signUp(controller.user.email, controller.user.password).then((userUUID: string) => {
                         // Restore state.
                         stateCorrector.correctState(userUUID);
                         controller.$apply();
                     }).catch((error: any) => {
+                        controller.loading = false;
                         controller.showToast(error);
                     });
                 }

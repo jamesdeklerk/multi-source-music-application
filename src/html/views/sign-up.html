@@ -1,4 +1,49 @@
-<h1>Sign up</h1>
+<div class="fill-screen sign-up">
+
+    <div class="center box">
+
+        <div>
+            <div class="logo">
+                <md-icon md-svg-src="src/assets/svg/logo.svg"></md-icon>
+                <span>contour</span>
+            </div>
+            <div class="horizontal-center slogan">
+                <span class="horizontal-center">Your world of music no matter the source.</span>
+            </div>
+        </div>
+
+        <form ng-submit="signUp()">
+
+            <md-input-container class="md-icon-float md-block">
+                <label>Email</label>
+                <md-icon md-svg-src="src/assets/svg/email.svg"></md-icon>
+                <input ng-model="user.email" type="email">
+            </md-input-container>
+            <md-input-container class="md-icon-float md-block">
+                <label>Password</label>
+                <md-icon md-svg-src="src/assets/svg/lock.svg"></md-icon>
+                <input ng-model="user.password" type="password">
+            </md-input-container>
+
+            <div class="button-container">
+                <div class="horizontal-center">
+                    <md-button type="submit" ng-hide="loading" class="md-raised">Sign up</md-button>
+                </div>
+
+                <div ng-hide="loading" class="horizontal-center sign-in">
+                    <md-button href="#/sign-in">Sign in</md-button>
+                </div>
+
+                <md-progress-circular ng-show="loading" class="md-hue-1 horizontal-center" md-mode="indeterminate"></md-progress-circular>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!--<h1>Sign up</h1>
 
 <form ng-submit="signUp()">
     <input type="email" ng-model="user.email" name="email" placeholder="Email" ng-class="emailError" autofocus>
@@ -11,4 +56,4 @@
 </form>
 
 <br/>
-<a href="#/sign-in">Sign in</a>
+<a href="#/sign-in">Sign in</a>-->

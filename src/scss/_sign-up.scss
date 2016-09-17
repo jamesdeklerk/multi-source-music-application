@@ -1,0 +1,60 @@
+$sign-up-logo-size: 24px;
+$sign-up-logo-font-size: 36px;
+$sign-up-slogan-font-size: 14px;
+
+.sign-up {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: $primary-color;
+    color: $primary-text-color-light;
+
+    .center {
+        .horizontal-center {
+            text-align: center;
+            margin: auto;
+        }
+
+        md-input-container, label, input {
+            color: $color-100;
+            border-color: $color-100;
+        }
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+
+        md-icon {
+            height: $sign-up-logo-size;
+            width: $sign-up-logo-size;
+            margin: 0px;
+            margin-top: 5px;
+            margin-right: 10px;
+        }
+        
+        span {
+            vertical-align: middle;
+            font-size: $sign-up-logo-font-size;
+        }
+    }
+
+    .slogan {
+        font-size: $sign-up-slogan-font-size;
+        padding-bottom: 24px;
+    }
+
+    .box {
+        width: 300px;
+    }
+
+    .sign-in {
+        padding-top: 14px;
+    }
+
+    .button-container {
+        height: 110px;
+    }
+}
