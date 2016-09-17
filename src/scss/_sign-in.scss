@@ -1,6 +1,6 @@
-$sign-in-logo-size: 24px;
-$sign-in-logo-font-size: 36px;
-$sign-in-slogan-font-size: 14px;
+$sign-in-logo-size: 34px;
+$sign-in-logo-font-size: 46px;
+$sign-in-slogan-font-size: 16px;
 
 .sign-in {
     display: flex;
@@ -25,13 +25,13 @@ $sign-in-slogan-font-size: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 14px;
+        padding-bottom: 76px;
 
         md-icon {
             height: $sign-in-logo-size;
             width: $sign-in-logo-size;
             margin: 0px;
-            margin-top: 5px;
+            margin-top: 8px;
             margin-right: 10px;
         }
         

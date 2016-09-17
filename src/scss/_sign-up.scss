@@ -1,6 +1,6 @@
-$sign-up-logo-size: 24px;
-$sign-up-logo-font-size: 36px;
-$sign-up-slogan-font-size: 14px;
+$sign-up-logo-size: 34px;
+$sign-up-logo-font-size: 46px;
+$sign-up-slogan-font-size: 16px;
 
 .sign-up {
     display: flex;
@@ -25,13 +25,13 @@ $sign-up-slogan-font-size: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 14px;
+        padding-bottom: 76px;
 
         md-icon {
             height: $sign-up-logo-size;
             width: $sign-up-logo-size;
             margin: 0px;
-            margin-top: 5px;
+            margin-top: 8px;
             margin-right: 10px;
         }
         
