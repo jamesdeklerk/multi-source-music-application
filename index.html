@@ -43,7 +43,7 @@
 
     <!-- Header container -->
     <md-toolbar layout="row" class="md-toolbar-tools">
-        <md-button class="menu md-icon-button" ng-click="toggleMenu()" aria-label="Show menu">
+        <md-button class="md-icon-button" ng-click="toggleMenu()" aria-label="Show menu">
             <md-icon md-svg-icon="src/assets/svg/menu.svg"></md-icon>
         </md-button>
         <!-- Search -->
@@ -73,17 +73,81 @@
     <div flex layout="row">
 
         <!-- Menu container -->
-        <md-sidenav class="md-whiteframe-4dp" md-is-locked-open="$mdMedia('gt-sm')" md-component-id="left" ng-click="toggleMenu()">
-            <a href="#/playlist/-KRiSs-DC15v9HZILASW">Library</a><br>
-            <a href="#/playlist/-KRiTnSnsx1j2-k2yyz-">My playlist</a><br>
+        <md-sidenav class="sidenav" class="md-whiteframe-4dp" md-is-locked-open="$mdMedia('gt-sm')" md-component-id="left" ng-click="toggleMenu()">
+
+            <!-- Auto generated stuff e.g. the users library -->
+            <md-content>
+                <md-list flex>
+                    <md-subheader class="md-no-sticky">Collection</md-subheader>
+                    <md-list-item ng-hide="loadingLibrary"="loadingLibrary" class="md-1-line" ng-click="null" href="#/playlist/{{library.uuid}}">
+                        <div class="md-list-item-text" layout="column">
+                            <h3>{{library.name}}</h3>
+                        </div>
+                        <md-menu class="md-secondary">
+                            <md-button class="md-icon-button" aria-label="library options" ng-click="$mdOpenMenu($event)">
+                                <md-icon md-svg-icon="src/assets/svg/more_vertical.svg"></md-icon>
+                            </md-button>
+                            <md-menu-content flex>
+                                <md-menu-item>
+                                    <md-button ng-click="null">Share</md-button>
+                                </md-menu-item>
+                            </md-menu-content>
+                        </md-menu>
+                    </md-list-item>
+
+                    <div class="loading" ng-show="loadingLibrary">
+                        <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+                    </div>
+
+                </md-list>
+            </md-content>
+
+            <!-- List of the users playlists -->
+            <md-content>
+                <md-list flex>
+                    <md-subheader class="md-no-sticky">Playlists</md-subheader>
+
+                    <!-- Each playlist -->
+                    <md-list-item class="md-1-line" ng-repeat="playlist in playlists" ng-click="null" href="#/playlist/-KRsGm0aYfDe_XgUuIbn">
+                        <!--<img ng-src="{{item.face}}?{{$index}}" class="md-avatar" alt="{{item.who}}" />-->
+                        <div class="md-list-item-text" layout="column">
+                            <h3>This</h3>
+                        </div>
+                        <md-menu class="md-secondary">
+                            <md-button class="md-icon-button" aria-label="playlist options" ng-click="$mdOpenMenu($event)">
+                                <md-icon md-svg-icon="src/assets/svg/more_vertical.svg"></md-icon>
+                            </md-button>
+                            <md-menu-content flex>
+                                <md-menu-item>
+                                    <md-button ng-click="null">Share</md-button>
+                                </md-menu-item>
+                                <md-menu-item>
+                                    <md-button ng-click="null">Rename</md-button>
+                                </md-menu-item>
+                                <md-menu-item>
+                                    <md-button ng-click="null">Delete</md-button>
+                                </md-menu-item>
+                            </md-menu-content>
+                        </md-menu>
+                    </md-list-item>
+
+                    <div class="loading" ng-show="loadingPlaylists">
+                        <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+                    </div>
+
+                </md-list>
+            </md-content>
+
+            <br>
+            <br>
             <a href="#/playlist/-KRi3vqSIK5W9hcU0Lwt">Other persons playlist</a><br>
-            <br><br>
+            <br><br> Library
 
-            Library<br>
+            <br>
             <a href="#/playlist/{{library.uuid}}">{{library.name}}</a><br>
-            <br><br>
+            <br><br> Playlists
 
-            Playlists<br>
+            <br>
             <a ng-repeat="playlist in playlists" href="#/playlist/{{playlist.uuid}}">{{playlist.name}}</a><br>
 
         </md-sidenav>

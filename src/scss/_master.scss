@@ -11,14 +11,6 @@
 $search-background-color: #f3f3f3;
 $search-font-color: black;
 
-.menu {
-    background-color: transparent;
-    border: none;
-    height: 38px;
-    margin: 16px;
-    width: 36px;
-}
-
 md-toolbar .search {
     flex: 1;
     margin: auto;
@@ -52,6 +44,31 @@ md-toolbar .user {
     height: 100%;
     width: 100%;
 }
+
+
+
+/* ====================================================
+ * Menu
+ * ==================================================== */
+
+.sidenav {
+    md-list {
+        color: $primary-text-color-dark;
+    }
+
+    svg {
+        color: $secondary-text-color-dark;
+    }
+
+    .loading {
+        text-align: center;
+        background-color: inherit;
+        height: 55px;
+    }
+}
+
+/* ---------------------------------------------------- */
+
 
 
 /* ====================================================

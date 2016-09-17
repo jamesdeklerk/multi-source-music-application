@@ -982,6 +982,10 @@ class Main {
             let controller = $scope;
             controller.master = {};
 
+            // Defaults
+            controller.loadingLibrary = true;
+            controller.loadingPlaylists = true;
+
             // Hide or show the menu
             controller.toggleMenu = () => {
                 $mdSidenav(`left`).toggle();
@@ -996,7 +1000,11 @@ class Main {
                     // Now that we have the users library UUID,
                     // we can get its details.
                     dataManager.getPlaylistDetails(libraryUUID).then((libraryDetails: any) => {
+                        controller.loadingLibrary = false;
                         controller.library = libraryDetails;
+                        controller.$digest();
+                    }).catch(() => {
+                        controller.loadingLibrary = false;
                         controller.$digest();
                     });
 
@@ -1018,18 +1026,25 @@ class Main {
                         // Now that we have the users library UUID,
                         // we can get its details.
                         dataManager.getPlaylistDetails(libraryUUID).then((libraryDetails: any) => {
+                            controller.loadingLibrary = false;
                             controller.library = libraryDetails;
                             controller.$digest();
                         });
 
                     }).catch(() => {
-                        // The library isn't finished being created. 
+                        // The library isn't finished being created.
+                        controller.loadingLibrary = true;
+                        controller.$digest();
                     });
 
                     // Update the users playlists
                     dataManager.getUsersPlaylists().then((playlists: any) => {
+                        controller.loadingPlaylists = false;
                         controller.playlists = playlists;
                         controller.$digest();
+                    }).catch(() => {
+                        // Failed to load playlists.
+                        controller.loadingPlaylists = false;
                     });
 
                 }
