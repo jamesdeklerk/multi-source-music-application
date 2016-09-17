@@ -278,6 +278,7 @@ class Main {
                             // The new library (i.e. playlist) uuid was successfully updated,
                             // now set it as this users library.
                             USERS_REF.child(owner).child(`library`).set(libraryUUID).then(() => {
+                                publisher.publish(`library-created`);
                                 resolve(`Library created successfully.`);
                             }).catch(() => {
                                 reject(`Failed to create library.`);
@@ -351,7 +352,6 @@ class Main {
 
                                 // Create the library (a library is just another playlist)
                                 createLibrary(data.uid).then(() => {
-                                    publisher.publish(`library-created`);
                                     resolve(data.uid);
                                 }).catch(() => {
                                     reject(`Failed to sign up.`);
@@ -535,18 +535,21 @@ class Main {
 
                             // The new playlist uuid was successfully updated,
                             // now add it to the users playlists.
-                            USERS_REF.child(playlist.owner).child(`playlists`).push(playlistUUID).then(() => {
+                            USERS_REF.child(playlist.owner).child(`playlists`).push(playlistUUID).then((data: any) => {
 
                                 // Make sure we have the latest version of the users playlists.
                                 getUsersPlaylists().then(() => {
 
                                     // Update the local copys.
                                     playlist.uuid = playlistUUID;
+                                    playlist.uuidInUsersPlaylists = data.key;
                                     playlists[playlistUUID] = playlist;
                                     usersPlaylists.push(playlist);
 
-                                    // Pass throught the playlist UUID.
+                                    // Publish the event.
                                     publisher.publish(`playlist-created`);
+
+                                    // Pass throught the playlist UUID.
                                     resolve(playlistUUID);
 
                                 }).catch(() => {
@@ -894,6 +897,9 @@ class Main {
 
             function deletePlaylist(playlistUUID: string, uuidInUsersPlaylists: string): Promise<any> {
 
+                console.log(playlistUUID);
+                console.log(uuidInUsersPlaylists);
+
                 let userUUID = auth.getUserUid();
 
                 // Delete playlist from users playlists.
@@ -906,6 +912,25 @@ class Main {
 
                         // Delete the actual playlist tracks.
                         PLAYLISTS_TRACKS_REF.child(playlistUUID).remove();
+
+                        // Remove local copies.
+                        playlists[playlistUUID] = undefined;
+                        playlistsTracks[playlistUUID] = undefined;
+                        playlistsDetails[playlistUUID] = undefined;
+                        // Do the same for usersPlaylists
+                        if (usersPlaylists instanceof Array) {
+                            // tslint:disable-next-line
+                            for (let i = 0, playlist: any; playlist = usersPlaylists[i]; i = i + 1) {
+                                // If we've found the playlist, remove it.
+                                if (playlist.uuid === playlistUUID) {
+                                    usersPlaylists.splice(i, 1);
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Publish the event.
+                        publisher.publish(`playlist-deleted`);
 
                         resolve(`Playlist removed.`);
                     }).catch(() => {
@@ -978,7 +1003,7 @@ class Main {
         /**
          * Master Page
          */
-        this.app.controller(`master`, ($scope: any, $mdSidenav: any, auth: any, dataManager: any) => {
+        this.app.controller(`master`, ($scope: any, $mdSidenav: any, auth: any, dataManager: any, $mdToast: any) => {
             let controller = $scope;
             controller.master = {};
 
@@ -989,6 +1014,25 @@ class Main {
             // Hide or show the menu
             controller.toggleMenu = () => {
                 $mdSidenav(`left`).toggle();
+            };
+
+            // Setup toasts
+            controller.showToast = function (message: string) {
+                $mdToast.show(
+                    $mdToast.simple()
+                        .textContent(message)
+                        .position(`bottom right`)
+                        .hideDelay(1500)
+                );
+            };
+
+            // Delete playlist.
+            controller.deletePlaylist = (playlistUUID: string, uuidInUsersPlaylists: string) => {
+                dataManager.deletePlaylist(playlistUUID, uuidInUsersPlaylists).then((message: string) => {
+                    controller.showToast(message);
+                }).catch((message: string) => {
+                    controller.showToast(message);
+                });
             };
 
             // Incase it's the user has just been created, we need to listen
@@ -1011,7 +1055,37 @@ class Main {
                 });
             });
 
-            // Watch for playlists being 
+            // Watch for playlists being created.
+            publisher.subscribe(`playlist-created`, () => {
+                // A new playlist has to be loaded, so show the loading spinner.
+                controller.loadingPlaylists = true;
+                // Update the users playlists
+                dataManager.getUsersPlaylists().then((playlists: any) => {
+                    controller.loadingPlaylists = false;
+                    controller.playlists = playlists;
+                    controller.$digest();
+                }).catch(() => {
+                    // Failed to load playlists.
+                    controller.loadingPlaylists = false;
+                    controller.$digest();
+                });
+            });
+
+            // Watch for playlists being deleted.
+            publisher.subscribe(`playlist-deleted`, () => {
+                // A playlist has been deleted, so show the loading spinner.
+                controller.loadingPlaylists = true;
+                // Update the users playlists
+                dataManager.getUsersPlaylists().then((playlists: any) => {
+                    controller.loadingPlaylists = false;
+                    controller.playlists = playlists;
+                    controller.$digest();
+                }).catch(() => {
+                    // Failed to load playlists.
+                    controller.loadingPlaylists = false;
+                    controller.$digest();
+                });
+            });
 
             publisher.subscribe(`user-ready`, () => {
                 controller.user = auth.getUser();
@@ -1045,6 +1119,7 @@ class Main {
                     }).catch(() => {
                         // Failed to load playlists.
                         controller.loadingPlaylists = false;
+                        controller.$digest();
                     });
 
                 }

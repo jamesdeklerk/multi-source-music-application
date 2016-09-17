@@ -3,4 +3,5 @@ interface IPlaylist {
     name: string;
     tracks: ITrack[];
     uuid: string;
+    uuidInUsersPlaylists: string;
 }
