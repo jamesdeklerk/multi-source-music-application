@@ -76,9 +76,9 @@
         <md-sidenav class="sidenav" class="md-whiteframe-4dp" md-is-locked-open="$mdMedia('gt-sm')" md-component-id="left" ng-click="toggleMenu()">
 
             <!-- Auto generated stuff e.g. the users library -->
+            <md-subheader class="md-no-sticky">Collection</md-subheader>
             <!--<md-content>-->
-                <md-list flex>
-                    <md-subheader class="md-no-sticky">Collection</md-subheader>
+                <md-list>
                     <md-list-item ng-hide="loadingLibrary"="loadingLibrary" ng-click="null" href="#/playlist/{{library.uuid}}">
                         <div class="md-list-item-text" layout="column">
                             <h3>{{library.name}}</h3>
@@ -103,12 +103,12 @@
             <!--</md-content>-->
 
             <!-- List of the users playlists -->
-            <!--<md-content>-->
+            <md-subheader class="md-no-sticky">Playlists</md-subheader>
+            <md-content>
                 <md-list flex>
-                    <md-subheader class="md-no-sticky">Playlists</md-subheader>
 
                     <!-- Each playlist -->
-                    <md-list-item class="md-1-line" ng-repeat="playlist in playlists" ng-click="null"  href="#/playlist/{{playlist.uuid}}">
+                    <md-list-item class="md-1-line" ng-repeat="playlist in playlists" ng-click="null" href="#/playlist/{{playlist.uuid}}">
                         <div class="md-list-item-text" layout="column">
                             <h3>{{playlist.name}}</h3>
                         </div>
@@ -135,12 +135,12 @@
                     </div>
 
                 </md-list>
-            <!--</md-content>-->
+                <!--</md-content>-->
 
-            <br>
-            <br>
-            <a href="#/playlist/-KRi3vqSIK5W9hcU0Lwt">Other persons playlist</a><br>
-            <br><br> Library
+                <br>
+                <br>
+                <a href="#/playlist/-KRi3vqSIK5W9hcU0Lwt">Other persons playlist</a><br>
+                <br><br> Library
 
         </md-sidenav>
 

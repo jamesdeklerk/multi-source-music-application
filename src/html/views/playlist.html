@@ -15,4 +15,19 @@
         </li>
     </ul>
 
+    <!-- Playlist details i.e. name, owner, add button etc. -->
+    <md-content>
+
+    </md-content>
+
+    <!-- Tracks in a virtual repeat (for speed) -->
+    <md-content>
+        <md-virtual-repeat-container id="vertical-container">
+            <div md-virtual-repeat="item in ctrl.dynamicItems" md-on-demand class="repeated-item" flex>
+                {{item}}
+            </div>
+        </md-virtual-repeat-container>
+    </md-content>
+
+
 </div>
