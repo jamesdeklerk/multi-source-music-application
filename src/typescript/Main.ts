@@ -859,7 +859,6 @@ class Main {
                             // Create an array of promises that will get playlist details.
                             for (let key in retrievedPlaylists) {
                                 if (retrievedPlaylists.hasOwnProperty(key)) {
-                                    console.log(key);
                                     promisePlaylistDetails.push(getPlaylistDetails(retrievedPlaylists[key], key));
                                 }
                             }
@@ -921,21 +920,18 @@ class Main {
 
                     let userUUID = auth.getUserUid();
 
-                    let correctUsersLibraryCached = false;
-                    if (currentUserUUID === undefined) {
-                        correctUsersLibraryCached = true;
-                    } else if (currentUserUUID === userUUID) {
-                        correctUsersLibraryCached = true;
+                    let correctUsersLibraryCached = true;
+                    if (currentUserUUID !== userUUID) {
+                        correctUsersLibraryCached = false;
                     }
-
-                    // Update the current users UUID.
-                    currentUserUUID = userUUID;
 
                     if (!usersLibraryUUID || !correctUsersLibraryCached) {
                         USERS_REF.child(userUUID).child(`library`).once(`value`).then((snapshot: any) => {
                             let libraryUUID = snapshot.val();
 
                             if (libraryUUID) {
+                                // Update the current users UUID.
+                                currentUserUUID = userUUID;
                                 usersLibraryUUID = libraryUUID;
                                 resolve(usersLibraryUUID);
                             } else {
@@ -946,6 +942,7 @@ class Main {
                             reject(`Failed to find the users library.`);
                         });
                     } else {
+                        console.log(`Cached usersLibraryUUID`);
                         resolve(usersLibraryUUID);
                     }
 
