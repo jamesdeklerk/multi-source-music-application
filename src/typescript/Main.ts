@@ -34,7 +34,11 @@ class Main {
      */
     private registerEvents(): void {
 
-        publisher.register(`new-user`, []);
+        publisher.register(`user-ready`, []);
+        publisher.register(`library-created`, []);
+        publisher.register(`playlist-created`, []);
+        publisher.register(`playlist-updated`, []);
+        publisher.register(`playlist-deleted`, []);
 
     }
 
@@ -244,10 +248,10 @@ class Main {
                 user = result;
                 if (user) {
                     stateCorrector.correctState(user.uid);
-                    publisher.publish(`new-user`);
+                    publisher.publish(`user-ready`);
                 } else {
                     stateCorrector.correctState(undefined);
-                    publisher.publish(`new-user`);
+                    publisher.publish(`user-ready`);
                 }
                 $rootScope.$apply();
             });
@@ -347,6 +351,7 @@ class Main {
 
                                 // Create the library (a library is just another playlist)
                                 createLibrary(data.uid).then(() => {
+                                    publisher.publish(`library-created`);
                                     resolve(data.uid);
                                 }).catch(() => {
                                     reject(`Failed to sign up.`);
@@ -484,10 +489,12 @@ class Main {
                             // Update the local copy of the track.
                             tracks[trackUUID] = snapshot.val();
 
-                            // If there is a uuidInPlaylist, that means it is a track
-                            // for a specific playlist, so we must clone the track
-                            // and append its uuidInPlaylist.
-                            if (uuidInPlaylist) {
+                            if (!tracks[trackUUID]) {
+                                reject(undefined);
+                            } else if (uuidInPlaylist) {
+                                // If there is a uuidInPlaylist, that means it is a track
+                                // for a specific playlist, so we must clone the track
+                                // and append its uuidInPlaylist.
                                 let clonedTrack = clone(tracks[trackUUID]);
                                 clonedTrack.uuidInPlaylist = uuidInPlaylist;
                                 resolve(clonedTrack);
@@ -539,6 +546,7 @@ class Main {
                                     usersPlaylists.push(playlist);
 
                                     // Pass throught the playlist UUID.
+                                    publisher.publish(`playlist-created`);
                                     resolve(playlistUUID);
 
                                 }).catch(() => {
@@ -602,6 +610,7 @@ class Main {
                         if (playlist.owner === userUid) {
                             // Add track.
                             PLAYLISTS_TRACKS_REF.child(playlistUUID).push(trackUUID).then((data: any) => {
+                                console.log(`addTrackToPlaylist - PLAYLISTS_TRACKS_REF.child`);
 
                                 let clonedTrack = clone(track);
                                 // Only cloned tracks have a reference to where they
@@ -611,6 +620,9 @@ class Main {
                                 // Maintain the local playlists
                                 // Have to clone track for ng-repeat
                                 playlists[playlistUUID].tracks.push(clonedTrack);
+                                if (playlistsTracks[playlistUUID] === undefined) {
+                                    playlistsTracks[playlistUUID] = [];
+                                }
                                 playlistsTracks[playlistUUID].push({
                                     trackUUID: trackUUID,
                                     uuidInPlaylist: data.key,
@@ -624,14 +636,16 @@ class Main {
                                     if (playlistUUID !== libraryUUID) {
                                         // But before we add it, we must make sure it isn't already added.
                                         isTrackInPlaylist(libraryUUID, trackUUID).then((itIs) => {
-                                            console.log(`It is in the library: ${itIs}`);
                                             // If it isn't in the playlist, add it.
                                             if (!itIs) {
                                                 addTrackToPlaylist(libraryUUID, trackUUID);
                                             }
+
+                                            resolve(`Track added to playlist.`);
+                                        }).catch(() => {
+                                            resolve(`Track added to playlist. But failed to add to library.`);
                                         });
 
-                                        resolve(`Track added to playlist.`);
                                     } else {
                                         resolve(`Track added to library.`);
                                     }
@@ -976,7 +990,25 @@ class Main {
                 $mdSidenav(`left`).toggle();
             };
 
-            publisher.subscribe(`new-user`, () => {
+            // Incase it's the user has just been created, we need to listen
+            // for the library created event.
+            publisher.subscribe(`library-created`, () => {
+                // Update the users library.
+                dataManager.getUsersLibraryUUID().then((libraryUUID: string) => {
+
+                    // Now that we have the users library UUID,
+                    // we can get its details.
+                    dataManager.getPlaylistDetails(libraryUUID).then((libraryDetails: any) => {
+                        controller.library = libraryDetails;
+                        controller.$digest();
+                    });
+
+                });
+            });
+
+            // Watch for playlists being 
+
+            publisher.subscribe(`user-ready`, () => {
                 controller.user = auth.getUser();
 
                 // Only if there is a new user should we try do stuff
@@ -993,6 +1025,8 @@ class Main {
                             controller.$digest();
                         });
 
+                    }).catch(() => {
+                        // The library isn't finished being created. 
                     });
 
                     // Update the users playlists
