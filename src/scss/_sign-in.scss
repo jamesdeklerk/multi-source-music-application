@@ -1,16 +1,60 @@
+$sign-in-logo-size: 24px;
+$sign-in-logo-font-size: 36px;
+$sign-in-slogan-font-size: 14px;
+
 .sign-in {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f3f3f3;
+    background-color: $primary-color;
+    color: $primary-text-color-light;
 
     .center {
-        background-color: orangered;
-            // align-self: center;
-
         .horizontal-center {
             text-align: center;
             margin: auto;
         }
+
+        md-input-container, label, input {
+            color: $color-100;
+            border-color: $color-100;
+        }
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+
+        md-icon {
+            height: $sign-in-logo-size;
+            width: $sign-in-logo-size;
+            margin: 0px;
+            margin-top: 5px;
+            margin-right: 10px;
+        }
+        
+        span {
+            vertical-align: middle;
+            font-size: $sign-in-logo-font-size;
+        }
+    }
+
+    .slogan {
+        font-size: $sign-in-slogan-font-size;
+        padding-bottom: 24px;
+    }
+
+    .box {
+        width: 300px;
+    }
+
+    .create-account {
+        padding-top: 14px;
+    }
+
+    .button-container {
+        height: 110px;
     }
 }

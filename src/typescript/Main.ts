@@ -618,12 +618,10 @@ class Main {
 
                                 // Add the track to the users library.
                                 getUsersLibraryUUID().then((libraryUUID) => {
-                                    console.log(`hmmmmmmmmmmmmmmmmmmm`);
                                     // We managed to get the users libraryUUID.
                                     // Only if we are not currently on the users library
                                     // should we consider add it to their library.
                                     if (playlistUUID !== libraryUUID) {
-                                        console.log(`hmmmmmmmmmmmmmmmmmmm 2`);
                                         // But before we add it, we must make sure it isn't already added.
                                         isTrackInPlaylist(libraryUUID, trackUUID).then((itIs) => {
                                             console.log(`It is in the library: ${itIs}`);
@@ -981,23 +979,29 @@ class Main {
             publisher.subscribe(`new-user`, () => {
                 controller.user = auth.getUser();
 
-                // Update the users library.
-                dataManager.getUsersLibraryUUID().then((libraryUUID: string) => {
+                // Only if there is a new user should we try do stuff
+                // with that users information.
+                if (controller.user) {
 
-                    // Now that we have the users library UUID,
-                    // we can get its details.
-                    dataManager.getPlaylistDetails(libraryUUID).then((libraryDetails: any) => {
-                        controller.library = libraryDetails;
+                    // Update the users library.
+                    dataManager.getUsersLibraryUUID().then((libraryUUID: string) => {
+
+                        // Now that we have the users library UUID,
+                        // we can get its details.
+                        dataManager.getPlaylistDetails(libraryUUID).then((libraryDetails: any) => {
+                            controller.library = libraryDetails;
+                            controller.$digest();
+                        });
+
+                    });
+
+                    // Update the users playlists
+                    dataManager.getUsersPlaylists().then((playlists: any) => {
+                        controller.playlists = playlists;
                         controller.$digest();
                     });
 
-                });
-
-                // Update the users playlists
-                dataManager.getUsersPlaylists().then((playlists: any) => {
-                    controller.playlists = playlists;
-                    controller.$digest();
-                });
+                }
 
             });
 

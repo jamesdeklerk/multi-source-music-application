@@ -1,27 +1,64 @@
-// Order of elements (z-index)
+/* ====================================================
+ * Order of elements (z-index)
+ * ==================================================== */
 
 // The top element.
 // .fill-screen
-$z-index-10: 1000000;
+$z-index-10: 100;
 
-$z-index-9: 900000;
+$z-index-9: 90;
 
-$z-index-8: 800000;
+$z-index-8: 80;
 
-$z-index-7: 700000;
+$z-index-7: 70;
 
-$z-index-6: 600000;
+$z-index-6: 60;
 
 // #seek-bar
-$z-index-5: 500000;
+$z-index-5: 50;
 
-$z-index-4: 400000;
+$z-index-4: 40;
 
-$z-index-3: 300000;
+$z-index-3: 30;
 
-$z-index-2: 200000;
+$z-index-2: 20;
 
-$z-index-1: 100000;
+$z-index-1: 10;
 
 // Bottom element.
 $z-index-0: 0;
+
+/* ---------------------------------------------------- */
+
+
+
+/* ====================================================
+ * Color palette - currently red
+ * ==================================================== */
+
+$color-50: #FFEBEE;
+$color-100: #FFCDD2;
+$color-200: #EF9A9A;
+$color-300: #E57373; /* Secondary information */
+$color-400: #EF5350;
+$color-500: #F44336; /* Dominant theme and toolbars */
+$color-600: #E53935;
+$color-700: #D32F2F; /* Status bars */
+$color-800: #C62828;
+$color-900: #B71C1C;
+
+// Main colors
+$primary-color: $color-500;
+$accent-color: $color-200;
+
+// Main text colors - light
+$primary-text-color-light: rgba(255, 255, 255, 1);
+$secondary-text-color-light: rgba(255, 255, 255, 0.7);
+$disabled-text-color-light: rgba(255, 255, 255, 0.5);
+
+// Main text colors - light
+$primary-text-color-dark: rgba(0, 0, 0, 0.87);
+$secondary-text-color-dark: rgba(0, 0, 0, 0.54);
+$disabled-text-color-dark: rgba(0, 0, 0, 0.38);
+
+/* ---------------------------------------------------- */

@@ -1,20 +1,43 @@
 <div class="fill-screen sign-in">
 
-    <div class="center">
+    <div class="center box">
 
-        <h1 class="horizontal-center">Sign in</h1>
+        <div>
+            <div class="logo">
+                <md-icon md-svg-src="src/assets/svg/logo.svg"></md-icon>
+                <span>contour</span>
+            </div>
+            <div class="horizontal-center slogan">
+                <span class="horizontal-center">Your world of music no matter the source.</span>
+            </div>
+        </div>
 
         <form ng-submit="signIn()">
-            <input type="email" ng-model="user.email" name="email" placeholder="Email" ng-class="emailError" autofocus>
-            <input type="password" ng-model="user.password" name="password" placeholder="Password" ng-class="passwordError">
-            <div class="horizontal-center">
-                <input type="submit" ng-hide="loading" value="Sign in">
+
+            <md-input-container class="md-icon-float md-block">
+                <label>Email</label>
+                <md-icon md-svg-src="src/assets/svg/email.svg"></md-icon>
+                <input ng-model="user.email" type="email">
+            </md-input-container>
+            <md-input-container class="md-icon-float md-block">
+                <label>Password</label>
+                <md-icon md-svg-src="src/assets/svg/lock.svg"></md-icon>
+                <input ng-model="user.password" type="password">
+            </md-input-container>
+
+            <div class="button-container">
+                <div class="horizontal-center">
+                    <md-button type="submit" ng-hide="loading" class="md-raised">Sign in</md-button>
+                </div>
+
+                <div ng-hide="loading" class="horizontal-center create-account">
+                    <md-button href="#/sign-up">Create Account</md-button>
+                </div>
+
+                <md-progress-circular ng-show="loading" class="md-hue-1 horizontal-center" md-mode="indeterminate"></md-progress-circular>
             </div>
+
         </form>
-
-        <a href="#/sign-up">Sign up</a>
-
-        <md-progress-circular class="horizontal-center" md-mode="indeterminate"></md-progress-circular>
 
     </div>
 
