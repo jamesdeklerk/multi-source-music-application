@@ -1056,22 +1056,15 @@ class Main {
             // Share playist.
             controller.sharePlaylist = (ev: any, playlistName: string, playlistUUID: string) => {
 
-                let currentURL = window.location.origin;
-
-                let confirm = $mdDialog.prompt()
-                    .title(`Copy link to share ${playlistName}`)
-                    .textContent(`Copy the link below and share it to any platform you like.`)
-                    .placeholder(`Playlist UUID`)
-                    .ariaLabel(`Share playlist`)
-                    .initialValue(`${currentURL}/#/playist/${playlistUUID}`)
-                    .targetEvent(ev)
-                    .ok(`Copy`)
-                    .cancel(`Cancel`);
-
-                $mdDialog.show(confirm).then((result: string) => {
-
-                }, () => {
-
+                $mdDialog.show({
+                    clickOutsideToClose: true,
+                    controller: `sharePlaylist`,
+                    fullscreen: false, // Only for -xs, -sm breakpoints.
+                    parent: angular.element(document.body),
+                    playlistName: playlistName,
+                    playlistUUID: playlistUUID,
+                    targetEvent: ev,
+                    templateUrl: `src/html/dialogs/share-playlist.html`,
                 });
 
             };
@@ -1101,9 +1094,9 @@ class Main {
             controller.deletePlaylist = (ev: any, playlistName: string, playlistUUID: string, uuidInUsersPlaylists: string) => {
 
                 let confirm = $mdDialog.confirm()
-                    .title(`Delete "${playlistName}"?`)
+                    .title(`Delete "${playlistName}" playlist`)
                     .textContent(`This will permanently delete the playlist.`)
-                    .ariaLabel(`Delete ${playlistName}`)
+                    .ariaLabel(`Delete ${playlistName} playlist`)
                     .targetEvent(ev)
                     .ok(`Yes`)
                     .cancel(`Cancel`);
@@ -1237,6 +1230,59 @@ class Main {
             controller.answer = (answer: string) => {
                 $mdDialog.hide(answer);
             };
+        });
+
+        /**
+         * Share playlist (for the dialog)
+         */
+        this.app.controller(`sharePlaylist`, ($scope: any, $mdDialog: any, $mdToast: any, playlistName: string, playlistUUID: string) => {
+            let controller = $scope;
+
+            let currentURL = window.location.origin;
+
+            // Defaults
+            controller.playlistName = playlistName;
+            controller.playlistURL = `${currentURL}/#/playlist/${playlistUUID}`;
+
+            // Setup toasts
+            controller.showToast = function (message: string) {
+                $mdToast.show(
+                    $mdToast.simple()
+                        .textContent(message)
+                        .position(`bottom right`)
+                        .hideDelay(1500)
+                );
+            };
+
+            controller.copy = () => {
+                let textarea = <HTMLTextAreaElement>document.getElementById(`linkToShare`);
+                textarea.select();
+
+                let success = false;
+                try {
+                    success = document.execCommand(`copy`);
+                } catch (error) {
+                    success = false;
+                }
+
+                if (success) {
+                    controller.showToast(`Link copied to clipboard.`);
+                } else {
+                    controller.showToast(`Failed to copy link, try manually copying.`);
+                }
+
+                $mdDialog.hide();
+
+            };
+
+            controller.hide = () => {
+                $mdDialog.hide();
+            };
+
+            controller.cancel = () => {
+                $mdDialog.cancel();
+            };
+
         });
 
         /**
