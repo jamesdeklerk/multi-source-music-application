@@ -6,34 +6,88 @@
 
     <div ng-hide="loading" class="content-once-loaded">
 
-        {{owner}}
+        <md-toolbar layout="row">
 
-        <md-button class="md-primary md-raised" ng-click="showAdvanced($event)">
-            Custom Dialog
-        </md-button>
+            <div class="headings" layout="row">
+                <md-button class="md-icon-button" aria-label="play playlist" ng-click="null">
+                    <md-icon md-svg-icon="src/assets/svg/play-playlist.svg"></md-icon>
+                </md-button>
+                <h3 class="playlist-name">{{playlist.name}}</h3>
+                <span ng-hide="thisUsersPlaylist" class="playlist-owner">Owner: {{owner}}</span>
+            </div>
 
-        <br>
-        <br>
-        <br> Tracks in {{playlist.name}} - {{playlist.uuidInUsersPlaylists}}:
-        <ul>
-            <li ng-repeat="track in playlist.tracks | filter: { title: search.text }">
-                {{$index}} Track: {{track.title}} Date added: {{track.dateAdded}}
-            </li>
-        </ul>
+            <div class="share-playlist">
+                <md-button ng-click="addTrack($event)">Add track</md-button>
+                <md-button class="md-icon-button" aria-label="share playlist" ng-click="sharePlaylist($event, playlist.name, playlist.uuid)">
+                    <md-icon md-svg-icon="src/assets/svg/share.svg"></md-icon>
+                </md-button>
+            </div>
 
-        <!-- Playlist details i.e. name, owner, add button etc. -->
-        <md-content>
+        </md-toolbar>
 
+        <!-- No tracks -->
+        <md-content class="no-tracks" layout="column" flex>
+            <h2>This playlist has no tracks :(</h2>
+            <h4>But, you have three options :)</h4>
+            <h5>1.<br>To add a video from YouTube, just drag it in.</h5>
+            <h5>2.<br>To add a track from Deezer, go to the track you want,<br>open the track menu > Share > Copy Deezer URL > Paste it here.</h5>
+            <h5>3.<br>Or, click "Add Track"" in the top right and do your thing.</h5>
         </md-content>
 
-        <!-- Tracks in a virtual repeat (for speed) -->
-        <!--<md-content>
-            <md-virtual-repeat-container id="vertical-container">
-                <div md-virtual-repeat="playlist in playlist.tracks" md-on-demand class="repeated-item" flex>
-                    {{item}}
-                </div>
-            </md-virtual-repeat-container>
-        </md-content>-->
+        <!-- Tracks -->
+        <md-content ng-hide="true">
+
+            <ul>
+                <li ng-repeat="track in playlist.tracks | filter: { title: search.text }">
+                    {{$index}} Track: {{track.title}} Date added: {{track.dateAdded}}
+                </li>
+            </ul>
+
+            <ol>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+                <li>•</li>
+            </ol>
+
+        </md-content>
 
     </div>
 

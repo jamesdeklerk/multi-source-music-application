@@ -1372,6 +1372,48 @@ class Main {
         });
 
         /**
+         * Edit track (for the dialog)
+         */
+        this.app.controller(`editTrack`, ($scope: any, $mdDialog: any, $mdToast: any, playlistName: string, playlistUUID: string, trackUUID: string) => {
+            let controller = $scope;
+
+            // Defaults
+            controller.playlistName = playlistName;
+            controller.playlistUUID = playlistUUID;
+            controller.trackUUID = trackUUID;
+            controller.saving = false;
+
+            if (trackUUID === undefined) {
+                controller.creatingTrack = true;
+                controller.heading = `Creating track`;
+            } else {
+                controller.creatingTrack = false;
+                controller.heading = `Editing track`;
+            }
+
+            // Setup toasts
+            controller.showToast = function (message: string) {
+                $mdToast.show(
+                    $mdToast.simple()
+                        .textContent(message)
+                        .position(`bottom right`)
+                        .hideDelay(1500)
+                );
+            };
+            
+
+
+            controller.hide = () => {
+                $mdDialog.hide();
+            };
+
+            controller.cancel = () => {
+                $mdDialog.cancel();
+            };
+
+        });
+
+        /**
          * Player
          */
         this.app.controller(`player`, ($scope: any, $interval: angular.IIntervalService) => {
@@ -1617,7 +1659,9 @@ class Main {
             controller.loading = true;
 
             // Setup defaults.
+            controller.playlist = {};
             controller.thisUsersPlaylist = true;
+            controller.noTracks = false;
 
             // Setup toasts
             controller.showToast = function (message: string) {
@@ -1629,32 +1673,44 @@ class Main {
                 );
             };
 
-            controller.showPrompt = function (ev) {
-                // Appending dialog to document.body to cover sidenav in docs app
-                var confirm = $mdDialog.prompt()
-                    .title('What would you name your dog?')
-                    .textContent('Bowser is a common name.')
-                    .placeholder('Dog name')
-                    .ariaLabel('Dog name')
-                    .initialValue('Buddy')
-                    .targetEvent(ev)
-                    .ok('Okay!')
-                    .cancel('I\'m a cat person');
-
-                $mdDialog.show(confirm).then(function (result) {
-                    $scope.status = 'You decided to name your dog ' + result + '.';
-                }, function () {
-                    $scope.status = 'You didn\'t name your dog.';
-                });
+            // Check if there are no tracks in the playlist
+            let updateNoTracksFlag = () => {
+                if (controller.playlist) {
+                    if (controller.playlist.track instanceof Array) {
+                        // Check if there are no tracks in the playlist.
+                        controller.noTracks = (controller.playlist.track.length <= 0);
+                    }
+                }
             };
 
             // Get the current playlist.
             controller.playlistUUID = $routeParams.playlistUUID;
 
+            controller.addTrack = (ev: any) => {
+                $mdDialog.show({
+                    clickOutsideToClose: true,
+                    controller: `editTrack`,
+                    fullscreen: false, // Only for -xs, -sm breakpoints.
+                    parent: angular.element(document.body),
+                    playlistName: controller.playlist.name,
+                    playlistUUID: controller.playlist.uuid,
+                    targetEvent: ev,
+                    templateUrl: `src/html/dialogs/edit-track.html`,
+                    trackUUID: undefined,
+                })
+                    .then((message: string) => {
+                        controller.showToast(message);
+                    }, () => {
+                        controller.showToast(`Canceled.`);
+                    });
+            };
+
             // Get the current playlist.
             dataManager.getPlaylist(controller.playlistUUID).then((playlist: IPlaylist) => {
                 controller.playlist = playlist;
                 controller.loading = false;
+
+                updateNoTracksFlag();
 
                 // Check if the current user is the owner of the playlist.
                 if (playlist.owner === user.uid) {
