@@ -895,6 +895,45 @@ class Main {
                 });
             }
 
+            function updatePlaylist(playlistUUID: string, infoToUpdate: any): Promise<any> {
+                return new Promise((resolve, reject) => {
+                    PLAYLISTS_DETAILS_REF.child(playlistUUID).update(infoToUpdate).then(() => {
+
+                        // Update local copys.
+                        for (let key in infoToUpdate) {
+                            console.log(key);
+                            if (infoToUpdate.hasOwnProperty(key)) {
+
+                                if (playlistsDetails[playlistUUID]) {
+                                    playlistsDetails[playlistUUID][key] = infoToUpdate[key];
+                                }
+
+                                if (playlists[playlistUUID]) {
+                                    playlists[playlistUUID][key] = infoToUpdate[key];
+                                }
+
+                                if (usersPlaylists instanceof Array) {
+                                    // Find the right playlist.
+                                    // tslint:disable-next-line
+                                    for (let i = 0, playlist: any; playlist = usersPlaylists[i]; i = i + 1) {
+                                        if (playlist.uuid === playlistUUID) {
+                                            usersPlaylists[i][key] = infoToUpdate[key];
+                                        }
+                                    }
+                                }
+
+                            }
+                        }
+
+                        publisher.publish(`playlist-updated`);
+
+                        resolve(`Playlist updated.`);
+                    }).catch(() => {
+                        reject(`Failed to update playlist.`);
+                    });
+                });
+            }
+
             function deletePlaylist(playlistUUID: string, uuidInUsersPlaylists: string): Promise<any> {
 
                 console.log(playlistUUID);
@@ -1017,7 +1056,9 @@ class Main {
                 getUsersPlaylists: getUsersPlaylists,
                 getUuidInUsersPlaylists: getUuidInUsersPlaylists,
                 isTrackInPlaylist: isTrackInPlaylist,
+                updatePlaylist: updatePlaylist,
             };
+
         });
 
     }
@@ -1082,10 +1123,10 @@ class Main {
                     targetEvent: ev,
                     templateUrl: `src/html/dialogs/update-playlist.html`,
                 })
-                    .then((answer: string) => {
-                        console.log(`You said the information was '${answer}'.`);
+                    .then(() => {
+                        controller.showToast(`Playlist updated.`);
                     }, () => {
-                        console.log(`You cancelled the dialog.`);
+                        controller.showToast(`Canceled.`);
                     });
 
             };
@@ -1133,9 +1174,9 @@ class Main {
                 });
             });
 
-            // Watch for playlists being created.
-            publisher.subscribe(`playlist-created`, () => {
-                // A new playlist has to be loaded, so show the loading spinner.
+            let listOfPlaylistChangeHandler = () => {
+                // The list of playlists has to be reloaded,
+                // so show the loading spinner.
                 controller.loadingPlaylists = true;
                 // Update the users playlists
                 dataManager.getUsersPlaylists().then((playlists: any) => {
@@ -1147,23 +1188,12 @@ class Main {
                     controller.loadingPlaylists = false;
                     controller.$digest();
                 });
-            });
+            };
 
-            // Watch for playlists being deleted.
-            publisher.subscribe(`playlist-deleted`, () => {
-                // A playlist has been deleted, so show the loading spinner.
-                controller.loadingPlaylists = true;
-                // Update the users playlists
-                dataManager.getUsersPlaylists().then((playlists: any) => {
-                    controller.loadingPlaylists = false;
-                    controller.playlists = playlists;
-                    controller.$digest();
-                }).catch(() => {
-                    // Failed to load playlists.
-                    controller.loadingPlaylists = false;
-                    controller.$digest();
-                });
-            });
+            // Watch for the list of playlists being changed in any way.
+            publisher.subscribe(`playlist-created`, listOfPlaylistChangeHandler);
+            publisher.subscribe(`playlist-updated`, listOfPlaylistChangeHandler);
+            publisher.subscribe(`playlist-deleted`, listOfPlaylistChangeHandler);
 
             publisher.subscribe(`user-ready`, () => {
                 controller.user = auth.getUser();
@@ -1213,11 +1243,23 @@ class Main {
         /**
          * Update playlist (for the dialog)
          */
-        this.app.controller(`updatePlaylist`, ($scope: any, $mdDialog: any, playlistName: string, playlistUUID: string) => {
+        this.app.controller(`updatePlaylist`, ($scope: any, $mdDialog: any, $mdToast: any, playlistName: string, playlistUUID: string, dataManager: any) => {
             let controller = $scope;
 
+            // Defaults
             controller.playlistName = playlistName;
-            console.log(playlistUUID);
+            controller.newPlaylistName = playlistName;
+            controller.saving = false;
+
+            // Setup toasts
+            controller.showToast = function (message: string) {
+                $mdToast.show(
+                    $mdToast.simple()
+                        .textContent(message)
+                        .position(`bottom right`)
+                        .hideDelay(1500)
+                );
+            };
 
             controller.hide = () => {
                 $mdDialog.hide();
@@ -1227,9 +1269,19 @@ class Main {
                 $mdDialog.cancel();
             };
 
-            controller.answer = (answer: string) => {
-                $mdDialog.hide(answer);
+            controller.save = (infoToUpdate: string) => {
+
+                controller.saving = true;
+
+                dataManager.updatePlaylist(playlistUUID, infoToUpdate).then(() => {
+                    $mdDialog.hide();
+                }).catch(() => {
+                    controller.saving = false;
+                    controller.showToast(`Something went wrong, try again.`);
+                });
+
             };
+
         });
 
         /**

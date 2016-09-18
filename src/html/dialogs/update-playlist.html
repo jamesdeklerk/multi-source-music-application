@@ -18,21 +18,21 @@
                 <!-- Rename container -->
                 <md-input-container class="md-block" flex-gt-sm>
                     <label>Playlist name</label>
-                    <input ng-model="playlistName">
+                    <input ng-model="newPlaylistName">
                 </md-input-container>
+                <div class="loading" ng-show="saving">
+                    <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+                </div>
             </div>
         </md-dialog-content>
 
         <!-- Actions -->
-        <md-dialog-actions layout="row">
-            <md-button href="http://en.wikipedia.org/wiki/Mango" target="_blank" md-autofocus>
-                More on Wikipedia
+        <md-dialog-actions layout="row" ng-hide="saving">
+            <md-button ng-click="cancel()">
+                Cancel
             </md-button>
-            <md-button ng-click="answer('not useful')">
-                Not Useful
-            </md-button>
-            <md-button ng-click="answer('useful')">
-                Useful
+            <md-button ng-click="save({ name: newPlaylistName })">
+                Save
             </md-button>
         </md-dialog-actions>
 
