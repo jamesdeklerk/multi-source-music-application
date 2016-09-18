@@ -1,33 +1,40 @@
-<div class="fill-block">
+<div class="fill-block playlist">
 
-    {{owner}}
+    <div ng-show="loading" class="loading">
+        <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+    </div>
 
-    <md-button class="md-primary md-raised" ng-click="showAdvanced($event)">
-        Custom Dialog
-    </md-button>
+    <div ng-hide="loading" class="content-once-loaded">
 
-    <br>
-    <br>
-    <br> Tracks in {{playlist.name}}:
-    <ul>
-        <li ng-repeat="track in playlist.tracks | filter: { title: search.text }">
-            {{$index}} Track: {{track.title}} Date added: {{track.dateAdded}}
-        </li>
-    </ul>
+        {{owner}}
 
-    <!-- Playlist details i.e. name, owner, add button etc. -->
-    <md-content>
+        <md-button class="md-primary md-raised" ng-click="showAdvanced($event)">
+            Custom Dialog
+        </md-button>
 
-    </md-content>
+        <br>
+        <br>
+        <br> Tracks in {{playlist.name}} - {{playlist.uuidInUsersPlaylists}}:
+        <ul>
+            <li ng-repeat="track in playlist.tracks | filter: { title: search.text }">
+                {{$index}} Track: {{track.title}} Date added: {{track.dateAdded}}
+            </li>
+        </ul>
 
-    <!-- Tracks in a virtual repeat (for speed) -->
-    <md-content>
-        <md-virtual-repeat-container id="vertical-container">
-            <div md-virtual-repeat="item in ctrl.dynamicItems" md-on-demand class="repeated-item" flex>
-                {{item}}
-            </div>
-        </md-virtual-repeat-container>
-    </md-content>
+        <!-- Playlist details i.e. name, owner, add button etc. -->
+        <md-content>
 
+        </md-content>
+
+        <!-- Tracks in a virtual repeat (for speed) -->
+        <!--<md-content>
+            <md-virtual-repeat-container id="vertical-container">
+                <div md-virtual-repeat="playlist in playlist.tracks" md-on-demand class="repeated-item" flex>
+                    {{item}}
+                </div>
+            </md-virtual-repeat-container>
+        </md-content>-->
+
+    </div>
 
 </div>

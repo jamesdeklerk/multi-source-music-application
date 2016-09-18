@@ -1,0 +1,40 @@
+<md-dialog class="update-playlist">
+    <form ng-cloak>
+
+        <!-- Toolbar -->
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Update playlist</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="cancel()">
+                    <md-icon md-svg-src="src/assets/svg/close.svg" aria-label="Close dialog"></md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <!-- Content -->
+        <md-dialog-content>
+            <div class="md-dialog-content">
+                <!-- Rename container -->
+                <md-input-container class="md-block" flex-gt-sm>
+                    <label>Playlist name</label>
+                    <input ng-model="playlistName">
+                </md-input-container>
+            </div>
+        </md-dialog-content>
+
+        <!-- Actions -->
+        <md-dialog-actions layout="row">
+            <md-button href="http://en.wikipedia.org/wiki/Mango" target="_blank" md-autofocus>
+                More on Wikipedia
+            </md-button>
+            <md-button ng-click="answer('not useful')">
+                Not Useful
+            </md-button>
+            <md-button ng-click="answer('useful')">
+                Useful
+            </md-button>
+        </md-dialog-actions>
+
+    </form>
+</md-dialog>

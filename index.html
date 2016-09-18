@@ -6,10 +6,10 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <meta name="description" content="Multi-source music application">
-    <meta name="keywords" content="music, multi-source, youtube, deezer, songs, track, video">
+    <meta name="description" content="Contour - a multi-source music application">
+    <meta name="keywords" content="contour, music, multi-source, youtube, deezer, songs, track, video">
 
-    <title>Music Application</title>
+    <title>Contour</title>
 
     <!-- Angular Material -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -118,13 +118,13 @@
                             </md-button>
                             <md-menu-content flex>
                                 <md-menu-item>
-                                    <md-button ng-click="null">Share</md-button>
+                                    <md-button ng-click="sharePlaylist($event, playlist.name, playlist.uuid)">Share</md-button>
                                 </md-menu-item>
                                 <md-menu-item>
-                                    <md-button ng-click="null">Rename</md-button>
+                                    <md-button ng-click="updatePlaylist($event, playlist.name, playlist.uuid)">Rename</md-button>
                                 </md-menu-item>
                                 <md-menu-item>
-                                    <md-button ng-click="deletePlaylist(playlist.uuid, playlist.uuidInUsersPlaylists)">Delete</md-button>
+                                    <md-button ng-click="deletePlaylist($event, playlist.name, playlist.uuid, playlist.uuidInUsersPlaylists)">Delete</md-button>
                                 </md-menu-item>
                             </md-menu-content>
                         </md-menu>
@@ -139,8 +139,8 @@
 
                 <br>
                 <br>
-                <a href="#/playlist/-KRi3vqSIK5W9hcU0Lwt">Other persons playlist</a><br>
-                <br><br> Library
+                <a href="#/playlist/-KRsgjSNLPBeKtdwDp9-">Other persons playlist</a><br>
+                <a href="#/playlist/-KRi3vqSIK5W9hcU0Lwt">Playlist that doesn't exist</a>
 
         </md-sidenav>
 

@@ -974,6 +974,32 @@ class Main {
                 });
             }
 
+            function getUuidInUsersPlaylists(playlistUUID: string): Promise<any> {
+                return new Promise((resolve, reject) => {
+                    getUsersPlaylists().then((resolvedUsersPlaylists) => {
+
+                        let uuidInUsersPlaylists: string;
+
+                        // tslint:disable-next-line
+                        for (let i = 0, playlist: any; playlist = resolvedUsersPlaylists[i]; i = i + 1) {
+                            if (playlist.uuid === playlistUUID) {
+                                uuidInUsersPlaylists = playlist.uuidInUsersPlaylists;
+                                break;
+                            }
+                        }
+
+                        if (uuidInUsersPlaylists) {
+                            resolve(uuidInUsersPlaylists);
+                        } else {
+                            reject(`Could not find uuidInUsersPlaylists`);
+                        }
+
+                    }).catch(() => {
+                        reject(`Could not find uuidInUsersPlaylists`);
+                    });
+                });
+            }
+
 
 
             return {
@@ -989,6 +1015,7 @@ class Main {
                 getUsersDetails: getUsersDetails,
                 getUsersLibraryUUID: getUsersLibraryUUID,
                 getUsersPlaylists: getUsersPlaylists,
+                getUuidInUsersPlaylists: getUuidInUsersPlaylists,
                 isTrackInPlaylist: isTrackInPlaylist,
             };
         });
@@ -1003,7 +1030,7 @@ class Main {
         /**
          * Master Page
          */
-        this.app.controller(`master`, ($scope: any, $mdSidenav: any, auth: any, dataManager: any, $mdToast: any) => {
+        this.app.controller(`master`, ($scope: any, $mdSidenav: any, auth: any, dataManager: any, $mdToast: any, $mdDialog: any) => {
             let controller = $scope;
             controller.master = {};
 
@@ -1026,13 +1053,71 @@ class Main {
                 );
             };
 
-            // Delete playlist.
-            controller.deletePlaylist = (playlistUUID: string, uuidInUsersPlaylists: string) => {
-                dataManager.deletePlaylist(playlistUUID, uuidInUsersPlaylists).then((message: string) => {
-                    controller.showToast(message);
-                }).catch((message: string) => {
-                    controller.showToast(message);
+            // Share playist.
+            controller.sharePlaylist = (ev: any, playlistName: string, playlistUUID: string) => {
+
+                let currentURL = window.location.origin;
+
+                let confirm = $mdDialog.prompt()
+                    .title(`Copy link to share ${playlistName}`)
+                    .textContent(`Copy the link below and share it to any platform you like.`)
+                    .placeholder(`Playlist UUID`)
+                    .ariaLabel(`Share playlist`)
+                    .initialValue(`${currentURL}/#/playist/${playlistUUID}`)
+                    .targetEvent(ev)
+                    .ok(`Copy`)
+                    .cancel(`Cancel`);
+
+                $mdDialog.show(confirm).then((result: string) => {
+
+                }, () => {
+
                 });
+
+            };
+
+            // Update playlist.
+            controller.updatePlaylist = (ev: any, playlistName: string, playlistUUID: string) => {
+
+                $mdDialog.show({
+                    clickOutsideToClose: true,
+                    controller: `updatePlaylist`,
+                    fullscreen: false, // Only for -xs, -sm breakpoints.
+                    parent: angular.element(document.body),
+                    playlistName: playlistName,
+                    playlistUUID: playlistUUID,
+                    targetEvent: ev,
+                    templateUrl: `src/html/dialogs/update-playlist.html`,
+                })
+                    .then((answer: string) => {
+                        console.log(`You said the information was '${answer}'.`);
+                    }, () => {
+                        console.log(`You cancelled the dialog.`);
+                    });
+
+            };
+
+            // Delete playlist.
+            controller.deletePlaylist = (ev: any, playlistName: string, playlistUUID: string, uuidInUsersPlaylists: string) => {
+
+                let confirm = $mdDialog.confirm()
+                    .title(`Delete "${playlistName}"?`)
+                    .textContent(`This will permanently delete the playlist.`)
+                    .ariaLabel(`Delete ${playlistName}`)
+                    .targetEvent(ev)
+                    .ok(`Yes`)
+                    .cancel(`Cancel`);
+
+                $mdDialog.show(confirm).then(() => {
+                    dataManager.deletePlaylist(playlistUUID, uuidInUsersPlaylists).then((message: string) => {
+                        controller.showToast(message);
+                    }).catch((message: string) => {
+                        controller.showToast(message);
+                    });
+                }, () => {
+                    controller.showToast(`Canceled.`);
+                });
+
             };
 
             // Incase it's the user has just been created, we need to listen
@@ -1130,6 +1215,28 @@ class Main {
                 auth.signOut();
             };
 
+        });
+
+        /**
+         * Update playlist (for the dialog)
+         */
+        this.app.controller(`updatePlaylist`, ($scope: any, $mdDialog: any, playlistName: string, playlistUUID: string) => {
+            let controller = $scope;
+
+            controller.playlistName = playlistName;
+            console.log(playlistUUID);
+
+            controller.hide = () => {
+                $mdDialog.hide();
+            };
+
+            controller.cancel = () => {
+                $mdDialog.cancel();
+            };
+
+            controller.answer = (answer: string) => {
+                $mdDialog.hide(answer);
+            };
         });
 
         /**
@@ -1366,6 +1473,14 @@ class Main {
         this.app.controller(`playlist`, ($scope: any, $location: any, $routeParams: any, dataManager: any, $mdToast: any, $mdDialog: any, user: any) => {
             let controller = $scope;
 
+
+            dataManager.getUuidInUsersPlaylists($routeParams.playlistUUID).then((uuidInUsersPlaylists: string) => {
+                console.log(uuidInUsersPlaylists);
+            }).catch((message: string) => {
+                console.log(message);
+            });
+
+
             // Start off loading.
             controller.loading = true;
 
@@ -1405,7 +1520,7 @@ class Main {
             controller.playlistUUID = $routeParams.playlistUUID;
 
             // Get the current playlist.
-            dataManager.getPlaylist(controller.playlistUUID).then((playlist) => {
+            dataManager.getPlaylist(controller.playlistUUID).then((playlist: IPlaylist) => {
                 controller.playlist = playlist;
                 controller.loading = false;
 
@@ -1415,14 +1530,14 @@ class Main {
                 } else {
                     controller.thisUsersPlaylist = false;
                     // Get the owners details.
-                    dataManager.getUsersDetails(playlist.owner).then((owner) => {
+                    dataManager.getUsersDetails(playlist.owner).then((owner: any) => {
                         controller.owner = owner.email;
                         controller.$digest();
                     });
                 }
 
                 controller.$digest();
-            }).catch((message) => {
+            }).catch((message: any) => {
                 controller.showToast(message);
                 $location.path(`/`);
             });

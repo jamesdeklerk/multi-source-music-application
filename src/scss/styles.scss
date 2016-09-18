@@ -4,12 +4,18 @@
 
 @import 'variables';
 @import 'hackery';
-@import 'loading';
-@import 'sign-in';
-@import 'sign-up';
 @import 'boilerplate';
 @import 'master';
-@import 'library';
+
+// views
+@import 'views/loading';
+@import 'views/sign-in';
+@import 'views/sign-up';
+@import 'views/library';
+@import 'views/playlist';
+
+// Dialogs
+@import 'dialogs/update-playlist';
 
 /* ---------------------------------------------------- */
 
