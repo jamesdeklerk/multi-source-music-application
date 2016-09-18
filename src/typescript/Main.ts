@@ -1278,7 +1278,7 @@ class Main {
                 $mdDialog.cancel();
             };
 
-            controller.save = (infoToUpdate: string) => {
+            controller.save = (infoToUpdate: any) => {
 
                 controller.saving = true;
 
@@ -1300,12 +1300,17 @@ class Main {
                 } else {
 
                     // Editing an existing playlist.
-                    dataManager.updatePlaylist(playlistUUID, infoToUpdate).then(() => {
-                        $mdDialog.hide(`Playlist edited.`);
-                    }).catch(() => {
+                    if (infoToUpdate.name.trim() !== ``) {
+                        dataManager.updatePlaylist(playlistUUID, infoToUpdate).then(() => {
+                            $mdDialog.hide(`Playlist edited.`);
+                        }).catch(() => {
+                            controller.saving = false;
+                            controller.showToast(`Something went wrong, try again.`);
+                        });
+                    } else {
                         controller.saving = false;
-                        controller.showToast(`Something went wrong, try again.`);
-                    });
+                        controller.showToast(`Invalid name.`);
+                    }
 
                 }
 
