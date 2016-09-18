@@ -78,32 +78,39 @@
             <!-- Auto generated stuff e.g. the users library -->
             <md-subheader class="md-no-sticky">Collection</md-subheader>
             <!--<md-content>-->
-                <md-list>
-                    <md-list-item ng-hide="loadingLibrary"="loadingLibrary" ng-click="null" href="#/playlist/{{library.uuid}}">
-                        <div class="md-list-item-text" layout="column">
-                            <h3>{{library.name}}</h3>
-                        </div>
-                        <md-menu class="md-secondary">
-                            <md-button class="md-icon-button" aria-label="library options" ng-click="$mdOpenMenu($event)">
-                                <md-icon md-svg-icon="src/assets/svg/more_vertical.svg"></md-icon>
-                            </md-button>
-                            <md-menu-content flex>
-                                <md-menu-item>
-                                    <md-button ng-click="sharePlaylist($event, library.name, library.uuid)">Share</md-button>
-                                </md-menu-item>
-                            </md-menu-content>
-                        </md-menu>
-                    </md-list-item>
-
-                    <div class="loading" ng-show="loadingLibrary">
-                        <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+            <md-list>
+                <md-list-item ng-hide="loadingLibrary"="loadingLibrary" ng-click="null" href="#/playlist/{{library.uuid}}">
+                    <div class="md-list-item-text" layout="column">
+                        <h3>{{library.name}}</h3>
                     </div>
+                    <md-menu class="md-secondary">
+                        <md-button class="md-icon-button" aria-label="library options" ng-click="$mdOpenMenu($event)">
+                            <md-icon md-svg-icon="src/assets/svg/more_vertical.svg"></md-icon>
+                        </md-button>
+                        <md-menu-content flex>
+                            <md-menu-item>
+                                <md-button ng-click="sharePlaylist($event, library.name, library.uuid)">Share</md-button>
+                            </md-menu-item>
+                        </md-menu-content>
+                    </md-menu>
+                </md-list-item>
 
-                </md-list>
+                <div class="loading" ng-show="loadingLibrary">
+                    <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+                </div>
+
+            </md-list>
             <!--</md-content>-->
 
             <!-- List of the users playlists -->
-            <md-subheader class="md-no-sticky">Playlists</md-subheader>
+            <md-subheader class="md-no-sticky playlists-heading">
+                <span class="heading">
+                    Playlists
+                </span>
+                <md-button ng-click="editPlaylist($event)" class="md-icon-button add-playlist" aria-label="add playlist">
+                    <md-icon md-svg-icon="src/assets/svg/add.svg"></md-icon>
+                </md-button>
+            </md-subheader>
             <md-content>
                 <md-list flex>
 
@@ -121,7 +128,7 @@
                                     <md-button ng-click="sharePlaylist($event, playlist.name, playlist.uuid)">Share</md-button>
                                 </md-menu-item>
                                 <md-menu-item>
-                                    <md-button ng-click="updatePlaylist($event, playlist.name, playlist.uuid)">Rename</md-button>
+                                    <md-button ng-click="editPlaylist($event, playlist.name, playlist.uuid)">Rename</md-button>
                                 </md-menu-item>
                                 <md-menu-item>
                                     <md-button ng-click="deletePlaylist($event, playlist.name, playlist.uuid, playlist.uuidInUsersPlaylists)">Delete</md-button>

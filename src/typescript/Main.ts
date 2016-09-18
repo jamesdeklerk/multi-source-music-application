@@ -901,7 +901,7 @@ class Main {
 
                         // Update local copys.
                         for (let key in infoToUpdate) {
-                            console.log(key);
+
                             if (infoToUpdate.hasOwnProperty(key)) {
 
                                 if (playlistsDetails[playlistUUID]) {
@@ -923,6 +923,7 @@ class Main {
                                 }
 
                             }
+
                         }
 
                         publisher.publish(`playlist-updated`);
@@ -1111,20 +1112,20 @@ class Main {
             };
 
             // Update playlist.
-            controller.updatePlaylist = (ev: any, playlistName: string, playlistUUID: string) => {
+            controller.editPlaylist = (ev: any, playlistName: string, playlistUUID: string) => {
 
                 $mdDialog.show({
                     clickOutsideToClose: true,
-                    controller: `updatePlaylist`,
+                    controller: `editPlaylist`,
                     fullscreen: false, // Only for -xs, -sm breakpoints.
                     parent: angular.element(document.body),
                     playlistName: playlistName,
                     playlistUUID: playlistUUID,
                     targetEvent: ev,
-                    templateUrl: `src/html/dialogs/update-playlist.html`,
+                    templateUrl: `src/html/dialogs/edit-playlist.html`,
                 })
-                    .then(() => {
-                        controller.showToast(`Playlist updated.`);
+                    .then((message: string) => {
+                        controller.showToast(message);
                     }, () => {
                         controller.showToast(`Canceled.`);
                     });
@@ -1241,15 +1242,23 @@ class Main {
         });
 
         /**
-         * Update playlist (for the dialog)
+         * Edit playlist (for the dialog)
          */
-        this.app.controller(`updatePlaylist`, ($scope: any, $mdDialog: any, $mdToast: any, playlistName: string, playlistUUID: string, dataManager: any) => {
+        this.app.controller(`editPlaylist`, ($scope: any, $mdDialog: any, $mdToast: any, playlistName: string, playlistUUID: string, dataManager: any) => {
             let controller = $scope;
 
             // Defaults
             controller.playlistName = playlistName;
             controller.newPlaylistName = playlistName;
             controller.saving = false;
+
+            if (playlistName === undefined) {
+                controller.creatingPlaylist = true;
+                controller.heading = `Creating playlist`;
+            } else {
+                controller.creatingPlaylist = false;
+                controller.heading = `Editing "${playlistName}" playlist`;
+            }
 
             // Setup toasts
             controller.showToast = function (message: string) {
@@ -1273,12 +1282,32 @@ class Main {
 
                 controller.saving = true;
 
-                dataManager.updatePlaylist(playlistUUID, infoToUpdate).then(() => {
-                    $mdDialog.hide();
-                }).catch(() => {
-                    controller.saving = false;
-                    controller.showToast(`Something went wrong, try again.`);
-                });
+                if (controller.creatingPlaylist) {
+
+                    // Creating a new playlist.
+                    if (controller.newPlaylistName && (controller.newPlaylistName.trim() !== ``)) {
+                        dataManager.createPlaylist({ name: controller.newPlaylistName }).then((message: string) => {
+                            $mdDialog.hide(`Playlist created.`);
+                        }).catch(() => {
+                            controller.saving = false;
+                            controller.showToast(`Failed to create playlist.`);
+                        });
+                    } else {
+                        controller.saving = false;
+                        controller.showToast(`Invalid name.`);
+                    }
+
+                } else {
+
+                    // Editing an existing playlist.
+                    dataManager.updatePlaylist(playlistUUID, infoToUpdate).then(() => {
+                        $mdDialog.hide(`Playlist edited.`);
+                    }).catch(() => {
+                        controller.saving = false;
+                        controller.showToast(`Something went wrong, try again.`);
+                    });
+
+                }
 
             };
 
