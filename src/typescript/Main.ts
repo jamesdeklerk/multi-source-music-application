@@ -1403,7 +1403,7 @@ class Main {
         /**
          * Edit track (for the dialog)
          */
-        this.app.controller(`editTrack`, ($scope: any, $mdDialog: any, $mdToast: any, playlistName: string, playlistUUID: string, trackUUID: string, dataManager: any) => {
+        this.app.controller(`editTrack`, ($scope: any, $mdDialog: any, $mdToast: any, playlistName: string, playlistUUID: string, trackUUID: string, url: string, dataManager: any) => {
             let controller = $scope;
 
             let verifier = new Verification();
@@ -1431,6 +1431,19 @@ class Main {
                         .hideDelay(1500)
                 );
             };
+
+            // Check what type of url was given if any, and then autofill it.
+            if (url) {
+                if (verifier.getYouTubeVideoId(url)) {
+                    controller.youtubeURL = verifier.youtubeVideoIdToLink(verifier.getYouTubeVideoId(url));
+                    console.log(controller.youtubeURL);
+                } else if (verifier.getDeezerTrackId(url)) {
+                    controller.deezerURL = verifier.deezerTrackIdToLink(verifier.getDeezerTrackId(url));
+                    console.log(controller.deezerURL);
+                } else {
+                    controller.showToast(`The URL given wasn't valid.`);
+                }
+            }
 
             controller.save = () => {
 
@@ -1815,7 +1828,7 @@ class Main {
                 }
             });
 
-            controller.addTrack = (ev: any) => {
+            controller.addTrack = (ev: any, url: string) => {
                 $mdDialog.show({
                     clickOutsideToClose: true,
                     controller: `editTrack`,
@@ -1826,6 +1839,7 @@ class Main {
                     targetEvent: ev,
                     templateUrl: `src/html/dialogs/edit-track.html`,
                     trackUUID: undefined,
+                    url: url,
                 })
                     .then((message: string) => {
                         controller.showToast(message);
@@ -1837,27 +1851,44 @@ class Main {
 
 
 
-            let tracksArea = document.getElementById(`playlist-tracks-area`);
-            // On track drop handler
-            tracksArea.addEventListener(`drop`, (ev: any) => {
+            // // let tracksArea = document.getElementById(`playlist-tracks-area`);
+            // // On track drop handler
+            // controller.tracksAreaDropHandler = (`drop`, (ev: any) => {
+            //     ev.preventDefault();
+            //     ev.stopPropagation();
+
+            //     console.log(`drop`);
+            //     console.log(ev.dataTransfer.getData("text"));
+
+            //     return false;
+            // }, false);
+
+            // // On drag over handler
+            // controller.tracksAreaDragOverHandler = (`dragover`, (ev: any) => {
+            //     ev.preventDefault();
+            //     // ev.dataTransfer.effectAllowed = `all`;
+            //     // console.log(`dragover`);
+            // }, false);
+            // // tracksArea.addEventListener(`dragleave`, () => {
+            // //     console.log(`dragleave`);
+            // // }, false);
+
+            // On drop events
+            window.tracksAreaDropHandler = (ev: any) => {
                 ev.preventDefault();
                 ev.stopPropagation();
 
-                console.log(`drop`);
-                console.log(ev.dataTransfer.getData("text"));
+                // Add open the add a track dialog.
+                controller.addTrack(ev, ev.dataTransfer.getData("text"));
+
+                console.log(`drop on ${controller.playlistUUID}`);
 
                 return false;
-            }, false);
+            };
 
-            // On drag over handler
-            tracksArea.addEventListener(`dragover`, (ev: any) => {
+            window.tracksAreaDragOverHandler = (ev: any) => {
                 ev.preventDefault();
-                // ev.dataTransfer.effectAllowed = `all`;
-                // console.log(`dragover`);
-            }, false);
-            tracksArea.addEventListener(`dragleave`, () => {
-                // console.log(`dragleave`);
-            }, false);
+            };
 
 
 

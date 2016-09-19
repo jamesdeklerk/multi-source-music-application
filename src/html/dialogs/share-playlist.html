@@ -6,7 +6,7 @@
             <div class="md-toolbar-tools">
                 <h2>Share "{{playlistName}}" playlist</h2>
                 <span flex></span>
-                <md-button class="md-icon-button" ng-click="cancel()">
+                <md-button type="button" class="md-icon-button" ng-click="cancel()">
                     <md-icon md-svg-src="src/assets/svg/close.svg" aria-label="Close dialog"></md-icon>
                 </md-button>
             </div>
@@ -25,7 +25,7 @@
 
         <!-- Actions -->
         <md-dialog-actions layout="row">
-            <md-button class="md-raised md-primary" ng-click="copy()">
+            <md-button type="submit" class="md-raised md-primary" ng-click="copy()">
                 Copy link
             </md-button>
         </md-dialog-actions>

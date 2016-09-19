@@ -29,7 +29,8 @@ $edit-button-size: 16px;
             }
 
             .playlist-owner {
-                margin-top: 5px;
+                margin: auto;
+                margin-top: 14px;
                 font-size: 14px;
             }
 
@@ -62,5 +63,10 @@ $edit-button-size: 16px;
         .tracks {
             
         }
+
+        md-content {
+            height: calc(100% - 64px);
+        }
+
     }
 }

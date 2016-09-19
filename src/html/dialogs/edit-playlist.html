@@ -6,7 +6,7 @@
             <div class="md-toolbar-tools">
                 <h2>{{heading}}</h2>
                 <span flex></span>
-                <md-button class="md-icon-button" ng-click="cancel()">
+                <md-button type="button" class="md-icon-button" ng-click="cancel()">
                     <md-icon md-svg-src="src/assets/svg/close.svg" aria-label="Close dialog"></md-icon>
                 </md-button>
             </div>
@@ -28,10 +28,10 @@
 
         <!-- Actions -->
         <md-dialog-actions layout="row" ng-hide="saving">
-            <md-button ng-click="cancel()">
+            <md-button type="button" ng-click="cancel()">
                 Cancel
             </md-button>
-            <md-button ng-click="save({ name: newPlaylistName })">
+            <md-button type="submit" ng-click="save({ name: newPlaylistName })">
                 Save
             </md-button>
         </md-dialog-actions>

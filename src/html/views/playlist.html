@@ -1,4 +1,4 @@
-<div class="fill-block playlist">
+<div class="fill-block playlist" ng-cloak>
 
     <div ng-show="loading" class="loading">
         <md-progress-circular md-mode="indeterminate"></md-progress-circular>
@@ -17,7 +17,7 @@
             </div>
 
             <div class="share-playlist">
-                <md-button ng-click="addTrack($event)">Add track</md-button>
+                <md-button ng-show="thisUsersPlaylist" ng-click="addTrack($event)">Add track</md-button>
                 <md-button class="md-icon-button" aria-label="share playlist" ng-click="sharePlaylist($event, playlist.name, playlist.uuid)">
                     <md-icon md-svg-icon="src/assets/svg/share.svg"></md-icon>
                 </md-button>
@@ -28,16 +28,19 @@
 
 
         <!-- Tracks -->
-        <md-content id="playlist-tracks-area">
+        <md-content id="playlist-tracks-area" ondrop="tracksAreaDropHandler(event)" ondragover="tracksAreaDragOverHandler(event)">
 
             <!-- No tracks -->
-            <div ng-show="noTracks" class="no-tracks" layout="column" flex>
+            <div ng-show="noTracks && thisUsersPlaylist" class="no-tracks" layout="column" flex>
                 <h2>This playlist has no tracks :(</h2>
                 <h4>But, you have three options :)</h4>
                 <h5>1.<br>To add a video from YouTube, just drag it in.</h5>
                 <h5>2.<br>To add a track from Deezer, go to the track you want,<br>open the track menu > Share > Copy Deezer
                     URL > Paste it here.</h5>
                 <h5>3.<br>Or, click "Add Track"" in the top right and do your thing.</h5>
+            </div>
+            <div ng-show="noTracks && !thisUsersPlaylist" class="no-tracks" layout="column" flex>
+                <h2>This playlist has no tracks,<br>only the owner can change that :(</h2>
             </div>
 
             <div ng-hide="noTracks" class="tracks" layout="column">
