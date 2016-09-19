@@ -25,67 +25,73 @@
 
         </md-toolbar>
 
-        <!-- No tracks -->
-        <md-content ng-show="noTracks" class="no-tracks" layout="column" flex>
-            <h2>This playlist has no tracks :(</h2>
-            <h4>But, you have three options :)</h4>
-            <h5>1.<br>To add a video from YouTube, just drag it in.</h5>
-            <h5>2.<br>To add a track from Deezer, go to the track you want,<br>open the track menu > Share > Copy Deezer URL > Paste it here.</h5>
-            <h5>3.<br>Or, click "Add Track"" in the top right and do your thing.</h5>
-        </md-content>
+
 
         <!-- Tracks -->
-        <md-content ng-hide="noTracks">
+        <md-content id="playlist-tracks-area">
 
-            <ul>
-                <li ng-repeat="track in playlist.tracks | filter: { title: search.text }">
-                    {{$index}} Track: {{track.title}} Date added: {{track.dateAdded}}
-                </li>
-            </ul>
+            <!-- No tracks -->
+            <div ng-show="noTracks" class="no-tracks" layout="column" flex>
+                <h2>This playlist has no tracks :(</h2>
+                <h4>But, you have three options :)</h4>
+                <h5>1.<br>To add a video from YouTube, just drag it in.</h5>
+                <h5>2.<br>To add a track from Deezer, go to the track you want,<br>open the track menu > Share > Copy Deezer
+                    URL > Paste it here.</h5>
+                <h5>3.<br>Or, click "Add Track"" in the top right and do your thing.</h5>
+            </div>
 
-            <ol>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-                <li>•</li>
-            </ol>
+            <div ng-hide="noTracks" class="tracks" layout="column">
+                <ul>
+                    <li ng-repeat="track in playlist.tracks | filter: { title: search.text }">
+                        {{$index}} Track: {{track.title}} Date added: {{track.dateAdded}}
+                    </li>
+                </ul>
+
+                <ol>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                    <li>•</li>
+                </ol>
+
+            </div>
 
         </md-content>
 

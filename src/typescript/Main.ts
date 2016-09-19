@@ -1834,6 +1834,34 @@ class Main {
                     });
             };
 
+
+
+
+            let tracksArea = document.getElementById(`playlist-tracks-area`);
+            // On track drop handler
+            tracksArea.addEventListener(`drop`, (ev: any) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                console.log(`drop`);
+                console.log(ev.dataTransfer.getData("text"));
+
+                return false;
+            }, false);
+
+            // On drag over handler
+            tracksArea.addEventListener(`dragover`, (ev: any) => {
+                ev.preventDefault();
+                // ev.dataTransfer.effectAllowed = `all`;
+                // console.log(`dragover`);
+            }, false);
+            tracksArea.addEventListener(`dragleave`, () => {
+                // console.log(`dragleave`);
+            }, false);
+
+
+
+
             // Get the current playlist.
             dataManager.getPlaylist(controller.playlistUUID).then((playlist: IPlaylist) => {
                 controller.playlist = playlist;
