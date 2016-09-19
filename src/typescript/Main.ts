@@ -1473,6 +1473,9 @@ class Main {
                                 };
                                 controller.youtubeURL = verifier.youtubeVideoIdToLink(YouTubeVideoId);
                                 validYouTubeUrl = true;
+                            } else {
+                                // If it's not a valid URL, clear it.
+                                controller.youtubeURL = undefined;
                             }
                         }
 
@@ -1487,6 +1490,8 @@ class Main {
                                 controller.deezerURL = verifier.deezerTrackIdToLink(DeezerTrackId);
                                 validDeezerUrl = true;
                             }
+                            // If it's not a valid URL, clear it.
+                            controller.deezerURL = undefined;
                         }
 
                         // If there is a valid YouTube or Deezer URL
