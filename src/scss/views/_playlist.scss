@@ -61,7 +61,20 @@ $edit-button-size: 16px;
         }
 
         .tracks {
-            
+
+                .title {
+                    display: inline-block;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    width: 200px;
+                }
+
+                .artist {
+                    display: inline-block;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    width: 200px;
+                }
         }
 
         md-content {
@@ -69,4 +82,23 @@ $edit-button-size: 16px;
         }
 
     }
+}
+
+
+@media only screen and (min-width: 960px){
+
+.playlist {
+    .content-once-loaded {
+        .tracks {
+                .title {
+                    width: 450px;
+                }
+
+                .artist {
+                    width: 400px;
+                }
+        }
+    }
+}
+
 }

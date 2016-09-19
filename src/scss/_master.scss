@@ -149,6 +149,8 @@ $player-element-image-width: $player-elements-height * (16 / 9);
 
         .text {
             margin: auto;
+            width: 300px;
+            overflow: hidden;
             margin-left: 36px;
         }
 

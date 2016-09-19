@@ -50,6 +50,12 @@ class Main {
                 type: `string`,
             },
         ]);
+        publisher.register(`track-deleted`, [
+            {
+                name: `playlistUUID`,
+                type: `string`,
+            },
+        ]);
 
     }
 
@@ -731,6 +737,8 @@ class Main {
                                 }
                             }
                         }
+
+                        publisher.publish(`track-deleted`, playlistUUID);
 
                         resolve(`Track removed from playlist.`);
                     }).catch(() => {
@@ -1489,9 +1497,10 @@ class Main {
                                 };
                                 controller.deezerURL = verifier.deezerTrackIdToLink(DeezerTrackId);
                                 validDeezerUrl = true;
+                            } else {
+                                // If it's not a valid URL, clear it.
+                                controller.deezerURL = undefined;
                             }
-                            // If it's not a valid URL, clear it.
-                            controller.deezerURL = undefined;
                         }
 
                         // If there is a valid YouTube or Deezer URL
@@ -1617,6 +1626,19 @@ class Main {
             seekbar.addEventListener(`change`, () => {
                 userMovingSeekBar = false;
                 this.player.seekToPercentage(parseFloat(seekbar.value));
+            });
+
+            publisher.subscribe(this.player.EVENTS.ON_TRACK_LOADED, (a: string, b: string) => {
+                controller.currentTrack = this.player.getCurrentTrack();
+                controller.$digest();
+            });
+            publisher.subscribe(this.player.EVENTS.ON_PREVIOUS, () => {
+                controller.currentTrack = this.player.getCurrentTrack();
+                // controller.$digest();
+            });
+            publisher.subscribe(this.player.EVENTS.ON_NEXT, () => {
+                controller.currentTrack = this.player.getCurrentTrack();
+                // controller.$digest();
             });
 
             // Update the player UI.
@@ -1813,15 +1835,34 @@ class Main {
                 }
             };
 
+            let updateTrackIndexs = () => {
+                // For each track in the playlist, append an index
+                for (let i = 0; i < controller.playlist.tracks.length; i = i + 1) {
+                    controller.playlist.tracks[i].index = i;
+                }
+            };
+
+            let updatePlaylist = () => {
+                dataManager.getPlaylist(controller.playlistUUID).then((playlist: IPlaylist) => {
+                    controller.playlist = playlist;
+                    updateTrackIndexs();
+                    updateNoTracksFlag();
+                    controller.$digest();
+                });
+            };
+
             // Watch for tracks being added to the playlist.
             publisher.subscribe(`track-added`, (playlistUUID: string) => {
                 // If the track was added to this library, update it.
                 if (controller.playlistUUID === playlistUUID) {
-                    dataManager.getPlaylist(controller.playlistUUID).then((playlist: IPlaylist) => {
-                        controller.playlist = playlist;
-                        updateNoTracksFlag();
-                        controller.$digest();
-                    });
+                    updatePlaylist();
+                }
+            });
+
+            publisher.subscribe(`track-deleted`, (playlistUUID: string) => {
+                // If the track was deleted from this library, update it.
+                if (controller.playlistUUID === playlistUUID) {
+                    updatePlaylist();
                 }
             });
 
@@ -1853,30 +1894,68 @@ class Main {
                     });
             };
 
+            // Delete track.
+            controller.deleteTrack = (ev: any, trackTitle: string, trackUUIDInPlaylist: string, index: number) => {
+                console.log(`uuidInPlaylist: ${trackUUIDInPlaylist}`);
+
+                let confirm = $mdDialog.confirm()
+                    .title(`Delete "${trackTitle}"`)
+                    .textContent(`This will permanently delete the track from this playlist.`)
+                    .ariaLabel(`Delete ${trackTitle} track`)
+                    .targetEvent(ev)
+                    .ok(`Yes`)
+                    .cancel(`Cancel`);
+
+                $mdDialog.show(confirm).then(() => {
+                    dataManager.deleteTrackFromPlaylist(controller.playlistUUID, trackUUIDInPlaylist).then((message: string) => {
+                        this.player.dequeue(index);
+                        controller.showToast(message);
+                    }).catch((message: string) => {
+                        controller.showToast(message);
+                    });
+                }, () => {
+                    controller.showToast(`Canceled.`);
+                });
+
+            };
+
+            // Load all the songs in the playlist to the queue.
+            let lastTimePlayed = 0;
+            let timeAfterWhichToAllowPlaying = 500;
+            controller.playTrack = (index: number) => {
+
+                if ((Date.now() - lastTimePlayed) > timeAfterWhichToAllowPlaying) {
+                    //  Update the last time played.
+                    lastTimePlayed = Date.now();
+
+                    this.player.dequeueAll();
+
+                    for (let i = 0; i < controller.playlist.tracks.length; i = i + 1) {
+                        this.player.queue(controller.playlist.tracks[i]);
+                    }
+
+                    this.player.playTrack(index);
+                } else {
+                    console.log(`Too fast bro! Too fast!`);
+                }
+            };
+
+            // Filter
+            controller.filter = function (track: ITrack) {
+                if (!(controller.search) || !(controller.search.text)) {
+                    return true;
+                } else if (track.title && (track.title.toLowerCase().indexOf(controller.search.text.toLowerCase()) !== -1)) {
+                    return true;
+                } else if (track.artist && (track.artist.toLowerCase().indexOf(controller.search.text.toLowerCase()) !== -1)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            };
 
 
 
-            // // let tracksArea = document.getElementById(`playlist-tracks-area`);
-            // // On track drop handler
-            // controller.tracksAreaDropHandler = (`drop`, (ev: any) => {
-            //     ev.preventDefault();
-            //     ev.stopPropagation();
 
-            //     console.log(`drop`);
-            //     console.log(ev.dataTransfer.getData("text"));
-
-            //     return false;
-            // }, false);
-
-            // // On drag over handler
-            // controller.tracksAreaDragOverHandler = (`dragover`, (ev: any) => {
-            //     ev.preventDefault();
-            //     // ev.dataTransfer.effectAllowed = `all`;
-            //     // console.log(`dragover`);
-            // }, false);
-            // // tracksArea.addEventListener(`dragleave`, () => {
-            // //     console.log(`dragleave`);
-            // // }, false);
 
             // On drop events
             window.tracksAreaDropHandler = (ev: any) => {
@@ -1887,6 +1966,7 @@ class Main {
                 controller.addTrack(ev, ev.dataTransfer.getData("text"));
 
                 console.log(`drop on ${controller.playlistUUID}`);
+                console.log(ev.dataTransfer.types);
 
                 return false;
             };
@@ -1897,12 +1977,12 @@ class Main {
 
 
 
-
             // Get the current playlist.
             dataManager.getPlaylist(controller.playlistUUID).then((playlist: IPlaylist) => {
                 controller.playlist = playlist;
                 controller.loading = false;
 
+                updateTrackIndexs();
                 updateNoTracksFlag();
 
                 // Check if the current user is the owner of the playlist.

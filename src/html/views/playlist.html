@@ -44,55 +44,45 @@
             </div>
 
             <div ng-hide="noTracks" class="tracks" layout="column">
-                <ul>
+                <!--<ul>
                     <li ng-repeat="track in playlist.tracks | filter: { title: search.text }">
                         {{$index}} Track: {{track.title}} Date added: {{track.dateAdded}}
                     </li>
-                </ul>
+                </ul>-->
 
-                <ol>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                    <li>•</li>
-                </ol>
+                <md-list ng-cloak>
+                    <md-subheader class="md-no-sticky">
+                        <span class="title">Title</span>
+                        <span class="artist">Artist</span>
+                    </md-subheader>
+                    <md-list-item draggable="true" ng-repeat="track in playlist.tracks | filter: filter" ng-dblclick="playTrack(track.index)">
+                        <span class="title">{{track.title}}</span>
+                        <span class="artist">{{track.artist}}</span>
+                        <!--<md-button class="md-secondary" ng-click="doSecondaryAction($event)">More Info</md-button>-->
+                        <md-menu class="md-secondary">
+                            <md-button class="md-icon-button" aria-label="track options" ng-click="$mdOpenMenu($event)">
+                                <md-icon md-svg-icon="src/assets/svg/more_vertical.svg"></md-icon>
+                            </md-button>
+                            <md-menu-content flex>
+                                <!--<md-menu-item>
+                                    <md-button ng-click="null">Share</md-button>
+                                </md-menu-item>-->
+                                <!--<md-menu-item>
+                                    <md-button ng-click="null">Add to playlist</md-button>
+                                </md-menu-item>-->
+                                <!--<md-menu-item>
+                                    <md-button ng-click="null">Add to queue</md-button>
+                                </md-menu-item>-->
+                                <!--<md-menu-item>
+                                    <md-button ng-click="null">Edit</md-button>
+                                </md-menu-item>-->
+                                <md-menu-item ng-show="thisUsersPlaylist">
+                                    <md-button ng-click="deleteTrack($event, track.title, track.uuidInPlaylist, track.index)">Delete</md-button>
+                                </md-menu-item>
+                            </md-menu-content>
+                        </md-menu>
+                    </md-list-item>
+                </md-list>
 
             </div>
 
