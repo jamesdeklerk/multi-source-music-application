@@ -26,7 +26,7 @@
         </md-toolbar>
 
         <!-- No tracks -->
-        <md-content class="no-tracks" layout="column" flex>
+        <md-content ng-show="noTracks" class="no-tracks" layout="column" flex>
             <h2>This playlist has no tracks :(</h2>
             <h4>But, you have three options :)</h4>
             <h5>1.<br>To add a video from YouTube, just drag it in.</h5>
@@ -35,7 +35,7 @@
         </md-content>
 
         <!-- Tracks -->
-        <md-content ng-hide="true">
+        <md-content ng-hide="noTracks">
 
             <ul>
                 <li ng-repeat="track in playlist.tracks | filter: { title: search.text }">

@@ -38,7 +38,18 @@ class Main {
         publisher.register(`library-created`, []);
         publisher.register(`playlist-created`, []);
         publisher.register(`playlist-updated`, []);
-        publisher.register(`playlist-deleted`, []);
+        publisher.register(`playlist-deleted`, [
+            {
+                name: `playlistUUID`,
+                type: `string`,
+            },
+        ]);
+        publisher.register(`track-added`, [
+            {
+                name: `playlistUUID`,
+                type: `string`,
+            },
+        ]);
 
     }
 
@@ -430,8 +441,8 @@ class Main {
 
             function createTrack(track: ITrack): Promise<any> {
                 return new Promise((resolve, reject) => {
+                    console.log(track);
                     TRACKS_REF.push(track).then((data: any) => {
-
                         let clonedTrack = clone(track);
 
                         clonedTrack.uuid = data.key;
@@ -442,7 +453,8 @@ class Main {
                             // Update local copy.
                             tracks[clonedTrack.uuid] = clonedTrack;
 
-                            resolve(`Track created.`);
+                            // Pass throught the new track UUID.
+                            resolve(data.key);
                         }).catch(() => {
                             reject(`Failed to create track.`);
                         });
@@ -613,15 +625,17 @@ class Main {
                         if (playlist.owner === userUid) {
                             // Add track.
                             PLAYLISTS_TRACKS_REF.child(playlistUUID).push(trackUUID).then((data: any) => {
-                                console.log(`addTrackToPlaylist - PLAYLISTS_TRACKS_REF.child`);
 
                                 let clonedTrack = clone(track);
                                 // Only cloned tracks have a reference to where they
                                 // are in the playlist, i.e. a uuidInPlaylist
+                                // Have to clone track for ng-repeat
                                 clonedTrack.uuidInPlaylist = data.key;
 
                                 // Maintain the local playlists
-                                // Have to clone track for ng-repeat
+                                if (!(playlists[playlistUUID].tracks instanceof Array)) {
+                                    playlists[playlistUUID].tracks = [];
+                                }
                                 playlists[playlistUUID].tracks.push(clonedTrack);
                                 if (playlistsTracks[playlistUUID] === undefined) {
                                     playlistsTracks[playlistUUID] = [];
@@ -644,16 +658,31 @@ class Main {
                                                 addTrackToPlaylist(libraryUUID, trackUUID);
                                             }
 
+                                            // Publish event.
+                                            publisher.publish(`track-added`, playlistUUID);
+
                                             resolve(`Track added to playlist.`);
                                         }).catch(() => {
+
+                                            // Publish event.
+                                            publisher.publish(`track-added`, playlistUUID);
+
                                             resolve(`Track added to playlist. But failed to add to library.`);
                                         });
 
                                     } else {
+
+                                        // Publish event.
+                                        publisher.publish(`track-added`, playlistUUID);
+
                                         resolve(`Track added to library.`);
                                     }
 
                                 }).catch(() => {
+
+                                    // Publish event.
+                                    publisher.publish(`track-added`, playlistUUID);
+
                                     resolve(`Track added to playlist.`);
                                 });
 
@@ -970,7 +999,7 @@ class Main {
                         }
 
                         // Publish the event.
-                        publisher.publish(`playlist-deleted`);
+                        publisher.publish(`playlist-deleted`, playlistUUID);
 
                         resolve(`Playlist removed.`);
                     }).catch(() => {
@@ -1175,7 +1204,7 @@ class Main {
                 });
             });
 
-            let listOfPlaylistChangeHandler = () => {
+            let listOfPlaylistChangeHandler = (playlistUUID: string) => {
                 // The list of playlists has to be reloaded,
                 // so show the loading spinner.
                 controller.loadingPlaylists = true;
@@ -1374,8 +1403,10 @@ class Main {
         /**
          * Edit track (for the dialog)
          */
-        this.app.controller(`editTrack`, ($scope: any, $mdDialog: any, $mdToast: any, playlistName: string, playlistUUID: string, trackUUID: string) => {
+        this.app.controller(`editTrack`, ($scope: any, $mdDialog: any, $mdToast: any, playlistName: string, playlistUUID: string, trackUUID: string, dataManager: any) => {
             let controller = $scope;
+
+            let verifier = new Verification();
 
             // Defaults
             controller.playlistName = playlistName;
@@ -1400,8 +1431,83 @@ class Main {
                         .hideDelay(1500)
                 );
             };
-            
 
+            controller.save = () => {
+
+                controller.saving = true;
+
+                if (controller.creatingTrack) {
+
+                    // Creating a new track.
+                    if (controller.trackTitle && (controller.trackTitle.trim() !== ``)) {
+                        let validYouTubeUrl = false;
+                        let validDeezerUrl = false;
+                        let newTrack: any = {};
+                        newTrack.title = controller.trackTitle;
+                        if (controller.trackArtist) {
+                            newTrack.artist = controller.trackArtist;
+                        }
+                        newTrack.dateAdded = Date.now();
+                        newTrack.services = {};
+
+                        // Check that there is a YouTube URL
+                        if (controller.youtubeURL && (controller.youtubeURL.trim() !== ``)) {
+                            let YouTubeVideoId = verifier.getYouTubeVideoId(controller.youtubeURL);
+
+                            if (YouTubeVideoId) {
+                                newTrack.services[`YouTube`] = {
+                                    videoId: YouTubeVideoId,
+                                };
+                                controller.youtubeURL = verifier.youtubeVideoIdToLink(YouTubeVideoId);
+                                validYouTubeUrl = true;
+                            }
+                        }
+
+                        // Check that there is a YouTube URL
+                        if (controller.deezerURL && (controller.deezerURL.trim() !== ``)) {
+                            let DeezerTrackId = verifier.getDeezerTrackId(controller.deezerURL);
+
+                            if (DeezerTrackId) {
+                                newTrack.services[`Deezer`] = {
+                                    trackId: DeezerTrackId,
+                                };
+                                controller.deezerURL = verifier.deezerTrackIdToLink(DeezerTrackId);
+                                validDeezerUrl = true;
+                            }
+                        }
+
+                        // If there is a valid YouTube or Deezer URL
+                        if (validYouTubeUrl || validDeezerUrl) {
+                            dataManager.createTrack(newTrack).then((createdTrackUUID: string) => {
+
+                                // Now that the track is created, add it to the current playlist.
+                                dataManager.addTrackToPlaylist(playlistUUID, createdTrackUUID).then(() => {
+                                    $mdDialog.hide(`Track added to playlist.`);
+                                }).catch((message: string) => {
+                                    controller.saving = false;
+                                    controller.showToast(message);
+                                });
+
+                            }).catch((message: string) => {
+                                controller.saving = false;
+                                controller.showToast(message);
+                            });
+                        } else {
+                            controller.saving = false;
+                            controller.showToast(`Invalid track URL.`);
+                        }
+
+
+                    } else {
+                        controller.saving = false;
+                        controller.showToast(`Invalid title.`);
+                    }
+
+                } else {
+
+                }
+
+            };
 
             controller.hide = () => {
                 $mdDialog.hide();
@@ -1662,6 +1768,8 @@ class Main {
             controller.playlist = {};
             controller.thisUsersPlaylist = true;
             controller.noTracks = false;
+            // Get the current playlist.
+            controller.playlistUUID = $routeParams.playlistUUID;
 
             // Setup toasts
             controller.showToast = function (message: string) {
@@ -1676,15 +1784,36 @@ class Main {
             // Check if there are no tracks in the playlist
             let updateNoTracksFlag = () => {
                 if (controller.playlist) {
-                    if (controller.playlist.track instanceof Array) {
+                    if (controller.playlist.tracks instanceof Array) {
                         // Check if there are no tracks in the playlist.
-                        controller.noTracks = (controller.playlist.track.length <= 0);
+                        controller.noTracks = (controller.playlist.tracks.length <= 0);
+                    } else {
+                        controller.noTracks = true;
                     }
+                } else {
+                    controller.noTracks = true;
                 }
             };
 
-            // Get the current playlist.
-            controller.playlistUUID = $routeParams.playlistUUID;
+            // Watch for tracks being added to the playlist.
+            publisher.subscribe(`track-added`, (playlistUUID: string) => {
+                // If the track was added to this library, update it.
+                if (controller.playlistUUID === playlistUUID) {
+                    dataManager.getPlaylist(controller.playlistUUID).then((playlist: IPlaylist) => {
+                        controller.playlist = playlist;
+                        updateNoTracksFlag();
+                        controller.$digest();
+                    });
+                }
+            });
+
+            // Watch for the playlist being deleted.
+            publisher.subscribe(`playlist-deleted`, (playlistUUID: string) => {
+                // If this playlist was deleted, redirect to library.
+                if (controller.playlistUUID === playlistUUID) {
+                    $location.path(`/`);
+                }
+            });
 
             controller.addTrack = (ev: any) => {
                 $mdDialog.show({

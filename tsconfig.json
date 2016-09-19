@@ -32,6 +32,7 @@
         // Resources
         "src/typescript/resources/Constants.ts",
         // Classes
+        "src/typescript/classes/Verification.ts",
         "src/typescript/classes/Settings.ts",
         "src/typescript/classes/Player.ts",
         // Main
