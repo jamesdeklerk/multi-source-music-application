@@ -1838,9 +1838,12 @@ class Main {
 
             let updateTrackIndexs = () => {
                 // For each track in the playlist, append an index
-                for (let i = 0; i < controller.playlist.tracks.length; i = i + 1) {
-                    controller.playlist.tracks[i].index = i;
+                if (controller.playlist.tracks) {
+                    for (let i = 0; i < controller.playlist.tracks.length; i = i + 1) {
+                        controller.playlist.tracks[i].index = i;
+                    }
                 }
+
             };
 
             let updatePlaylist = () => {
@@ -1990,6 +1993,7 @@ class Main {
                 let trackUUID = element.getAttribute(`data-uuid`);
                 ev.dataTransfer.setData(`text/plain`, trackUUID);
             };
+
 
 
 

@@ -119,8 +119,8 @@ gulp.task('reload', [
 gulp.task('default', [
     'recompile',
     'recompile:watch',
-    'reload',
-    'reload:watch'
+    // 'reload',
+    // 'reload:watch'
 ]);
 
 // -------------------------------------------------------
