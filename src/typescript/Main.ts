@@ -1475,11 +1475,31 @@ class Main {
                 );
             };
 
+            // Change watchers
+            controller.youtubeURLChange = (youtubeURL: string) => {
+
+                // If there isn't a track title, try autofill it.
+                if (!controller.trackTitle) {
+                    // Check that there is a YouTube URL
+                    if (youtubeURL && (youtubeURL.trim() !== ``)) {
+                        let YouTubeVideoId = verifier.getYouTubeVideoId(youtubeURL);
+
+                        if (YouTubeVideoId) {
+                            verifier.getYouTubeVideoTitle(YouTubeVideoId).then((title: string) => {
+                                controller.trackTitle = title;
+                            });
+                        }
+                    }
+                }
+
+            };
+
             // Check what type of url was given if any, and then autofill it.
             if (url) {
                 if (verifier.getYouTubeVideoId(url)) {
                     controller.youtubeURL = verifier.youtubeVideoIdToLink(verifier.getYouTubeVideoId(url));
-                    console.log(controller.youtubeURL);
+                    // Update the name
+                    controller.youtubeURLChange(controller.youtubeURL);
                 } else if (verifier.getDeezerTrackId(url)) {
                     controller.deezerURL = verifier.deezerTrackIdToLink(verifier.getDeezerTrackId(url));
                     console.log(controller.deezerURL);
@@ -1511,6 +1531,11 @@ class Main {
                             let YouTubeVideoId = verifier.getYouTubeVideoId(controller.youtubeURL);
 
                             if (YouTubeVideoId) {
+                                verifier.getYouTubeVideoTitle(YouTubeVideoId).then((title: string) => {
+                                    controller.trackTitle = title;
+                                    console.log(controller.trackTitle);
+                                });
+
                                 newTrack.services[`YouTube`] = {
                                     videoId: YouTubeVideoId,
                                 };
@@ -1707,8 +1732,6 @@ class Main {
         this.app.controller(`library`, ($scope: any, $location: any, user: any, database: any, dataManager: any, $mdToast: any) => {
             let controller = $scope;
 
-            // $location.path
-
             controller.showToast = function (message: string) {
                 $mdToast.show(
                     $mdToast.simple()
@@ -1718,12 +1741,29 @@ class Main {
                 );
             };
 
-            // Get users playlist.
-            dataManager.getUsersLibraryUUID().then((libraryUUID: any) => {
-                $location.path(`playlist/${libraryUUID}`);
-            }).catch(() => {
-                controller.showToast(`Couldn't find your library, try refreshing the page...`);
-            });
+            // If the library hasn't been created, keep trying 
+            let timesToTry = 10;
+            let tryCount = 0;
+            let everyHowManyMilliseconds = 1000;
+            let tryGetLibrary = () => {
+
+                // Get users playlist.
+                dataManager.getUsersLibraryUUID().then((libraryUUID: any) => {
+                    console.log(libraryUUID);
+                    $location.path(`/playlist/${libraryUUID}`);
+                    controller.$apply();
+                }).catch(() => {
+                    if (tryCount < timesToTry) {
+                        tryCount = tryCount + 1;
+                        console.log(`Try count = ${tryCount}, library still not there, try again...`);
+                        setTimeout(tryGetLibrary, everyHowManyMilliseconds);
+                    } else {
+                        controller.showToast(`Couldn't find your library, try refreshing the page...`);
+                    }
+                });
+
+            };
+            tryGetLibrary();
 
         });
 

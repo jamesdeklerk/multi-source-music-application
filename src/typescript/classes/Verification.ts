@@ -36,6 +36,42 @@ class Verification {
     }
 
     /**
+     * Get YouTube video title.
+     * 
+     * @return A promise that resolves the title.
+     */
+    public getYouTubeVideoTitle(videoId: string): Promise<any> {
+        return new Promise((resolve, reject) => {
+
+            let apiKey = `AIzaSyAN7vyNOXc_U-qWbxkLt6RPx-PAT2dl3qQ`;
+
+            $.ajax({
+                dataType: "jsonp",
+                error: function (jqXHR: any, textStatus: any, errorThrown: any) {
+                    reject(`Could not get title.`);
+                },
+                success: function (data: any) {
+                    if (data) {
+                        if (data.items) {
+                            if (data.items[0]) {
+                                resolve(data.items[0].snippet.title);
+                            } else {
+                                reject(`Could not get title.`);
+                            }
+                        } else {
+                            reject(`Could not get title.`);
+                        }
+                    } else {
+                        reject(`Could not get title.`);
+                    }
+                },
+                url: "https://www.googleapis.com/youtube/v3/videos?id=" + videoId + "&key=" + apiKey + "&fields=items(snippet(title))&part=snippet",
+            });
+        });
+
+    }
+
+    /**
      * Gets the Deezer track id given a link.
      * 
      * @return The Deezer track id, and undefined if not valid.
