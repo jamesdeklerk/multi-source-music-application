@@ -1,48 +1,7 @@
-<div class="fill-block">
-    Current user email: {{userEmail}}
-    <br>
-    <br>
-    <br>
-    Track uid:<input type="text" ng-model="trackUUID" name="trackUid"><br>
-    Track uuidInPlaylist:<input type="text" ng-model="uuidInPlaylist" name="trackUid"><br>
-    Track title:<input type="text" ng-model="track.title" name="trackTitle"><br>
-    <br>
-    <md-button ng-click="createTrack()" class="md-raised md-primary">Create Track {{trackTitle}} - {{trackUid}}</md-button>
-    <md-button ng-click="deleteTrackFromPlaylist()" class="md-raised md-primary">Delete Track {{trackTitle}} from playlist!</md-button>
-    <md-button ng-click="getTrack()" class="md-raised md-primary">Get Track {{trackUid}}</md-button>
-    <br>
-    <br>
-    Playlist uid:<input type="text" ng-model="playlist.uuid" name="playlistUid"><br>
-    Playlist uuidInUsersPlaylists:<input type="text" ng-model="playlist.uuidInUsersPlaylists" name="playlistUid"><br>
-    Playlist owner:<input type="text" ng-model="playlist.owner" name="playlistOwner"><br>
-    Playlist name:<input type="text" ng-model="playlist.name" name="playlistName"><br>
-    <br>
-    <md-button ng-click="createPlaylist()" class="md-raised md-primary">Create Playlist {{playlist.name}} - {{playlistUid}}</md-button>
-    <br>
-    <md-button ng-click="addTrackToPlaylist()" class="md-raised md-primary">Add Track to Playlist {{playlist.name}}</md-button>
-    <br>
-    <md-button ng-click="getPlaylistDetails()" class="md-raised md-primary">Get Playlist Details {{playlistUid}}</md-button>
-    <br>
-    <md-button ng-click="getPlaylistTracksUUIDs()" class="md-raised md-primary">Get Playlist Tracks UUIDs {{playlistUid}}</md-button>
-    <br>
-    <md-button ng-click="getPlaylist()" class="md-raised md-primary">Get Playlist {{playlistUid}}</md-button>
-    <br>
-    <md-button ng-click="getUsersPlaylists()" class="md-raised md-primary">Get Users Playlists</md-button>
-    <br>
-    <md-button ng-click="getUsersLibraryUUID()" class="md-raised md-primary">Get Users Library UUID</md-button>
-    <br>
-    <md-button ng-click="isTrackInPlaylist()" class="md-raised md-primary">Check if track is in playlist</md-button>
-    <br>
-    <md-button ng-click="deletePlaylist()" class="md-raised md-primary">Delete playlist</md-button>
-    <br>
-    <br>
-    <br>
-    Tracks in {{playlist.name}}:
-    <ul>
-        <li ng-repeat="track in playlist.tracks | filter: { title: search.text }">
-            Track: {{track.title}}
-            Date added: {{track.dateAdded}}
-        </li>
-    </ul>
+<div class="fill-block library" ng-cloak>
+
+    <div class="loading">
+        <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+    </div>
 
 </div>
