@@ -39,6 +39,23 @@ md-toolbar .user {
     }
 }
 
+.logo {
+    display: flex;
+    
+    md-icon {
+        height: 24px;
+        width: 24px;
+        margin-top: 11px;
+        margin-right: 10px;
+        margin-left: 0px;
+    }
+    
+    span {
+        vertical-align: middle;
+        font-size: 34px;
+    }
+}
+
 #content {
     display: flex;
     height: 100%;

@@ -1502,7 +1502,6 @@ class Main {
 
                     if (DeezerTrackId) {
                         verifier.getDeezerTrackObject(DeezerTrackId).then((object: any) => {
-                            console.log(object);
 
                             // If there isn't a track title, try autofill it.
                             if (!controller.trackTitle) {
@@ -1558,11 +1557,6 @@ class Main {
                             let YouTubeVideoId = verifier.getYouTubeVideoId(controller.youtubeURL);
 
                             if (YouTubeVideoId) {
-                                verifier.getYouTubeVideoTitle(YouTubeVideoId).then((title: string) => {
-                                    controller.trackTitle = title;
-                                    console.log(controller.trackTitle);
-                                });
-
                                 newTrack.services[`YouTube`] = {
                                     videoId: YouTubeVideoId,
                                 };

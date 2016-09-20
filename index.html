@@ -42,10 +42,15 @@
 
 
     <!-- Header container -->
-    <md-toolbar layout="row" class="md-toolbar-tools">
-        <md-button class="md-icon-button" ng-click="toggleMenu()" aria-label="Show menu">
+    <md-toolbar layout="row" md-whiteframe="4" class="md-toolbar-tools">
+        <md-button hide-gt-sm class="md-icon-button" ng-click="toggleMenu()" aria-label="Show menu">
             <md-icon md-svg-icon="src/assets/svg/menu.svg"></md-icon>
         </md-button>
+        <div class="logo" hide-sm hide-xs>
+            <md-icon md-svg-src="src/assets/svg/logo.svg"></md-icon>
+            <span>contour</span>
+        </div>
+
         <!-- Search -->
         <div class="search" flex>
             <input layout-align="center center" type="text" ng-model="search.text" placeholder="Search">
@@ -73,13 +78,14 @@
     <div flex layout="row">
 
         <!-- Menu container -->
-        <md-sidenav class="sidenav" class="md-whiteframe-4dp" md-is-locked-open="$mdMedia('gt-sm')" md-component-id="left" ng-click="toggleMenu()">
+        <md-sidenav class="sidenav" md-whiteframe="4" md-is-locked-open="$mdMedia('gt-sm')" md-component-id="left" ng-click="toggleMenu()">
 
             <!-- Auto generated stuff e.g. the users library -->
             <md-subheader class="md-no-sticky">Collection</md-subheader>
             <!--<md-content>-->
             <md-list>
-                <md-list-item ng-hide="loadingLibrary"="loadingLibrary" ng-click="null" href="#/playlist/{{library.uuid}}" ondrop="playlistAreaDropHandler(event, this)" data-uuid="{{library.uuid}}" ondragover="playlistAreaDragOverHandler(event)">
+                <md-list-item ng-hide="loadingLibrary"="loadingLibrary" ng-click="null" href="#/playlist/{{library.uuid}}" ondrop="playlistAreaDropHandler(event, this)"
+                    data-uuid="{{library.uuid}}" ondragover="playlistAreaDragOverHandler(event)">
                     <div class="md-list-item-text" layout="column">
                         <h3>{{library.name}}</h3>
                     </div>
@@ -115,7 +121,8 @@
                 <md-list flex>
 
                     <!-- Each playlist -->
-                    <md-list-item class="md-1-line" ng-repeat="playlist in playlists" ng-click="null" href="#/playlist/{{playlist.uuid}}" ondrop="playlistAreaDropHandler(event, this)" data-uuid="{{playlist.uuid}}" ondragover="playlistAreaDragOverHandler(event)">
+                    <md-list-item class="md-1-line" ng-repeat="playlist in playlists" ng-click="null" href="#/playlist/{{playlist.uuid}}" ondrop="playlistAreaDropHandler(event, this)"
+                        data-uuid="{{playlist.uuid}}" ondragover="playlistAreaDragOverHandler(event)">
                         <div class="md-list-item-text" layout="column">
                             <h3>{{playlist.name}}</h3>
                         </div>
@@ -154,7 +161,7 @@
     </div>
 
     <!-- Player container -->
-    <div class="player-container" layout="column" ng-controller="player">
+    <div class="player-container" md-whiteframe="4" layout="column" ng-controller="player">
 
         <!-- Seekbar -->
         <div class="seekbar" layout="column">
@@ -267,7 +274,7 @@
 
     <!-- JQuery for ajax calls -->
     <script src="build/javascript/jquery-3.1.0.min.js"></script>
-    
+
     <!-- AngularJS dependencies -->
     <script src="build/javascript/angular.min.js"></script>
     <script src="build/javascript/angular-animate.min.js"></script>

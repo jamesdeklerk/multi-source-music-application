@@ -6,12 +6,12 @@
 
     <div ng-hide="loading" class="content-once-loaded">
 
-        <md-toolbar layout="row">
+        <md-toolbar layout="row" md-whiteframe="4">
 
             <div class="headings" layout="row">
-                <md-button class="md-icon-button" aria-label="play playlist" ng-click="null">
+                <!--<md-button class="md-icon-button" aria-label="play playlist" ng-click="null">
                     <md-icon md-svg-icon="src/assets/svg/play-playlist.svg"></md-icon>
-                </md-button>
+                </md-button>-->
                 <h3 class="playlist-name">{{playlist.name}}</h3>
                 <span ng-hide="thisUsersPlaylist" class="playlist-owner">Owner: {{owner}}</span>
             </div>
@@ -44,18 +44,13 @@
             </div>
 
             <div ng-hide="noTracks" class="tracks" layout="column">
-                <!--<ul>
-                    <li ng-repeat="track in playlist.tracks | filter: { title: search.text }">
-                        {{$index}} Track: {{track.title}} Date added: {{track.dateAdded}}
-                    </li>
-                </ul>-->
 
                 <md-list ng-cloak>
                     <md-subheader class="md-no-sticky">
                         <span class="title">Title</span>
                         <span class="artist">Artist</span>
                     </md-subheader>
-                    <md-list-item draggable="true" ng-repeat="track in playlist.tracks | filter: filter" ondragstart="trackDragStartHandler(event, this)" data-uuid="trackUUID={{track.uuid}}"  ng-dblclick="playTrack(track.index)">
+                    <md-list-item draggable="true" ng-repeat="track in playlist.tracks | filter: filter" ondragstart="trackDragStartHandler(event, this)" data-uuid="trackUUID={{track.uuid}}"  ng-click="playTrack(track.index)">
                         <span class="title">{{track.title}}</span>
                         <span class="artist">{{track.artist}}</span>
                         <!--<md-button class="md-secondary" ng-click="doSecondaryAction($event)">More Info</md-button>-->

@@ -17,15 +17,21 @@ $edit-button-size: 16px;
 
         md-toolbar {
             align-items: center;
+            background-color: #F4F4F4;
+            color: $primary-text-color-dark;
 
             .headings {
                 margin: auto;
                 margin-left: 16px;
+
+                h3 {
+                    font-weight: normal;
+                }
             }
 
             .playlist-name {
                 margin: auto;
-                margin-right: 16px;
+                margin-right: 24px;
             }
 
             .playlist-owner {
@@ -37,6 +43,10 @@ $edit-button-size: 16px;
             .share-playlist {
                 margin: auto;
                 margin-right: 36px;
+
+                svg {
+                    fill: $primary-text-color-dark;
+                }
             }
             
         }
