@@ -30,7 +30,7 @@
                 </md-input-container>
                 <md-input-container class="md-block" flex-gt-sm>
                     <label>Deezer URL</label>
-                    <input ng-model="deezerURL">
+                    <input ng-change="deezerURLChange(deezerURL)" ng-model="deezerURL">
                 </md-input-container>
                 <div class="loading" ng-show="saving">
                     <md-progress-circular md-mode="indeterminate"></md-progress-circular>

@@ -117,4 +117,26 @@ class Verification {
 
     }
 
+    /**
+     * Get Deezer track object.
+     * 
+     * @return A promise that resolves the track object.
+     */
+    public getDeezerTrackObject(trackId: string): Promise<any> {
+        return new Promise((resolve, reject) => {
+
+            $.ajax({
+                dataType: "jsonp",
+                error: function (jqXHR: any, textStatus: any, errorThrown: any) {
+                    reject(`Could not get track object.`);
+                },
+                success: function (data: any) {
+                    resolve(data);
+                },
+                url: "https://api.deezer.com/track/" + trackId + "?output=jsonp",
+            });
+        });
+
+    }
+
 }

@@ -1487,8 +1487,35 @@ class Main {
                         if (YouTubeVideoId) {
                             verifier.getYouTubeVideoTitle(YouTubeVideoId).then((title: string) => {
                                 controller.trackTitle = title;
+                                controller.$digest();
                             });
                         }
+                    }
+                }
+
+            };
+
+            controller.deezerURLChange = (deezerURL: string) => {
+
+                if (deezerURL && (deezerURL.trim() !== ``)) {
+                    let DeezerTrackId = verifier.getDeezerTrackId(deezerURL);
+
+                    if (DeezerTrackId) {
+                        verifier.getDeezerTrackObject(DeezerTrackId).then((object: any) => {
+                            console.log(object);
+
+                            // If there isn't a track title, try autofill it.
+                            if (!controller.trackTitle) {
+                                controller.trackTitle = object.title;
+                            }
+
+                            if (!controller.trackArtist) {
+                                controller.trackArtist = object.artist.name;
+                            }
+
+                            controller.$digest();
+
+                        });
                     }
                 }
 
