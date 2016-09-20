@@ -1228,6 +1228,41 @@ class Main {
                 });
             };
 
+
+
+            window.playlistAreaDropHandler = (ev: any, element: HTMLElement) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                let data = ev.dataTransfer.getData("text/plain");
+
+                let trackUUIDIdentifier = `trackUUID=`;
+                let index = data.indexOf(trackUUIDIdentifier);
+
+                // Only if it is a track, should we add it to the playlist.
+                if (index >= 0) {
+                    let trackUUID = data.slice(index + trackUUIDIdentifier.length, data.length);
+
+                    dataManager.addTrackToPlaylist(element.getAttribute(`data-uuid`), trackUUID).then((message: string) => {
+                        controller.showToast(message);
+                    }).catch((message: string) => {
+                        controller.showToast(message);
+                    });
+                }
+
+                return false;
+            };
+
+            window.playlistAreaDragOverHandler = (ev: any) => {
+                let dragIcon = <HTMLImageElement>document.createElement(`img`);
+                dragIcon.src = `src/assets/png/add-circle.png`;
+                dragIcon.width = 100;
+                ev.dataTransfer.setDragImage(dragIcon, -10, -10);
+                ev.preventDefault();
+            };
+
+
+
             // Watch for the list of playlists being changed in any way.
             publisher.subscribe(`playlist-created`, listOfPlaylistChangeHandler);
             publisher.subscribe(`playlist-updated`, listOfPlaylistChangeHandler);
@@ -1658,8 +1693,10 @@ class Main {
         /**
          * Library
          */
-        this.app.controller(`library`, ($scope: any, user: any, database: any, dataManager: any, $mdToast: any) => {
+        this.app.controller(`library`, ($scope: any, $location: any, user: any, database: any, dataManager: any, $mdToast: any) => {
             let controller = $scope;
+
+            // $location.path
 
             controller.showToast = function (message: string) {
                 $mdToast.show(
@@ -1962,17 +1999,32 @@ class Main {
                 ev.preventDefault();
                 ev.stopPropagation();
 
-                // Add open the add a track dialog.
-                controller.addTrack(ev, ev.dataTransfer.getData("text"));
+                let data = ev.dataTransfer.getData("text/plain");
 
-                console.log(`drop on ${controller.playlistUUID}`);
-                console.log(ev.dataTransfer.types);
+                let trackUUIDIdentifier = `trackUUID=`;
+                let index = data.indexOf(trackUUIDIdentifier);
+
+                // Only if it's not a track, should we add it.
+                if (index < 0) {
+                    // Add open the add a track dialog.
+                    controller.addTrack(ev, ev.dataTransfer.getData("text"));
+                }
 
                 return false;
             };
 
             window.tracksAreaDragOverHandler = (ev: any) => {
                 ev.preventDefault();
+            };
+
+            window.trackDragStartHandler = (ev: any, element: HTMLElement) => {
+
+                let dragIcon = <HTMLImageElement> document.createElement(`img`);
+                dragIcon.src = `src/assets/png/add-circle.png`;
+                ev.dataTransfer.setDragImage(dragIcon, 20, 10);
+
+                let trackUUID = element.getAttribute(`data-uuid`);
+                ev.dataTransfer.setData(`text/plain`, trackUUID);
             };
 
 

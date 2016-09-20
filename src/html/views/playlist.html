@@ -55,7 +55,7 @@
                         <span class="title">Title</span>
                         <span class="artist">Artist</span>
                     </md-subheader>
-                    <md-list-item draggable="true" ng-repeat="track in playlist.tracks | filter: filter" ng-dblclick="playTrack(track.index)">
+                    <md-list-item draggable="true" ng-repeat="track in playlist.tracks | filter: filter" ondragstart="trackDragStartHandler(event, this)" data-uuid="trackUUID={{track.uuid}}"  ng-dblclick="playTrack(track.index)">
                         <span class="title">{{track.title}}</span>
                         <span class="artist">{{track.artist}}</span>
                         <!--<md-button class="md-secondary" ng-click="doSecondaryAction($event)">More Info</md-button>-->
