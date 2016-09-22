@@ -38,7 +38,9 @@ class Main {
                 },
                 // The service will have an undefined object if it hasn't been searched,
                 // and marked as false if the service has been searched but no track was found.
-                "SoundCloud": false,
+                "SoundCloud": {
+                    trackPath: `/tracks/282422837`,
+                },
             },
             title: `1. Get Low`,
             uuid: `1`,
@@ -55,7 +57,9 @@ class Main {
                 },
                 // The service will have an undefined object if it hasn't been searched,
                 // and marked as false if the service has been searched but no track was found.
-                "SoundCloud": false,
+                "SoundCloud": {
+                    trackPath: `/tracks/208199477`, // not available outside of SoundCloud.
+                },
             },
             title: `2. Be Together feat. Wild Belle`,
             uuid: `2`,
@@ -123,7 +127,9 @@ class Main {
                 },
                 // The service will have an undefined object if it hasn't been searched,
                 // and marked as false if the service has been searched but no track was found.
-                "SoundCloud": false,
+                "SoundCloud": {
+                    trackPath: `/tracks/233719633`,
+                },
             },
             title: `6. Ocean Eyes`,
             uuid: `6`,
@@ -162,6 +168,23 @@ class Main {
             title: `8. Runaway (Video Version) ft. Pusha T`,
             uuid: `8`,
         };
+        let track9: ITrack = {
+            artist: undefined,
+            duration: 9769,
+            services: {
+                "Deezer": {
+                    trackId: 1,
+                },
+                "YouTube": {
+                    videoId: `Bm5iAaaupek`,
+                },
+                "SoundCloud": {
+                    trackPath: `/tracks/47580057`,
+                },
+            },
+            title: `9. Another Ordinary Day (SoundCloud Only)`,
+            uuid: `9`,
+        }
 
         // Queue multiple tracks.
         AP.queue([
@@ -174,6 +197,7 @@ class Main {
             track6,
             track7,
             track8,
+            track9,
         ]);
 
         // After this the queue should look like this [track3, track1, track3, track4]

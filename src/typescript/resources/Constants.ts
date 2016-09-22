@@ -21,6 +21,10 @@ let CONSTANTS = {
              * Use IMusicService format.
              */
             {
+                adapter: SoundCloudAdapter,
+                name: `SoundCloud`,
+            },
+            {
                 adapter: DeezerAdapter,
                 name: `Deezer`,
             },
