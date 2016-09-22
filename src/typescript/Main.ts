@@ -1096,8 +1096,26 @@ class Main {
                 isTrackInPlaylist: isTrackInPlaylist,
                 updatePlaylist: updatePlaylist,
             };
+        let track9: ITrack = {
+            artist: undefined,
+            duration: 9769,
+            services: {
+                "Deezer": {
+                    trackId: 1,
+                },
+                "YouTube": {
+                    videoId: `Bm5iAaaupek`,
+                },
+                "SoundCloud": {
+                    trackPath: `/tracks/47580057`,
+                },
+            },
+            title: `9. Another Ordinary Day (SoundCloud Only)`,
+            uuid: `9`,
+        }
 
         });
+            track9,
 
     }
 

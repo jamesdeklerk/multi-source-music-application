@@ -11,6 +11,8 @@ class DeezerAdapter implements IPlayerAdapter {
     private currentDuration = 0;
     private percentageLoaded = 0;
     private trackEnd = false;
+    private currentPlayer: any;
+    private unloaded: any = true;
 
     public initialize(): Promise<any> {
 
@@ -51,6 +53,20 @@ class DeezerAdapter implements IPlayerAdapter {
             e.async = true;
             document.getElementById(`dz-root`).appendChild(e);
 
+            // Keep making sure it's in the correct paused state.
+            function keepTrying() {
+
+                // If it is unloaded, make sure it's in the paused state.
+                if (currentContext.unloaded) {
+                    if (window.DZ.player.isPlaying()) {
+                        window.DZ.player.pause();
+                    }
+                }
+
+                setTimeout(keepTrying, 500); // Every half a second.
+            }
+            keepTrying();
+
         });
 
     }
@@ -65,6 +81,11 @@ class DeezerAdapter implements IPlayerAdapter {
 
         // Unload all tracks from Deezer player.
         window.DZ.player.playTracks([]);
+
+        this.unloaded = true;
+
+        // Clear the current player.
+        this.currentPlayer = undefined;
     }
 
     public load(track: ITrack): Promise<{}> {
@@ -78,73 +99,112 @@ class DeezerAdapter implements IPlayerAdapter {
             this.percentageLoaded = 0;
             this.trackEnd = false;
 
-            window.DZ.player.playTracks([track.services[`Deezer`].trackId], function (response: any) {
+            let trackId: string;
+            if (track.services[this.name]) {
+                trackId = track.services[this.name].trackId;
+            }
 
-                // If it returned no tracks then it failed to play the track.
-                if (response.tracks.length <= 0) {
-                    reject();
-                } else {
+            if (trackId) {
+                window.DZ.player.playTracks([trackId], function (response: any) {
 
-                    currentContext.currentDuration = response.tracks[0].duration;
+                    // If it returned no tracks then it failed to play the track.
+                    if (response.tracks.length <= 0) {
+                        reject();
+                    } else {
 
-                    // Keep trying to see if the track is playable yet.
-                    function keepTrying() {
-                        if (window.DZ.player.play() === false) {
+                        currentContext.currentDuration = response.tracks[0].duration;
 
-                            // The track isn't ready yet.
-                            // For some reason, playing and pausing the song gets it to load.
-                            window.DZ.player.pause();
+                        // Keep trying to see if the track is playable yet.
+                        function keepTrying() {
+                            if (window.DZ.player.play() === false) {
 
-                            // try every 150 milliseconds.
-                            setTimeout(keepTrying, 150);
-                        } else {
+                                // The track isn't ready yet.
+                                // For some reason, playing and pausing the song gets it to load.
+                                window.DZ.player.pause();
 
-                            // The track is now playable,
-                            // so resolve the promise.
-                            resolve();
+                                // try every 150 milliseconds.
+                                setTimeout(keepTrying, 150);
+                            } else {
+
+                                currentContext.unloaded = false;
+
+                                // Set the current player.
+                                currentContext.currentPlayer = window.DZ.player;
+
+                                // The track is now playable,
+                                // so resolve the promise.
+                                resolve();
+                            }
                         }
-                    }
-                    // Initialize the keep trying loop.
-                    keepTrying();
+                        // Initialize the keep trying loop.
+                        keepTrying();
 
-                }
-            });
+                    }
+                });
+            } else {
+                reject();
+            }
+
 
         });
     }
 
     public play(): void {
-        this.trackEnd = false;
-        window.DZ.player.play();
+        if (this.currentPlayer) {
+            this.trackEnd = false;
+            this.currentPlayer.play();
+        }
     }
 
     public pause(): void {
-        window.DZ.player.pause();
+        if (this.currentPlayer) {
+            this.currentPlayer.pause();
+        }
     }
 
     public getPaused(): boolean {
-        return !window.DZ.player.isPlaying();
+        if (this.currentPlayer) {
+            return !(this.currentPlayer.isPlaying());
+        } else {
+            return true;
+        }
     }
 
     public setVolume(volume: number): void {
-        window.DZ.player.setVolume(volume * 100);
+        if (this.currentPlayer) {
+            this.currentPlayer.setVolume(volume * 100);
+        }
     }
 
     public seekToPercentage(percentage: number): void {
-        window.DZ.player.seek(percentage * 100);
+        if (this.currentPlayer) {
+            this.currentPlayer.seek(percentage * 100);
+        }
     }
 
     public getCurrentTime(): number {
-        // Current time in milliseconds.
-        return this.currentPosition * 1000;
+        if (this.currentPlayer) {
+            // Current time in milliseconds.
+            return this.currentPosition * 1000;
+        } else {
+            return 0;
+        }
     }
 
     public getDuration(): number {
-        return this.currentDuration * 1000;
+        if (this.currentPlayer) {
+            return this.currentDuration * 1000;
+        } else {
+            return 0;
+        }
     }
 
     public getPercentageLoaded(): number {
-        return this.percentageLoaded / 100;
+        if (this.currentPlayer) {
+            return this.percentageLoaded / 100;
+        } else {
+            return 0;
+        }
     }
 
 }

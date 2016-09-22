@@ -26,7 +26,7 @@ class YouTubeAdapter implements IPlayerAdapter {
         return new Promise((resolve, reject) => {
 
             // Load the IFrame Player API code asynchronously.
-            let tag = <HTMLScriptElement> document.createElement(`script`);
+            let tag = <HTMLScriptElement>document.createElement(`script`);
             tag.src = "https://www.youtube.com/iframe_api";
             let firstScriptTag = document.getElementsByTagName(`script`)[0];
             firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
@@ -72,41 +72,51 @@ class YouTubeAdapter implements IPlayerAdapter {
         this.youtubePlayer.stopVideo();
     }
 
-    public load(track: ITrack): Promise<{}> {
+    public load(track: ITrack): Promise<any> {
         return new Promise((resolve, reject) => {
 
-            function onStateChangeHandler(e: any) {
-                // If the state changes to playing (i.e. 1),
-                // then from the YouTube API we know it's the track is loaded.
-                if (e.data === 1) {
+            let videoId: string;
+            if (track.services[this.name]) {
+                videoId = track.services[this.name].videoId;
+            }
+
+            if (videoId) {
+                function onStateChangeHandler(e: any) {
+                    // If the state changes to playing (i.e. 1),
+                    // then from the YouTube API we know it's the track is loaded.
+                    if (e.data === 1) {
+
+                        // We're done with the onStateChangeHandler, so get rid of it.
+                        publisher.unsubscribe(`youtube-onStateChange`, onStateChangeHandler);
+                        // We're done with the onErrorHandler, so get rid of it.
+                        publisher.unsubscribe(`youtube-onError`, onErrorHandler);
+
+                        // The track is now playable,
+                        // so resolve the promise.
+                        resolve();
+
+                    }
+                }
+
+                function onErrorHandler(e: any) {
 
                     // We're done with the onStateChangeHandler, so get rid of it.
                     publisher.unsubscribe(`youtube-onStateChange`, onStateChangeHandler);
                     // We're done with the onErrorHandler, so get rid of it.
                     publisher.unsubscribe(`youtube-onError`, onErrorHandler);
 
-                    // The track is now playable,
-                    // so resolve the promise.
-                    resolve();
-
+                    reject(e);
                 }
+
+                publisher.subscribe(`youtube-onStateChange`, onStateChangeHandler);
+                publisher.subscribe(`youtube-onError`, onErrorHandler);
+
+                // Get YouTube ID from track then load it.
+                this.youtubePlayer.loadVideoById(videoId);
+            } else {
+                reject();
             }
 
-            function onErrorHandler(e: any) {
-
-                // We're done with the onStateChangeHandler, so get rid of it.
-                publisher.unsubscribe(`youtube-onStateChange`, onStateChangeHandler);
-                // We're done with the onErrorHandler, so get rid of it.
-                publisher.unsubscribe(`youtube-onError`, onErrorHandler);
-
-                reject(e);
-            }
-
-            publisher.subscribe(`youtube-onStateChange`, onStateChangeHandler);
-            publisher.subscribe(`youtube-onError`, onErrorHandler);
-
-            // Get YouTube ID from track then load it.
-            this.youtubePlayer.loadVideoById(track.services[`YouTube`].videoId);
         });
     }
 
