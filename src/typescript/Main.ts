@@ -1234,6 +1234,8 @@ class Main {
                 ev.preventDefault();
                 ev.stopPropagation();
 
+                element.style.animation = ``;
+
                 let data = ev.dataTransfer.getData("track");
 
                 let trackUUIDIdentifier = `trackUUID=`;
@@ -1253,12 +1255,24 @@ class Main {
                 return false;
             };
 
-            window.playlistAreaDragOverHandler = (ev: any) => {
+            window.playlistAreaDragOverHandler = (ev: any, element: HTMLElement) => {
                 let dragIcon = <HTMLImageElement>document.createElement(`img`);
                 dragIcon.src = `src/assets/png/add-circle.png`;
                 dragIcon.width = 100;
                 ev.dataTransfer.setDragImage(dragIcon, -10, -10);
                 ev.preventDefault();
+
+                let types = ev.dataTransfer.types;
+
+                if (types) {
+                    if (types.indexOf("track") >= 0) {
+                        element.style.animation = `playlist-area-pulsate 2s infinite`;
+                    }
+                }
+            };
+
+            window.playlistAreaDragLeaveHandler = (ev: any, element: HTMLElement) => {
+                element.style.animation = ``;
             };
 
 
@@ -2037,7 +2051,7 @@ class Main {
 
 
 
-            
+
             // On drop events
             window.tracksAreaDropHandler = (ev: any) => {
                 ev.preventDefault();

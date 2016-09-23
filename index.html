@@ -85,7 +85,7 @@
             <!--<md-content>-->
             <md-list>
                 <md-list-item ng-hide="loadingLibrary"="loadingLibrary" ng-click="null" href="#/playlist/{{library.uuid}}" ondrop="playlistAreaDropHandler(event, this)"
-                    data-uuid="{{library.uuid}}" ondragover="playlistAreaDragOverHandler(event)">
+                    data-uuid="{{library.uuid}}" ondragover="playlistAreaDragOverHandler(event, this)" ondragleave="playlistAreaDragLeaveHandler(event, this)">
                     <div class="md-list-item-text" layout="column">
                         <h3>{{library.name}}</h3>
                     </div>
@@ -122,7 +122,7 @@
 
                     <!-- Each playlist -->
                     <md-list-item class="md-1-line" ng-repeat="playlist in playlists" ng-click="null" href="#/playlist/{{playlist.uuid}}" ondrop="playlistAreaDropHandler(event, this)"
-                        data-uuid="{{playlist.uuid}}" ondragover="playlistAreaDragOverHandler(event)">
+                        data-uuid="{{playlist.uuid}}" ondragover="playlistAreaDragOverHandler(event, this)" ondragleave="playlistAreaDragLeaveHandler(event, this)">
                         <div class="md-list-item-text" layout="column">
                             <h3>{{playlist.name}}</h3>
                         </div>

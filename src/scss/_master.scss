@@ -7,6 +7,12 @@
 /* ---------------------------------------------------- */
 
 
+@keyframes playlist-area-pulsate {
+    0%   { background-color: rgba(0, 128, 0, 1); }
+    50%  { background-color: rgba(0, 128, 0, 0.7); }
+    100% { background-color: rgba(0, 128, 0, 1); }
+}
+
 
 $search-background-color: #f3f3f3;
 $search-font-color: black;
@@ -85,6 +91,10 @@ md-toolbar .user {
 
     .playlists-heading {
         display: flex;
+    }
+
+    .hmmm {
+        background-color: red;
     }
 
     md-list {
