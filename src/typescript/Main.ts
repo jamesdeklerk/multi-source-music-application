@@ -1695,7 +1695,7 @@ class Main {
         /**
          * Player
          */
-        this.app.controller(`player`, ($scope: any, $interval: angular.IIntervalService) => {
+        this.app.controller(`player`, ($scope: any, $interval: angular.IIntervalService, $mdToast: any) => {
             let controller = $scope;
 
             // Setting up defaults.
@@ -1711,6 +1711,16 @@ class Main {
             controller.seek = {
                 percentage: 0,
                 percentageLoaded: 0,
+            };
+
+            // Setup toasts
+            controller.showToast = function (message: string) {
+                $mdToast.show(
+                    $mdToast.simple()
+                        .textContent(message)
+                        .position(`bottom right`)
+                        .hideDelay(1500)
+                );
             };
 
             // Player buttons
@@ -1796,6 +1806,7 @@ class Main {
             });
             publisher.subscribe(this.player.EVENTS.ON_TRACK_LOAD_FAILED, function (track: ITrack, musicServiceName: string) {
                 console.log(`FAILED (${musicServiceName}) - ${track.title}.`);
+                controller.showToast(`${track.title} not available on ${musicServiceName}.`);
             });
 
             // Update the player UI.
