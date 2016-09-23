@@ -2037,8 +2037,7 @@ class Main {
 
 
 
-            let playlistTracksArea = document.getElementById(`playlist-tracks-area`);
-
+            
             // On drop events
             window.tracksAreaDropHandler = (ev: any) => {
                 ev.preventDefault();
@@ -2049,8 +2048,8 @@ class Main {
                 if (types) {
                     // Only if it's not a track.
                     if (types.indexOf("track") < 0) {
-
-                        playlistTracksArea.className = ``;
+                        let playlistTracksArea = document.getElementById(`playlist-tracks-area-${controller.playlistUUID}`);
+                        playlistTracksArea.className = `playlist-tracks-area`;
                         // Add open the add a track dialog.
                         controller.addTrack(ev, ev.dataTransfer.getData("text"));
                     }
@@ -2067,13 +2066,15 @@ class Main {
                 if (types) {
                     // Only if it's not a track.
                     if (types.indexOf("track") < 0) {
-                        playlistTracksArea.className = `can-be-dropped`;
+                        let playlistTracksArea = document.getElementById(`playlist-tracks-area-${controller.playlistUUID}`);
+                        playlistTracksArea.className = `can-be-dropped playlist-tracks-area`;
                     }
                 }
             };
 
             window.tracksAreaDragLeaveHandler = (ev: any) => {
-                playlistTracksArea.className = ``;
+                let playlistTracksArea = document.getElementById(`playlist-tracks-area-${controller.playlistUUID}`);
+                playlistTracksArea.className = `playlist-tracks-area`;
             };
 
             window.trackDragStartHandler = (ev: any, element: HTMLElement) => {
