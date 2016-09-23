@@ -1520,6 +1520,43 @@ class Main {
 
             };
 
+            controller.soundcloudURLChange = (soundcloudURL: string, object: any) => {
+
+                if (object) {
+
+                    controller.soundcloudURL = object.permalink_url;
+
+                    if (!controller.trackTitle) {
+                        controller.trackTitle = object.title;
+                    }
+
+                    if (!controller.trackArtist) {
+                        controller.trackArtist = object.user.username;
+                    }
+
+                    controller.$digest();
+
+                } else if (soundcloudURL && (soundcloudURL.trim() !== ``)) {
+
+                    // Else, get the object then update.
+                    verifier.getSoundCloudObject(url).then((returnedObject: any) => {
+                        controller.soundcloudURL = returnedObject.permalink_url;
+
+                        if (!controller.trackTitle) {
+                            controller.trackTitle = returnedObject.title;
+                        }
+
+                        if (!controller.trackArtist) {
+                            controller.trackArtist = returnedObject.user.username;
+                        }
+
+                        controller.$digest();
+                    });
+
+                }
+
+            };
+
             // Check what type of url was given if any, and then autofill it.
             if (url) {
                 if (verifier.getYouTubeVideoId(url)) {
@@ -1530,9 +1567,33 @@ class Main {
                     controller.deezerURL = verifier.deezerTrackIdToLink(verifier.getDeezerTrackId(url));
                     console.log(controller.deezerURL);
                 } else {
-                    controller.showToast(`The URL given wasn't valid.`);
+
+                    // Try get a SoundCloud object.
+                    verifier.getSoundCloudObject(url).then((object: any) => {
+                        controller.soundcloudURLChange(url, object);
+                    }).catch(() => {
+                        controller.showToast(`The URL given wasn't valid.`);
+                    });
+
                 }
             }
+
+            let createTrackAndAddIt = (newTrack: any) => {
+                dataManager.createTrack(newTrack).then((createdTrackUUID: string) => {
+
+                    // Now that the track is created, add it to the current playlist.
+                    dataManager.addTrackToPlaylist(playlistUUID, createdTrackUUID).then(() => {
+                        $mdDialog.hide(`Track added to playlist.`);
+                    }).catch((message: string) => {
+                        controller.saving = false;
+                        controller.showToast(message);
+                    });
+
+                }).catch((message: string) => {
+                    controller.saving = false;
+                    controller.showToast(message);
+                });
+            };
 
             controller.save = () => {
 
@@ -1584,27 +1645,31 @@ class Main {
                             }
                         }
 
-                        // If there is a valid YouTube or Deezer URL
-                        if (validYouTubeUrl || validDeezerUrl) {
-                            dataManager.createTrack(newTrack).then((createdTrackUUID: string) => {
+                        // Check the soundcloudURL
+                        // Else, get the object then update.
+                        verifier.getSoundCloudObject(url).then((returnedObject: any) => {
+                            let trackPath = `/tracks/${returnedObject.id}`;
 
-                                // Now that the track is created, add it to the current playlist.
-                                dataManager.addTrackToPlaylist(playlistUUID, createdTrackUUID).then(() => {
-                                    $mdDialog.hide(`Track added to playlist.`);
-                                }).catch((message: string) => {
-                                    controller.saving = false;
-                                    controller.showToast(message);
-                                });
+                            newTrack.services[`SoundCloud`] = {
+                                trackPath: trackPath,
+                            };
 
-                            }).catch((message: string) => {
+                            createTrackAndAddIt(newTrack);
+                        }).catch(() => {
+
+                            // There wasn't a valid SoundCloud url, but check
+                            // YouTube and Deezer
+                            // If there is a valid YouTube or Deezer URL
+                            if (validYouTubeUrl || validDeezerUrl) {
+
+                                createTrackAndAddIt(newTrack);
+
+                            } else {
                                 controller.saving = false;
-                                controller.showToast(message);
-                            });
-                        } else {
-                            controller.saving = false;
-                            controller.showToast(`Invalid track URL.`);
-                        }
+                                controller.showToast(`Invalid track URL.`);
+                            }
 
+                        });
 
                     } else {
                         controller.saving = false;

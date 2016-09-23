@@ -139,4 +139,50 @@ class Verification {
 
     }
 
+    /**
+     * Gets the SoundCloud track object given a link.
+     * 
+     * @return The SoundCloud track object, and undefined if not valid.
+     */
+    public getSoundCloudObject(link: string): Promise<any> {
+        return new Promise((resolve, reject) => {
+            SC.resolve(link).then((object) => {
+                if (object.kind === "track") {
+                    resolve(object);
+                } else {
+                    reject();
+                }
+            }).catch(() => {
+                reject();
+            });
+        });
+    }
+
+    /**
+     * Turns a SoundCloud track path into a link.
+     * 
+     * @return The SoundCloud track link, if the track path isn't defined return undefined;
+     */
+    public soundcloudTrackPathToLink(trackPath: string): Promise<any> {
+        return new Promise((resolve, reject) => {
+
+            if (!trackPath) {
+                reject();
+            } else {
+                SC.resolve(`https://api.soundcloud.com${trackPath}`).then((object) => {
+                    if (object) {
+                        resolve(object.permalink_url);
+                    } else {
+                        reject();
+                    }
+                }).catch(() => {
+                    reject();
+                });
+
+            }
+
+        });
+
+    }
+
 }
