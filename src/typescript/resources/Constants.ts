@@ -28,10 +28,10 @@ let CONSTANTS = {
                 adapter: YouTubeAdapter,
                 name: `YouTube`,
             },
-            {
-                adapter: DeezerAdapter,
-                name: `Deezer`,
-            },
+            // {
+            //     adapter: DeezerAdapter,
+            //     name: `Deezer`,
+            // },
         ],
     },
 };

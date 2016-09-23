@@ -203,16 +203,24 @@
 
                     <!-- Music service -->
                     <md-menu>
-                        <md-button class="md-icon-button" aria-label="volume" ng-click="$mdOpenMenu($event)">
-                            <md-icon ng-show="musicService === 'Deezer'" md-svg-icon="src/assets/svg/deezer-logo.svg"></md-icon>
-                            <md-icon ng-show="musicService === 'YouTube'" md-svg-icon="src/assets/svg/youtube-logo.svg"></md-icon>
+                        <md-button class="md-icon-button music-service" aria-label="music service" ng-click="$mdOpenMenu($event)">
+                            <md-icon ng-show="musicService === 'SoundCloud'" md-svg-icon="src/assets/svg/soundcloud-logo.svg"></md-icon>
+                            <md-icon ng-show="musicService === 'YouTube'" md-svg-icon="src/assets/svg/youtube-logo-color.svg"></md-icon>
                         </md-button>
                         <md-menu-content>
-                            <md-button aria-label="change to Deezer" ng-click="dynamicallyChangeMusicService('Deezer')">
-                                <md-icon md-svg-icon="src/assets/svg/deezer-logo.svg"></md-icon>
+                            <md-button class="music-service-button" aria-label="change to SoundCloud" ng-click="dynamicallyChangeMusicService('SoundCloud')">
+                                <div layout="row" flex>
+                                    <md-icon md-menu-align-target md-svg-icon="src/assets/svg/soundcloud-logo.svg" style="margin: auto 5px auto 5px;"></md-icon>
+                                    <p flex>SoundCloud</p>
+                                </div>
+                                <!--<md-icon md-svg-icon="src/assets/svg/soundcloud-logo.svg"></md-icon>-->
                             </md-button>
-                            <md-button aria-label="change to YouTube" ng-click="dynamicallyChangeMusicService('YouTube')">
-                                <md-icon md-svg-icon="src/assets/svg/youtube-logo.svg"></md-icon>
+                            <md-button class="music-service-button" aria-label="change to YouTube" ng-click="dynamicallyChangeMusicService('YouTube')">
+                                <div layout="row" flex>
+                                    <md-icon md-menu-align-target md-svg-icon="src/assets/svg/youtube-logo-color.svg" style="margin: auto 5px auto 5px;"></md-icon>
+                                    <p flex>YouTube</p>
+                                </div>
+                                <!--<md-icon md-svg-icon="src/assets/svg/youtube-logo-color.svg"></md-icon>-->
                             </md-button>
                         </md-menu-content>
                     </md-menu>
