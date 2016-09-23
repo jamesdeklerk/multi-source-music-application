@@ -1,5 +1,11 @@
 $edit-button-size: 16px;
 
+@keyframes tracks-area-pulsate {
+    0%   { background-color: rgba(0, 128, 0, 1); }
+    50%  { background-color: rgba(0, 128, 0, 0.7); }
+    100% { background-color: rgba(0, 128, 0, 1); }
+}
+
 .playlist {
     display: flex;
 
@@ -89,6 +95,18 @@ $edit-button-size: 16px;
 
         md-content {
             height: calc(100% - 64px);
+        }
+
+        #playlist-tracks-area {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            bottom: 0px;
+            left: 0px;
+        }
+
+        .can-be-dropped {
+            animation: tracks-area-pulsate 2s infinite;
         }
 
     }

@@ -28,7 +28,10 @@
 
 
         <!-- Tracks -->
-        <md-content id="playlist-tracks-area" ondrop="tracksAreaDropHandler(event)" ondragover="tracksAreaDragOverHandler(event)">
+        <md-content ondrop="tracksAreaDropHandler(event)" ondragover="tracksAreaDragOverHandler(event)" ondragleave="tracksAreaDragLeaveHandler(event)">
+
+            <!-- Drag over display -->
+            <div id="playlist-tracks-area"></div>
 
             <!-- No tracks -->
             <div ng-show="noTracks && thisUsersPlaylist" class="no-tracks" layout="column" flex>

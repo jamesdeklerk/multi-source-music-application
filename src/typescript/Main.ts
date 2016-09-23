@@ -1234,7 +1234,7 @@ class Main {
                 ev.preventDefault();
                 ev.stopPropagation();
 
-                let data = ev.dataTransfer.getData("text/plain");
+                let data = ev.dataTransfer.getData("track");
 
                 let trackUUIDIdentifier = `trackUUID=`;
                 let index = data.indexOf(trackUUIDIdentifier);
@@ -2037,20 +2037,23 @@ class Main {
 
 
 
+            let playlistTracksArea = document.getElementById(`playlist-tracks-area`);
+
             // On drop events
             window.tracksAreaDropHandler = (ev: any) => {
                 ev.preventDefault();
                 ev.stopPropagation();
 
-                let data = ev.dataTransfer.getData("text/plain");
+                let types = ev.dataTransfer.types;
 
-                let trackUUIDIdentifier = `trackUUID=`;
-                let index = data.indexOf(trackUUIDIdentifier);
+                if (types) {
+                    // Only if it's not a track.
+                    if (types.indexOf("track") < 0) {
 
-                // Only if it's not a track, should we add it.
-                if (index < 0) {
-                    // Add open the add a track dialog.
-                    controller.addTrack(ev, ev.dataTransfer.getData("text"));
+                        playlistTracksArea.className = ``;
+                        // Add open the add a track dialog.
+                        controller.addTrack(ev, ev.dataTransfer.getData("text"));
+                    }
                 }
 
                 return false;
@@ -2058,6 +2061,19 @@ class Main {
 
             window.tracksAreaDragOverHandler = (ev: any) => {
                 ev.preventDefault();
+
+                let types = ev.dataTransfer.types;
+
+                if (types) {
+                    // Only if it's not a track.
+                    if (types.indexOf("track") < 0) {
+                        playlistTracksArea.className = `can-be-dropped`;
+                    }
+                }
+            };
+
+            window.tracksAreaDragLeaveHandler = (ev: any) => {
+                playlistTracksArea.className = ``;
             };
 
             window.trackDragStartHandler = (ev: any, element: HTMLElement) => {
@@ -2067,7 +2083,7 @@ class Main {
                 ev.dataTransfer.setDragImage(dragIcon, 20, 10);
 
                 let trackUUID = element.getAttribute(`data-uuid`);
-                ev.dataTransfer.setData(`text/plain`, trackUUID);
+                ev.dataTransfer.setData(`track`, trackUUID);
             };
 
 
