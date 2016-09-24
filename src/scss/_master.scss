@@ -7,15 +7,20 @@
 /* ---------------------------------------------------- */
 
 
+$search-background-color: #f3f3f3;
+$search-font-color: black;
+
 @keyframes playlist-area-pulsate {
     0%   { background-color: rgba(0, 128, 0, 1); }
     50%  { background-color: rgba(0, 128, 0, 0.7); }
     100% { background-color: rgba(0, 128, 0, 1); }
 }
 
-
-$search-background-color: #f3f3f3;
-$search-font-color: black;
+@keyframes search-area-pulsate {
+    0%   { background-color: $search-background-color }
+    10%  { background-color: rgba(0, 128, 0, 1); }
+    100% { background-color: $search-background-color }
+}
 
 md-toolbar .search {
     flex: 1;
@@ -33,6 +38,10 @@ md-toolbar .search {
         outline: none;
 
         background-color: $search-background-color;
+    }
+
+    .pulse-search {
+        animation: search-area-pulsate 2s;
     }
 }
 
@@ -91,10 +100,6 @@ md-toolbar .user {
 
     .playlists-heading {
         display: flex;
-    }
-
-    .hmmm {
-        background-color: red;
     }
 
     md-list {

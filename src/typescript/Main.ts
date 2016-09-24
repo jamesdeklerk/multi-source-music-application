@@ -34,6 +34,7 @@ class Main {
      */
     private registerEvents(): void {
 
+        publisher.register(`page-changed`, []);
         publisher.register(`user-ready`, []);
         publisher.register(`library-created`, []);
         publisher.register(`playlist-created`, []);
@@ -91,6 +92,9 @@ class Main {
                     return firebase.database().ref();
                 },
                 user: (auth: any, stateCorrector: any) => {
+
+                    // Notify everyone that the page has changed.
+                    publisher.publish(`page-changed`);
 
                     stateCorrector.correctState(auth.getUserUid());
                     return auth.getUser();
@@ -1276,6 +1280,19 @@ class Main {
             };
 
 
+            // Watch for the page to change.
+            publisher.subscribe(`page-changed`, () => {
+
+                let searchBar = <HTMLInputElement> document.getElementById(`search-bar`);
+
+                // If the search bar isn't empty, make it pulse.
+                if (searchBar.value.trim() !== ``) {
+                    searchBar.classList.remove(`pulse-search`);
+                    void searchBar.offsetWidth;
+                    searchBar.classList.add(`pulse-search`);
+                }
+
+            });
 
             // Watch for the list of playlists being changed in any way.
             publisher.subscribe(`playlist-created`, listOfPlaylistChangeHandler);
