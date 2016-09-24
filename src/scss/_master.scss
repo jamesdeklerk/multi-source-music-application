@@ -23,6 +23,7 @@ $search-font-color: black;
 }
 
 md-toolbar .search {
+    position: relative;
     flex: 1;
     margin: auto;
 
@@ -38,6 +39,16 @@ md-toolbar .search {
         outline: none;
 
         background-color: $search-background-color;
+    }
+
+    md-icon {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        padding: 8px;
+        height: 38px;
+        width: 38px;
+        fill: $secondary-text-color-dark;
     }
 
     .pulse-search {

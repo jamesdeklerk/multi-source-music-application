@@ -1279,6 +1279,10 @@ class Main {
                 element.style.animation = ``;
             };
 
+            controller.clearSearch = () => {
+                controller.search.text = ``;
+            };
+
 
             // Watch for the page to change.
             publisher.subscribe(`page-changed`, () => {
