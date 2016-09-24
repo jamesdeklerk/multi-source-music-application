@@ -1330,7 +1330,7 @@ class Main {
         /**
          * Edit playlist (for the dialog)
          */
-        this.app.controller(`editPlaylist`, ($scope: any, $mdDialog: any, $mdToast: any, playlistName: string, playlistUUID: string, dataManager: any) => {
+        this.app.controller(`editPlaylist`, ($scope: any, $mdDialog: any, $mdToast: any, playlistName: string, playlistUUID: string, dataManager: any, $location: any) => {
             let controller = $scope;
 
             // Defaults
@@ -1372,7 +1372,8 @@ class Main {
 
                     // Creating a new playlist.
                     if (controller.newPlaylistName && (controller.newPlaylistName.trim() !== ``)) {
-                        dataManager.createPlaylist({ name: controller.newPlaylistName }).then((message: string) => {
+                        dataManager.createPlaylist({ name: controller.newPlaylistName }).then((newPlaylistUUID: string) => {
+                            $location.path(`/playlist/${newPlaylistUUID}`);
                             $mdDialog.hide(`Playlist created.`);
                         }).catch(() => {
                             controller.saving = false;
