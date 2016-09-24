@@ -216,7 +216,7 @@ class Main {
 
                     } else {
                         // If a user doesn't exist, redirect to the sign in page.
-                        $location.path(`/sign-in`);
+                        $location.path(`/sign-up`);
                     }
 
                 } else if (($location.path() === `/sign-in`) || ($location.path() === `/sign-up`)) {
@@ -235,7 +235,7 @@ class Main {
 
                     if (!userUUID) {
                         // If a user doesn't exist, redirect to the sign in page.
-                        $location.path(`/sign-in`);
+                        $location.path(`/sign-up`);
                     } else {
                         restoreRoute();
                     }
