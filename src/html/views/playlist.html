@@ -36,11 +36,9 @@
             <!-- No tracks -->
             <div ng-show="noTracks && thisUsersPlaylist" class="no-tracks" layout="column" flex>
                 <h2>This playlist has no tracks :(</h2>
-                <h4>But, you have three options :)</h4>
-                <h5>1.<br>To add a video from YouTube, just drag it in.</h5>
-                <h5>2.<br>To add a track from Deezer, go to the track you want,<br>open the track menu > Share > Copy Deezer
-                    URL > Paste it here.</h5>
-                <h5>3.<br>Or, click "Add Track"" in the top right and do your thing.</h5>
+                <h4>But, you have two options :)</h4>
+                <h5>1.<br>To add a track from YouTube or SoundCloud, just drag and drop it here.</h5>
+                <h5>2.<br>Or, click "Add Track"" in the top right and do your thing.</h5>
             </div>
             <div ng-show="noTracks && !thisUsersPlaylist" class="no-tracks" layout="column" flex>
                 <h2>This playlist has no tracks,<br>only the owner can change that :(</h2>
@@ -57,7 +55,7 @@
                         <span class="title">{{track.title}}</span>
                         <span class="artist">{{track.artist}}</span>
                         <!--<md-button class="md-secondary" ng-click="doSecondaryAction($event)">More Info</md-button>-->
-                        <md-menu class="md-secondary">
+                        <md-menu class="md-secondary" ng-show="thisUsersPlaylist">
                             <md-button class="md-icon-button" aria-label="track options" ng-click="$mdOpenMenu($event)">
                                 <md-icon md-svg-icon="src/assets/svg/more_vertical.svg"></md-icon>
                             </md-button>
@@ -74,7 +72,7 @@
                                 <!--<md-menu-item>
                                     <md-button ng-click="null">Edit</md-button>
                                 </md-menu-item>-->
-                                <md-menu-item ng-show="thisUsersPlaylist">
+                                <md-menu-item>
                                     <md-button ng-click="deleteTrack($event, track.title, track.uuidInPlaylist, track.index)">Delete</md-button>
                                 </md-menu-item>
                             </md-menu-content>
