@@ -78,6 +78,10 @@ $edit-button-size: 16px;
 
         .tracks {
 
+                .number {
+                    display: none;
+                }
+
                 .title {
                     display: inline-block;
                     overflow: hidden;
@@ -118,6 +122,14 @@ $edit-button-size: 16px;
 .playlist {
     .content-once-loaded {
         .tracks {
+
+                .number {
+                    display: inline-block;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    width: 50px;
+                }
+
                 .title {
                     width: 450px;
                 }

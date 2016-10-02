@@ -68,6 +68,9 @@
                     <md-menu-item>
                         <md-button ng-click="signOut()">Sign out</md-button>
                     </md-menu-item>
+                    <md-menu-item>
+                        <md-button>Settings (to be added)</md-button>
+                    </md-menu-item>
                 </md-menu-content>
             </md-menu>
         </div>
@@ -206,7 +209,8 @@
                     <md-menu>
                         <md-button class="md-icon-button music-service" aria-label="music service" ng-click="$mdOpenMenu($event)">
                             <md-icon ng-show="musicService === 'SoundCloud'" md-svg-icon="src/assets/svg/soundcloud-logo.svg"></md-icon>
-                            <md-icon ng-show="musicService === 'YouTube'" md-svg-icon="src/assets/svg/youtube-logo-color.svg"></md-icon>
+                            <md-icon ng-show="musicService !== 'SoundCloud'" md-svg-icon="src/assets/svg/youtube-logo-color.svg"></md-icon>
+                            <md-icon md-svg-icon="src/assets/svg/drop-up-arrow.svg"></md-icon>
                         </md-button>
                         <md-menu-content>
                             <md-button class="music-service-button" aria-label="change to SoundCloud" ng-click="dynamicallyChangeMusicService('SoundCloud')">

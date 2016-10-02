@@ -48,10 +48,13 @@
 
                 <md-list ng-cloak>
                     <md-subheader class="md-no-sticky">
+                        <span class="number">#</span>
                         <span class="title">Title</span>
                         <span class="artist">Artist</span>
                     </md-subheader>
-                    <md-list-item draggable="true" ng-repeat="track in playlist.tracks | filter: filter" ondragstart="trackDragStartHandler(event, this)" data-uuid="trackUUID={{track.uuid}}"  ng-click="playTrack(track.index)">
+                    <md-list-item draggable="true" ng-repeat="track in playlist.tracks | filter: filter" ondragstart="trackDragStartHandler(event, this)"
+                        data-uuid="trackUUID={{track.uuid}}" ng-click="playTrack(track.index)">
+                        <span class="number">{{$index + 1}}</span>
                         <span class="title">{{track.title}}</span>
                         <span class="artist">{{track.artist}}</span>
                         <!--<md-button class="md-secondary" ng-click="doSecondaryAction($event)">More Info</md-button>-->
@@ -72,6 +75,12 @@
                                 <!--<md-menu-item>
                                     <md-button ng-click="null">Edit</md-button>
                                 </md-menu-item>-->
+                                <md-menu-item>
+                                    <md-button>Add to playlist (to be added)</md-button>
+                                </md-menu-item>
+                                <md-menu-item>
+                                    <md-button>Edit (to be added)</md-button>
+                                </md-menu-item>
                                 <md-menu-item>
                                     <md-button ng-click="deleteTrack($event, track.title, track.uuidInPlaylist, track.index)">Delete</md-button>
                                 </md-menu-item>
