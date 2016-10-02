@@ -17,7 +17,7 @@
             <md-input-container class="md-icon-float md-block">
                 <label>Email</label>
                 <md-icon md-svg-src="src/assets/svg/email.svg"></md-icon>
-                <input ng-model="user.email" type="email">
+                <input ng-model="user.email" type="text">
             </md-input-container>
             <md-input-container class="md-icon-float md-block">
                 <label>Password</label>
@@ -37,7 +37,7 @@
                     <span class="have-account">Already have an account?</span>
                 </div>
                 <div ng-hide="loading" class="horizontal-center sign-in">
-                    <md-button href="#/sign-in">Sign in</md-button>
+                    <md-button ng-click="signIn(user.email, user.password)">Sign in</md-button>
                 </div>
 
                 <md-progress-circular ng-show="loading" class="md-hue-1 horizontal-center" md-mode="indeterminate"></md-progress-circular>

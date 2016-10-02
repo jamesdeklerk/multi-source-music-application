@@ -220,7 +220,7 @@ class Main {
 
                     } else {
                         // If a user doesn't exist, redirect to the sign in page.
-                        $location.path(`/sign-up`);
+                        $location.path(`/sign-in`);
                     }
 
                 } else if (($location.path() === `/sign-in`) || ($location.path() === `/sign-up`)) {
@@ -239,7 +239,7 @@ class Main {
 
                     if (!userUUID) {
                         // If a user doesn't exist, redirect to the sign in page.
-                        $location.path(`/sign-up`);
+                        $location.path(`/sign-in`);
                     } else {
                         restoreRoute();
                     }
@@ -429,6 +429,20 @@ class Main {
              */
             let usersPlaylists: any;
 
+
+            let signInUpPageDetails = {
+                email: ``,
+                password: ``,
+            };
+
+            function setSignInUpPageDetails(email: string, password: string): void {
+                signInUpPageDetails.email = email;
+                signInUpPageDetails.password = password;
+            }
+
+            function getSignInUpPageDetails(): any {
+                return signInUpPageDetails;
+            }
 
             let USERS_REF = firebase.database().ref().child(`users`);
             let TRACKS_REF = firebase.database().ref().child(`tracks`);
@@ -1097,7 +1111,9 @@ class Main {
                 getUsersLibraryUUID: getUsersLibraryUUID,
                 getUsersPlaylists: getUsersPlaylists,
                 getUuidInUsersPlaylists: getUuidInUsersPlaylists,
+                getSignInUpPageDetails: getSignInUpPageDetails,
                 isTrackInPlaylist: isTrackInPlaylist,
+                setSignInUpPageDetails: setSignInUpPageDetails,
                 updatePlaylist: updatePlaylist,
             };
 
@@ -1343,6 +1359,7 @@ class Main {
             });
 
             controller.signOut = () => {
+                dataManager.setSignInUpPageDetails(``, ``);
                 auth.signOut();
             };
 
@@ -2162,7 +2179,7 @@ class Main {
         /**
          * Sign up
          */
-        this.app.controller(`signUp`, ($scope: any, auth: any, $location: angular.ILocationService, stateCorrector: any, $mdToast: any) => {
+        this.app.controller(`signUp`, ($scope: any, auth: any, $location: angular.ILocationService, stateCorrector: any, $mdToast: any, dataManager: any) => {
             let controller = $scope;
             controller.loading = false;
 
@@ -2176,7 +2193,7 @@ class Main {
                 );
             };
 
-            controller.user = {};
+            controller.user = dataManager.getSignInUpPageDetails();
 
             controller.signUp = () => {
 
@@ -2198,12 +2215,17 @@ class Main {
 
             };
 
+            controller.signIn = (email: string, password: string) => {
+                dataManager.setSignInUpPageDetails(email, password);
+                $location.path(`/sign-in`);
+            };
+
         });
 
         /**
          * Sign in
          */
-        this.app.controller(`signIn`, ($scope: any, auth: any, $location: angular.ILocationService, stateCorrector: any, $mdToast: any) => {
+        this.app.controller(`signIn`, ($scope: any, auth: any, $location: angular.ILocationService, stateCorrector: any, $mdToast: any, dataManager: any) => {
             let controller = $scope;
             controller.loading = false;
 
@@ -2217,7 +2239,7 @@ class Main {
                 );
             };
 
-            controller.user = {};
+            controller.user = dataManager.getSignInUpPageDetails();
 
             controller.signIn = () => {
 
@@ -2237,6 +2259,12 @@ class Main {
                     });
                 }
 
+            };
+
+            controller.signUp = (email: string, password: string) => {
+                console.log(`email????? ${email}`);
+                dataManager.setSignInUpPageDetails(email, password);
+                $location.path(`/sign-up`);
             };
 
         });
