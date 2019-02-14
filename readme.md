@@ -4,6 +4,8 @@
 **Try it out! https://jamesdeklerk.github.io/multi-source-music-application/** <br>
 *NOTE: There will be some SoundCloud and YouTube songs that won’t play due to external site playback restrictions*
 
+**Try it out on moble too, you can even "Add to Home screen" if you're using Chrome for Android**
+
 ---
 
 ## Project Overview
