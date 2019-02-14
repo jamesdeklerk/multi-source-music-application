@@ -1,10 +1,9 @@
 # A Multi-Source Music Application
 
-### NB – Issues one may experience: 
-Unfortunately, due to recent restrictions placed on many YouTube music videos, many videos won’t play (the YouTube API restricts playback on certain sites); the “not available on …” error notification will appear, and the app will move on to the next song in the playlist. <br>
-*To test the app, look for Indie music which is less likely to have these restrictions.*
 
-Live demo: https://jamesdeklerk.github.io/multi-source-music-application/ 
+### Try it out! https://jamesdeklerk.github.io/multi-source-music-application/ 
+
+---
 
 ## Project Overview
 
