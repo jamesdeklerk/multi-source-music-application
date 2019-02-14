@@ -1,0 +1,462 @@
+/* ====================================================
+ * Importing
+ * ==================================================== */
+/* ====================================================
+ * Order of elements (z-index)
+ * ==================================================== */
+/* ---------------------------------------------------- */
+/* ====================================================
+ * Color palette - currently red
+ * ==================================================== */
+/* Secondary information */
+/* Dominant theme and toolbars */
+/* Status bars */
+/* ---------------------------------------------------- */
+[ng-cloak] {
+  display: none; }
+
+* {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none; }
+
+html, body {
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+  /* This makes sure that the padding and border are 
+    included in the total width and height of the elements. */ }
+
+/* ====================================================
+ * Importing
+ * ==================================================== */
+/* ====================================================
+ * Order of elements (z-index)
+ * ==================================================== */
+/* ---------------------------------------------------- */
+/* ====================================================
+ * Color palette - currently red
+ * ==================================================== */
+/* Secondary information */
+/* Dominant theme and toolbars */
+/* Status bars */
+/* ---------------------------------------------------- */
+/* ---------------------------------------------------- */
+@keyframes playlist-area-pulsate {
+  0% {
+    background-color: green; }
+  50% {
+    background-color: rgba(0, 128, 0, 0.7); }
+  100% {
+    background-color: green; } }
+
+@keyframes search-area-pulsate {
+  0% {
+    background-color: #f3f3f3; }
+  10% {
+    background-color: green; }
+  100% {
+    background-color: #f3f3f3; } }
+
+md-toolbar .search {
+  position: relative;
+  -ms-flex: 1;
+      flex: 1;
+  margin: auto; }
+  md-toolbar .search input {
+    color: black;
+    border: 0px;
+    border-radius: 4px;
+    font-size: 16px;
+    height: 38px;
+    width: 100%;
+    padding-left: 8px;
+    outline: none;
+    background-color: #f3f3f3; }
+  md-toolbar .search md-icon {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    padding: 8px;
+    height: 38px;
+    width: 38px;
+    fill: rgba(0, 0, 0, 0.54); }
+  md-toolbar .search .pulse-search {
+    animation: search-area-pulsate 2s; }
+
+md-toolbar .user {
+  font-size: 14px;
+  padding-left: 14px; }
+  md-toolbar .user md-icon {
+    color: red; }
+
+.logo {
+  display: -ms-flexbox;
+  display: flex; }
+  .logo md-icon {
+    height: 24px;
+    width: 24px;
+    margin-top: 11px;
+    margin-right: 10px;
+    margin-left: 0px; }
+  .logo span {
+    vertical-align: middle;
+    font-size: 34px; }
+
+#content {
+  display: -ms-flexbox;
+  display: flex;
+  height: 100%;
+  width: 100%; }
+
+/* ====================================================
+ * Menu
+ * ==================================================== */
+.sidenav md-list {
+  color: rgba(0, 0, 0, 0.87); }
+
+.sidenav svg {
+  color: rgba(0, 0, 0, 0.54); }
+
+.sidenav .loading {
+  text-align: center;
+  background-color: inherit;
+  height: 55px; }
+
+.sidenav .playlists-heading {
+  display: -ms-flexbox;
+  display: flex; }
+
+.sidenav md-list {
+  min-height: 70px; }
+
+/* ---------------------------------------------------- */
+/* ====================================================
+ * Player container
+ * ==================================================== */
+.off {
+  opacity: 0.3; }
+
+.player-container {
+  height: 100px; }
+
+.seekbar {
+  height: 5px; }
+
+#seek-bar {
+  position: absolute;
+  z-index: 90;
+  width: 100%;
+  padding: 0px;
+  margin: 0px;
+  height: 0px;
+  outline: none; }
+
+.seekbar input[type=range] {
+  /*removes default webkit styles*/
+  -webkit-appearance: none; }
+
+.seekbar input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  border: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: black;
+  margin-left: -5px;
+  margin-top: 5px; }
+
+.player-elements {
+  height: 95px;
+  overflow: hidden; }
+  .player-elements .player-details {
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-flow: row;
+        flex-flow: row;
+    height: 100%;
+    width: calc(100% - 168.88889px);
+    -ms-flex-align: center;
+        align-items: center; }
+    .player-elements .player-details .text {
+      margin: auto;
+      width: 300px;
+      overflow: hidden;
+      margin-left: 36px; }
+    .player-elements .player-details .buttons {
+      margin: auto; }
+    .player-elements .player-details .settings {
+      margin: auto;
+      margin-right: 36px; }
+      .player-elements .player-details .settings .music-service {
+        width: 50px;
+        height: 50px; }
+
+#dz-root {
+  position: fixed;
+  left: -1000px;
+  top: -1000px; }
+
+#youtube-player {
+  height: 95px;
+  width: 168.88889px;
+  background-color: indianred; }
+
+/* ---------------------------------------------------- */
+/* ====================================================
+ * Greater than small
+ * ==================================================== */
+@media only screen and (min-width: 960px) {
+  md-toolbar .search {
+    -ms-flex: 0.5;
+        flex: 0.5; } }
+
+/* ---------------------------------------------------- */
+.loading {
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-align: center;
+      align-items: center;
+  -ms-flex-pack: center;
+      justify-content: center;
+  background-color: #f3f3f3; }
+
+.sign-in {
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-align: center;
+      align-items: center;
+  -ms-flex-pack: center;
+      justify-content: center;
+  background-color: #F44336;
+  color: white; }
+  .sign-in .center .horizontal-center {
+    text-align: center;
+    margin: auto; }
+  .sign-in .center md-input-container, .sign-in .center label, .sign-in .center input {
+    color: #FFCDD2;
+    border-color: #FFCDD2; }
+  .sign-in .logo {
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-align: center;
+        align-items: center;
+    -ms-flex-pack: center;
+        justify-content: center;
+    padding-bottom: 76px; }
+    .sign-in .logo md-icon {
+      height: 34px;
+      width: 34px;
+      margin: 0px;
+      margin-top: 8px;
+      margin-right: 10px; }
+    .sign-in .logo span {
+      vertical-align: middle;
+      font-size: 46px; }
+  .sign-in .slogan {
+    font-size: 16px;
+    padding-bottom: 24px; }
+  .sign-in .box {
+    width: 300px; }
+  .sign-in .button-container {
+    height: 110px; }
+    .sign-in .button-container .have-account {
+      font-size: 12px; }
+
+.sign-up {
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-align: center;
+      align-items: center;
+  -ms-flex-pack: center;
+      justify-content: center;
+  background-color: #F44336;
+  color: white; }
+  .sign-up .center .horizontal-center {
+    text-align: center;
+    margin: auto; }
+  .sign-up .center md-input-container, .sign-up .center label, .sign-up .center input {
+    color: #FFCDD2;
+    border-color: #FFCDD2; }
+  .sign-up .logo {
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-align: center;
+        align-items: center;
+    -ms-flex-pack: center;
+        justify-content: center;
+    padding-bottom: 76px; }
+    .sign-up .logo md-icon {
+      height: 34px;
+      width: 34px;
+      margin: 0px;
+      margin-top: 8px;
+      margin-right: 10px; }
+    .sign-up .logo span {
+      vertical-align: middle;
+      font-size: 46px; }
+  .sign-up .slogan {
+    font-size: 16px;
+    padding-bottom: 24px; }
+  .sign-up .box {
+    width: 300px; }
+  .sign-up .button-container {
+    height: 110px; }
+    .sign-up .button-container .have-account {
+      font-size: 12px; }
+
+.library {
+  display: -ms-flexbox;
+  display: flex; }
+  .library .loading {
+    width: 100%;
+    height: 100%;
+    -ms-flex-align: center;
+        -ms-grid-row-align: center;
+        align-items: center;
+    -ms-flex-pack: center;
+        justify-content: center;
+    background-color: inherit; }
+
+@keyframes tracks-area-pulsate {
+  0% {
+    background-color: green; }
+  50% {
+    background-color: rgba(0, 128, 0, 0.7); }
+  100% {
+    background-color: green; } }
+
+.playlist {
+  display: -ms-flexbox;
+  display: flex; }
+  .playlist .loading {
+    width: 100%;
+    height: 100%;
+    -ms-flex-align: center;
+        -ms-grid-row-align: center;
+        align-items: center;
+    -ms-flex-pack: center;
+        justify-content: center;
+    background-color: inherit; }
+  .playlist .content-once-loaded {
+    width: 100%;
+    height: 100%; }
+    .playlist .content-once-loaded md-toolbar {
+      -ms-flex-align: center;
+          -ms-grid-row-align: center;
+          align-items: center;
+      background-color: #F4F4F4;
+      color: rgba(0, 0, 0, 0.87); }
+      .playlist .content-once-loaded md-toolbar .headings {
+        margin: auto;
+        margin-left: 16px; }
+        .playlist .content-once-loaded md-toolbar .headings h3 {
+          font-weight: normal; }
+      .playlist .content-once-loaded md-toolbar .playlist-name {
+        margin: auto;
+        margin-right: 24px; }
+      .playlist .content-once-loaded md-toolbar .playlist-owner {
+        margin: auto;
+        margin-top: 14px;
+        font-size: 14px; }
+      .playlist .content-once-loaded md-toolbar .share-playlist {
+        margin: auto;
+        margin-right: 36px; }
+        .playlist .content-once-loaded md-toolbar .share-playlist svg {
+          fill: rgba(0, 0, 0, 0.87); }
+    .playlist .content-once-loaded .no-tracks {
+      display: -ms-flexbox;
+      display: flex;
+      text-align: center;
+      margin: auto;
+      margin-top: 64px; }
+      .playlist .content-once-loaded .no-tracks h2 {
+        color: rgba(0, 0, 0, 0.54);
+        margin-bottom: 36px; }
+      .playlist .content-once-loaded .no-tracks h4, .playlist .content-once-loaded .no-tracks h5 {
+        color: rgba(0, 0, 0, 0.54);
+        margin-top: 14px;
+        margin-bottom: 0px; }
+    .playlist .content-once-loaded .tracks .number {
+      display: none; }
+    .playlist .content-once-loaded .tracks .title {
+      display: inline-block;
+      overflow: hidden;
+      white-space: nowrap;
+      width: 200px; }
+    .playlist .content-once-loaded .tracks .artist {
+      display: inline-block;
+      overflow: hidden;
+      white-space: nowrap;
+      width: 200px; }
+    .playlist .content-once-loaded md-content {
+      height: calc(100% - 64px); }
+    .playlist .content-once-loaded .playlist-tracks-area {
+      position: absolute;
+      top: 0px;
+      right: 0px;
+      bottom: 0px;
+      left: 0px; }
+    .playlist .content-once-loaded .can-be-dropped {
+      animation: tracks-area-pulsate 2s infinite; }
+
+@media only screen and (min-width: 960px) {
+  .playlist .content-once-loaded .tracks .number {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 50px; }
+  .playlist .content-once-loaded .tracks .title {
+    width: 450px; }
+  .playlist .content-once-loaded .tracks .artist {
+    width: 400px; } }
+
+.edit-track .loading {
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-pack: center;
+      justify-content: center;
+  background-color: inherit; }
+
+.edit-playlist .loading {
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-pack: center;
+      justify-content: center;
+  background-color: inherit; }
+
+/* ---------------------------------------------------- */
+/* ====================================================
+ * General styles
+ * ==================================================== */
+.fill-screen {
+  position: fixed;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  z-index: 100; }
+
+.fill-block {
+  width: 100%;
+  height: 100%; }
+
+/* ---------------------------------------------------- */
+/* ====================================================
+ * Tablet styles
+ * ==================================================== */
+@media only screen and (max-width: 60em) {
+  /* 60em ~= 960px */ }
+
+/* ---------------------------------------------------- */
+/* ====================================================
+ * Mobile styles
+ * ==================================================== */
+@media only screen and (max-width: 32.5em) {
+  /* 25em ~= 520px */ }
+
+/* ---------------------------------------------------- */

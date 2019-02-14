@@ -1,31 +1,25 @@
-## Synopsis
+# A Multi-Source Music Application
 
-At the top of the file there should be a short introduction and/ or overview that explains **what** the project is. This description should match descriptions added for package managers (Gemspec, package.json, etc.)
+### NB – Issues one may experience: 
+Unfortunately, due to recent restrictions placed on many YouTube music videos, many videos won’t play (the YouTube API restricts playback on certain sites); the “not available on …” error notification will appear, and the app will move on to the next song in the playlist. <br>
+*To test the app, look for Indie music which is less likely to have these restrictions.*
 
-## Code Example
+Live demo: https://jamesdeklerk.github.io/multi-source-music-application/ 
 
-Show what the library does as concisely as possible, developers should be able to figure out **how** your project solves their problem by looking at the code example. Make sure the API you are showing off is obvious, and that your code is short and concise.
+## Project Overview
 
-## Motivation
+People tend to use a mixture of music services to share, manage and listen to music. The problem is, the experience of sharing, managing and listening to music from multiple music services is cumbersome. The goal of this project was to develop an easily extensible multi-source music application with improved usability relative to existing multi-source music systems.
 
-A short description of the motivation behind the creation and maintenance of the project. This should explain **why** the project exists.
+<img src="images/how_msm_app_works.png" width="100%"> <br>
 
-## Installation
+## Tablet and desktop view of a playlist
 
-Provide code examples and explanations of how to get the project.
+<img src="images/desktop_and_tablet_view.png" width="100%"> <br>
 
-## API Reference
+## Mobile view of a playlist (left) and the sign in screen (right)
 
-Depending on the size of the project, if it is small and simple enough the reference docs can be added to the README. For medium size to larger projects it is important to at least provide a link to where the API reference docs live.
+<img src="images/mobile_view.png" width="80%"> <br>
 
-## Tests
+## UI components
 
-Describe and show how to run the tests with code examples.
-
-## Contributors
-
-Let people know how they can dive into the project, include important links to things like issue trackers, irc, twitter accounts if applicable.
-
-## License
-
-A short snippet describing the license (MIT, Apache, etc.)
+<img src="images/ui_components.png" width="100%"> <br>
