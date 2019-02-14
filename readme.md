@@ -1,7 +1,8 @@
 # A Multi-Source Music Application
 
 
-#### Try it out! https://jamesdeklerk.github.io/multi-source-music-application/ 
+**Try it out! https://jamesdeklerk.github.io/multi-source-music-application/** <br>
+*NOTE: There will be some SoundCloud and YouTube songs that won’t play due to external site playback restrictions*
 
 ---
 
