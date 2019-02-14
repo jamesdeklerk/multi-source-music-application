@@ -1,0 +1,60 @@
+$sign-in-logo-size: 34px;
+$sign-in-logo-font-size: 46px;
+$sign-in-slogan-font-size: 16px;
+
+.sign-in {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: $primary-color;
+    color: $primary-text-color-light;
+
+    .center {
+        .horizontal-center {
+            text-align: center;
+            margin: auto;
+        }
+
+        md-input-container, label, input {
+            color: $color-100;
+            border-color: $color-100;
+        }
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-bottom: 76px;
+
+        md-icon {
+            height: $sign-in-logo-size;
+            width: $sign-in-logo-size;
+            margin: 0px;
+            margin-top: 8px;
+            margin-right: 10px;
+        }
+        
+        span {
+            vertical-align: middle;
+            font-size: $sign-in-logo-font-size;
+        }
+    }
+
+    .slogan {
+        font-size: $sign-in-slogan-font-size;
+        padding-bottom: 24px;
+    }
+
+    .box {
+        width: 300px;
+    }
+
+    .button-container {
+        height: 110px;
+
+        .have-account {
+            font-size: 12px;
+        }
+    }
+}

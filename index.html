@@ -1,39 +1,338 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-app="music-application">
 
 <head>
     <!-- HTML information -->
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="description" content="Multi-source music application">
-    <meta name="keywords" content="music, multi-source, youtube, deezer, songs, track, video">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="description" content="Contour - a multi-source music application">
+    <meta name="keywords" content="contour, music, multi-source, youtube, deezer, songs, track, video">
 
-    <title>Music Application</title>
+    <title>Contour</title>
+
+    <!-- Icons -->
+    <link rel="apple-touch-icon" sizes="57x57" href="src/assets/icons/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="src/assets/icons/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="src/assets/icons/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="src/assets/icons/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="src/assets/icons/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="src/assets/icons/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="src/assets/icons/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="src/assets/icons/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="src/assets/icons/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="src/assets/icons/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="src/assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="src/assets/icons/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="src/assets/icons/favicon-16x16.png">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="msapplication-TileColor" content="#F44336">
+    <meta name="msapplication-TileImage" content="src/assets/icons/ms-icon-144x144.png">
+    <meta name="theme-color" content="#F44336">
+
+    <!-- Angular Material -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="build/css/roboto-fonts.css">
+    <link rel="stylesheet" href="build/css/angular-material.min.css">
 
     <!-- Custom Styles -->
     <link rel="stylesheet" type="text/css" href="build/css/styles.css">
 </head>
 
-<body>
+<body ng-cloak layout="column" ng-controller="master">
 
-    <h1>Noice!</h1>
 
-    <div id="youtube-player"></div>
 
-    <br />
 
-    <button onclick="AP.playPause()">play/pause</button>
-    <button onclick="AP.previous()">previous</button>
-    <button onclick="AP.next()">next</button>
 
-    <br />
 
-    <input type="range" step="any" min="0" max="1" id="seek-bar" value="0"></input>
-    <input type="range" step="any" min="0" max="1" id="buffering-bar" value="0"></input>
 
-    <!-- Adding Deezer -->
-    <div id="dz-root"></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <!-- Header container -->
+    <md-toolbar layout="row" md-whiteframe="4" class="md-toolbar-tools">
+        <md-button hide-gt-sm class="md-icon-button" ng-click="toggleMenu()" aria-label="Show menu">
+            <md-icon md-svg-icon="src/assets/svg/menu.svg"></md-icon>
+        </md-button>
+        <div class="logo" hide-sm hide-xs>
+            <md-icon md-svg-src="src/assets/svg/logo.svg"></md-icon>
+            <span>contour</span>
+        </div>
+
+        <!-- Search -->
+        <div class="search" flex>
+            <input id="search-bar" layout-align="center center" type="text" ng-model="search.text" placeholder="Search playlist">
+            <md-icon ng-show="search.text" ng-click="clearSearch()" md-svg-icon="src/assets/svg/close.svg"></md-icon>
+        </div>
+        <!-- Login details -->
+        <div class="user">
+            <span hide-xs hide-sm>{{user.email}}</span>
+            <!-- Sign out menu -->
+            <md-menu>
+                <md-button class="md-icon-button" aria-label="sign out menu" ng-click="$mdOpenMenu($event)">
+                    <md-icon md-svg-icon="src/assets/svg/more_vertical.svg"></md-icon>
+                </md-button>
+                <md-menu-content flex>
+                    <md-menu-item>
+                        <md-button ng-click="signOut()">Sign out</md-button>
+                    </md-menu-item>
+                    <md-menu-item>
+                        <md-button>Settings (to be added)</md-button>
+                    </md-menu-item>
+                </md-menu-content>
+            </md-menu>
+        </div>
+    </md-toolbar>
+
+
+
+    <!-- Main container -->
+    <div flex layout="row">
+
+        <!-- Menu container -->
+        <md-sidenav class="sidenav" md-whiteframe="4" md-is-locked-open="$mdMedia('gt-sm')" md-component-id="left" ng-click="toggleMenu()">
+
+            <!-- Auto generated stuff e.g. the users library -->
+            <md-subheader class="md-no-sticky">Collection</md-subheader>
+            <!--<md-content>-->
+            <md-list>
+                <md-list-item ng-hide="loadingLibrary"="loadingLibrary" ng-click="null" href="#/playlist/{{library.uuid}}" ondrop="playlistAreaDropHandler(event, this)"
+                    data-uuid="{{library.uuid}}" ondragover="playlistAreaDragOverHandler(event, this)" ondragleave="playlistAreaDragLeaveHandler(event, this)">
+                    <div class="md-list-item-text" layout="column">
+                        <h3>{{library.name}}</h3>
+                    </div>
+                    <md-menu class="md-secondary">
+                        <md-button class="md-icon-button" aria-label="library options" ng-click="$mdOpenMenu($event)">
+                            <md-icon md-svg-icon="src/assets/svg/more_vertical.svg"></md-icon>
+                        </md-button>
+                        <md-menu-content flex>
+                            <md-menu-item>
+                                <md-button ng-click="sharePlaylist($event, library.name, library.uuid)">Share</md-button>
+                            </md-menu-item>
+                        </md-menu-content>
+                    </md-menu>
+                </md-list-item>
+
+                <div class="loading" ng-show="loadingLibrary">
+                    <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+                </div>
+
+            </md-list>
+            <!--</md-content>-->
+
+            <!-- List of the users playlists -->
+            <md-subheader class="md-no-sticky playlists-heading">
+                <span class="heading">
+                    Playlists
+                </span>
+                <md-button ng-click="editPlaylist($event)" class="md-icon-button add-playlist" aria-label="add playlist">
+                    <md-icon md-svg-icon="src/assets/svg/add.svg"></md-icon>
+                </md-button>
+            </md-subheader>
+            <md-content>
+                <md-list flex>
+
+                    <!-- Each playlist -->
+                    <md-list-item class="md-1-line" ng-repeat="playlist in playlists" ng-click="null" href="#/playlist/{{playlist.uuid}}" ondrop="playlistAreaDropHandler(event, this)"
+                        data-uuid="{{playlist.uuid}}" ondragover="playlistAreaDragOverHandler(event, this)" ondragleave="playlistAreaDragLeaveHandler(event, this)">
+                        <div class="md-list-item-text" layout="column">
+                            <h3>{{playlist.name}}</h3>
+                        </div>
+                        <md-menu class="md-secondary">
+                            <md-button class="md-icon-button" aria-label="playlist options" ng-click="$mdOpenMenu($event)">
+                                <md-icon md-svg-icon="src/assets/svg/more_vertical.svg"></md-icon>
+                            </md-button>
+                            <md-menu-content flex>
+                                <md-menu-item>
+                                    <md-button ng-click="sharePlaylist($event, playlist.name, playlist.uuid)">Share</md-button>
+                                </md-menu-item>
+                                <md-menu-item>
+                                    <md-button ng-click="editPlaylist($event, playlist.name, playlist.uuid)">Rename</md-button>
+                                </md-menu-item>
+                                <md-menu-item>
+                                    <md-button ng-click="deletePlaylist($event, playlist.name, playlist.uuid, playlist.uuidInUsersPlaylists)">Delete</md-button>
+                                </md-menu-item>
+                            </md-menu-content>
+                        </md-menu>
+                    </md-list-item>
+
+                    <div class="loading" ng-show="loadingPlaylists">
+                        <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+                    </div>
+
+                </md-list>
+                <!--</md-content>-->
+
+        </md-sidenav>
+
+        <!-- Content container -->
+        <md-content flex>
+            <div ng-view id="content"></div>
+        </md-content>
+
+    </div>
+
+    <!-- Player container -->
+    <div class="player-container" md-whiteframe="4" layout="column" ng-controller="player">
+
+        <!-- Seekbar -->
+        <div class="seekbar" layout="column">
+            <input type="range" step="any" min="0" max="1" id="seek-bar" value="0"></input>
+            <md-progress-linear md-mode="buffer" class="md-accent" value="{{seek.percentage}}" md-buffer-value="{{seek.percentageLoaded}}"></md-progress-linear>
+        </div>
+
+        <!-- Elements below seekbar -->
+        <div class="player-elements" layout="row" md-swipe-right="previous()" md-swipe-left="next()">
+
+            <div class="player-image">
+                <!-- YouTube -->
+                <div id="youtube-player"></div>
+                <!-- Deezer -->
+                <div id="dz-root"></div>
+            </div>
+
+            <div layout="row" class="player-details">
+
+                <div class="text">
+                    {{currentTrack.title}} - {{currentTrack.artist}}
+                </div>
+
+                <!-- Next, play and previous buttons -->
+                <div class="buttons">
+                    <md-button hide-xs hide-sm class="md-icon-button" aria-label="previous" ng-click="previous()">
+                        <md-icon md-svg-icon="src/assets/svg/previous.svg"></md-icon>
+                    </md-button>
+                    <md-button class="md-fab" aria-label="play or pause" ng-click="playPause()">
+                        <md-icon ng-show="paused" md-svg-src="src/assets/svg/play.svg"></md-icon>
+                        <md-icon ng-hide="paused" md-svg-src="src/assets/svg/pause.svg"></md-icon>
+                    </md-button>
+                    <md-button hide-xs hide-sm class="md-icon-button" aria-label="next" ng-click="next()">
+                        <md-icon md-svg-icon="src/assets/svg/next.svg"></md-icon>
+                    </md-button>
+                </div>
+
+                <div class="settings">
+
+                    <!-- Music service -->
+                    <md-menu>
+                        <md-button class="md-icon-button music-service" aria-label="music service" ng-click="$mdOpenMenu($event)">
+                            <md-icon ng-show="musicService === 'SoundCloud'" md-svg-icon="src/assets/svg/soundcloud-logo.svg"></md-icon>
+                            <md-icon ng-show="musicService !== 'SoundCloud'" md-svg-icon="src/assets/svg/youtube-logo-color.svg"></md-icon>
+                            <md-icon md-svg-icon="src/assets/svg/drop-up-arrow.svg"></md-icon>
+                        </md-button>
+                        <md-menu-content>
+                            <md-button class="music-service-button" aria-label="change to SoundCloud" ng-click="dynamicallyChangeMusicService('SoundCloud')">
+                                <div layout="row" flex>
+                                    <md-icon md-menu-align-target md-svg-icon="src/assets/svg/soundcloud-logo.svg" style="margin: auto 5px auto 5px;"></md-icon>
+                                    <p flex>SoundCloud</p>
+                                </div>
+                                <!--<md-icon md-svg-icon="src/assets/svg/soundcloud-logo.svg"></md-icon>-->
+                            </md-button>
+                            <md-button class="music-service-button" aria-label="change to YouTube" ng-click="dynamicallyChangeMusicService('YouTube')">
+                                <div layout="row" flex>
+                                    <md-icon md-menu-align-target md-svg-icon="src/assets/svg/youtube-logo-color.svg" style="margin: auto 5px auto 5px;"></md-icon>
+                                    <p flex>YouTube</p>
+                                </div>
+                                <!--<md-icon md-svg-icon="src/assets/svg/youtube-logo-color.svg"></md-icon>-->
+                            </md-button>
+                        </md-menu-content>
+                    </md-menu>
+
+                    <!-- Repeat -->
+                    <md-button hide-xs hide-sm class="md-icon-button" aria-label="repeat" ng-click="toggleRepeat()">
+                        <md-icon ng-class="repeatOff ? 'off' : ''" ng-hide="repeatOne" ng-disabled="true" md-svg-icon="src/assets/svg/repeat.svg"></md-icon>
+                        <md-icon ng-show="repeatOne" md-svg-icon="src/assets/svg/repeat-one.svg"></md-icon>
+                    </md-button>
+
+                    <!-- Shuffle -->
+                    <md-button hide-xs hide-sm class="md-icon-button" aria-label="shuffle" ng-click="toggleShuffle()">
+                        <md-icon ng-class="shuffle ? '' : 'off'" md-svg-icon="src/assets/svg/shuffle.svg"></md-icon>
+                    </md-button>
+
+                    <!-- Volume -->
+                    <md-menu hide-xs hide-sm>
+                        <md-button class="md-icon-button" aria-label="volume" ng-click="$mdOpenMenu($event)">
+                            <md-icon ng-hide="volumeOff" md-svg-icon="src/assets/svg/volume.svg"></md-icon>
+                            <md-icon ng-show="volumeOff" md-svg-icon="src/assets/svg/volume-off.svg"></md-icon>
+                        </md-button>
+                        <md-menu-content>
+                            <md-slider-container flex>
+                                <md-slider ng-change="setVolume(volume)" md-discrete ng-model="volume" min="0" max="100" step="1" aria-label="volume" class="md-primary"
+                                    md-vertical></md-slider>
+                                <h5>Volume</h5>
+                            </md-slider-container>
+                        </md-menu-content>
+                    </md-menu>
+
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <!-- JQuery for ajax calls -->
+    <script src="build/javascript/jquery-3.1.0.min.js"></script>
+
+    <!-- AngularJS dependencies -->
+    <script src="build/javascript/angular.min.js"></script>
+    <script src="build/javascript/angular-animate.min.js"></script>
+    <script src="build/javascript/angular-aria.min.js"></script>
+    <script src="build/javascript/angular-messages.min.js"></script>
+    <script src="build/javascript/angular-resource.min.js"></script>
+    <script src="build/javascript/angular-route.min.js"></script>
+
+    <!-- Angular Material Library -->
+    <script src="build/javascript/angular-material.min.js"></script>
+
+    <!-- Firebase dependencies -->
+    <script src="build/javascript/firebase.js"></script>
+    <script>
+        // Initialize Firebase
+        var config = {
+            apiKey: "AIzaSyAN7vyNOXc_U-qWbxkLt6RPx-PAT2dl3qQ",
+            authDomain: "music-application-951ac.firebaseapp.com",
+            databaseURL: "https://music-application-951ac.firebaseio.com",
+            storageBucket: "",
+        };
+        firebase.initializeApp(config);
+    </script>
+
+    <!-- AngularFire -->
+    <script src="build/javascript/angularfire.min.js"></script>
 
     <!-- Adding SoundCloud -->
     <script src="https://connect.soundcloud.com/sdk/sdk-3.1.2.js"></script>

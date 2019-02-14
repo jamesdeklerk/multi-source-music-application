@@ -1,0 +1,50 @@
+<div class="fill-screen sign-in">
+
+    <div class="center box">
+
+        <div>
+            <div class="logo">
+                <md-icon md-svg-src="src/assets/svg/logo.svg"></md-icon>
+                <span>contour</span>
+            </div>
+            <div class="horizontal-center slogan">
+                <span class="horizontal-center">Your world of music no matter the source.</span>
+            </div>
+        </div>
+
+        <form ng-submit="signIn()">
+
+            <md-input-container class="md-icon-float md-block">
+                <label>Email</label>
+                <md-icon md-svg-src="src/assets/svg/email.svg"></md-icon>
+                <input ng-model="user.email" type="text">
+            </md-input-container>
+            <md-input-container class="md-icon-float md-block">
+                <label>Password</label>
+                <md-icon md-svg-src="src/assets/svg/lock.svg"></md-icon>
+                <input ng-model="user.password" type="password">
+            </md-input-container>
+
+            <div class="button-container">
+                <div class="horizontal-center">
+                    <md-button type="submit" ng-hide="loading" class="md-raised">Sign in</md-button>
+                </div>
+                <br>
+                <br>
+                <br>
+                <br>
+                <div ng-hide="loading" class="horizontal-center">
+                    <span class="have-account">Don't have an account?</span>
+                </div>
+                <div ng-hide="loading" class="horizontal-center create-account">
+                    <md-button ng-click="signUp(user.email, user.password)">Create Account</md-button>
+                </div>
+
+                <md-progress-circular ng-show="loading" class="md-hue-1 horizontal-center" md-mode="indeterminate"></md-progress-circular>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>

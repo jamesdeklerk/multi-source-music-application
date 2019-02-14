@@ -1,0 +1,327 @@
+/* ====================================================
+ * Importing
+ * ==================================================== */
+
+@import 'variables';
+
+/* ---------------------------------------------------- */
+
+
+$search-background-color: #f3f3f3;
+$search-font-color: black;
+
+@keyframes playlist-area-pulsate {
+    0%   { background-color: rgba(0, 128, 0, 1); }
+    50%  { background-color: rgba(0, 128, 0, 0.7); }
+    100% { background-color: rgba(0, 128, 0, 1); }
+}
+
+@keyframes search-area-pulsate {
+    0%   { background-color: $search-background-color }
+    10%  { background-color: rgba(0, 128, 0, 1); }
+    100% { background-color: $search-background-color }
+}
+
+md-toolbar .search {
+    position: relative;
+    flex: 1;
+    margin: auto;
+
+    input {
+        color: $search-font-color;
+        border: 0px;
+        border-radius: 4px;
+        font-size: 16px;
+        height: 38px;
+        
+        width: 100%;
+        padding-left: 8px;
+        outline: none;
+
+        background-color: $search-background-color;
+    }
+
+    md-icon {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        padding: 8px;
+        height: 38px;
+        width: 38px;
+        fill: $secondary-text-color-dark;
+    }
+
+    .pulse-search {
+        animation: search-area-pulsate 2s;
+    }
+}
+
+md-toolbar .user {
+    font-size: 14px;
+    padding-left: 14px;
+
+    md-icon {
+        color: red;
+    }
+}
+
+.logo {
+    display: flex;
+    
+    md-icon {
+        height: 24px;
+        width: 24px;
+        margin-top: 11px;
+        margin-right: 10px;
+        margin-left: 0px;
+    }
+    
+    span {
+        vertical-align: middle;
+        font-size: 34px;
+    }
+}
+
+#content {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+
+
+/* ====================================================
+ * Menu
+ * ==================================================== */
+
+.sidenav {
+    md-list {
+        color: $primary-text-color-dark;
+    }
+
+    svg {
+        color: $secondary-text-color-dark;
+    }
+
+    .loading {
+        text-align: center;
+        background-color: inherit;
+        height: 55px;
+    }
+
+    .playlists-heading {
+        display: flex;
+    }
+
+    md-list {
+        min-height: 70px;
+    }
+}
+
+/* ---------------------------------------------------- */
+
+
+
+/* ====================================================
+ * Player container
+ * ==================================================== */
+
+$player-container-color: deeppink;
+
+$player-container-height: 100px;
+
+$seekbar-width: 100%;
+$seekbar-height: 5px;
+$seekbar-thumb-color: black;
+$seekbar-thumb-size: 20px;
+$seekbar-loaded-color: blue;
+$seekbar-buffering-color: red;
+
+$player-elements-height: 100px - $seekbar-height;
+
+$player-element-image-width: $player-elements-height * (16 / 9);
+
+.off {
+    opacity: 0.3;
+}
+
+.player-container {
+    height: $player-container-height;
+}
+
+.seekbar {
+    height: $seekbar-height;
+}
+
+#seek-bar {
+    position: absolute;
+    z-index: $z-index-9;
+    width: 100%;
+    padding: 0px;
+    margin: 0px;
+    height: 0px;
+    outline: none;
+}
+
+.seekbar input[type=range] {
+    /*removes default webkit styles*/
+    -webkit-appearance: none;
+}
+
+.seekbar input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    border: none;
+    height: $seekbar-thumb-size;
+    width: $seekbar-thumb-size;
+    border-radius: 50%;
+    background: $seekbar-thumb-color;
+    margin-left: -($seekbar-thumb-size / 4);
+    margin-top: $seekbar-height;
+}
+
+.player-elements {
+    height: $player-elements-height;
+    overflow: hidden;
+
+    .player-details {
+        display: flex;
+        flex-flow: row;
+        height: 100%;
+        width: calc(100% - #{$player-element-image-width});
+        align-items: center;
+
+        .text {
+            margin: auto;
+            width: 300px;
+            overflow: hidden;
+            margin-left: 36px;
+        }
+
+        .buttons {
+            margin: auto;
+        }
+
+        .settings {
+            margin: auto;
+            margin-right: 36px;
+
+            .music-service {
+                width: 50px;
+                height: 50px;
+            }
+
+        }
+    }
+}
+
+#dz-root {
+    position: fixed;
+    left: -1000px;
+    top: -1000px;
+}
+
+#youtube-player {
+    height: $player-elements-height;
+    width: $player-element-image-width;
+    background-color: indianred;
+}
+
+/* ---------------------------------------------------- */
+
+
+
+/* ====================================================
+ * Greater than small
+ * ==================================================== */
+
+@media only screen and (min-width: 960px){
+
+md-toolbar .search {
+    flex: 0.5;
+}
+
+}
+
+/* ---------------------------------------------------- */
+
+
+
+
+
+// .seekbar input[type=range] {
+
+//     /*removes default webkit styles*/
+//     -webkit-appearance: none;
+    
+//     /*fix for FF unable to apply focus style bug */
+//     border: 1px solid white;
+    
+//     /*required for proper track sizing in FF*/
+//     width: 300px;
+// }
+// input[type=range]::-webkit-slider-runnable-track {
+//     // width: $seekbar-width;
+//     height: 5px;
+//     background: transparent;
+//     border: none;
+//     border-radius: 3px;
+// }
+// input[type=range]::-webkit-slider-thumb {
+//     -webkit-appearance: none;
+//     border: none;
+//     height: 36px;
+//     width: 36px;
+//     margin: 16px;
+//     border-radius: 50%;
+//     background: orange;
+//     margin-top: -4px;
+// }
+// input[type=range]:focus {
+//     outline: none;
+// }
+// input[type=range]:focus::-webkit-slider-runnable-track {
+//     background: #ccc;
+// }
+
+// input[type=range]::-moz-range-track {
+//     // width: 300px;
+//     height: 5px;
+//     background: #ddd;
+//     border: none;
+//     border-radius: 3px;
+// }
+// input[type=range]::-moz-range-thumb {
+//     border: none;
+//     height: 16px;
+//     width: 16px;
+//     border-radius: 50%;
+//     background: goldenrod;
+// }
+
+// /*hide the outline behind the border*/
+// input[type=range]:-moz-focusring{
+//     outline: 1px solid white;
+//     outline-offset: -1px;
+// }
+
+// input[type=range]::-ms-track {
+//     // width: 300px;
+//     height: 5px;
+    
+//     /*remove bg colour from the track, we'll use ms-fill-lower and ms-fill-upper instead */
+//     background: transparent;
+    
+//     /*leave room for the larger thumb to overflow with a transparent border */
+//     border-color: transparent;
+//     border-width: 6px 0;
+
+//     /*remove default tick marks*/
+//     color: transparent;
+// }
+// input[type=range]::-ms-thumb {
+//     border: none;
+//     height: 16px;
+//     width: 16px;
+//     border-radius: 50%;
+//     background: goldenrod;
+// }

@@ -1,0 +1,24 @@
+[ng-cloak] {
+  display: none;
+}
+
+* {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+html, body {
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    height: 100%;
+
+    margin: 0px;
+    padding: 0px;
+
+    /* This makes sure that the padding and border are 
+    included in the total width and height of the elements. */
+    // box-sizing: border-box;
+}

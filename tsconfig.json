@@ -12,7 +12,10 @@
         // Libraries
         "src/typescript/libraries/Publisher.ts",
         // Definitions
+        "src/typescript/definitions/angular-route.d.ts",
+        "src/typescript/definitions/angular.d.ts",
         "src/typescript/definitions/es6-promise.d.ts",
+        "src/typescript/definitions/firebase.d.ts",
         "src/typescript/definitions/youtube.d.ts",
         // Interfaces
         "src/typescript/interfaces/IAlbum.ts",
@@ -22,6 +25,7 @@
         "src/typescript/interfaces/IServerAdapter.ts",
         "src/typescript/interfaces/IServiceDataAdapter.ts",
         "src/typescript/interfaces/ITrack.ts",
+        "src/typescript/interfaces/IPlaylist.ts",
         // Player Adapters
         "src/typescript/classes/player_adapters/DeezerAdapter.ts",
         "src/typescript/classes/player_adapters/SoundCloudAdapter.ts",
@@ -29,6 +33,7 @@
         // Resources
         "src/typescript/resources/Constants.ts",
         // Classes
+        "src/typescript/classes/Verification.ts",
         "src/typescript/classes/Settings.ts",
         "src/typescript/classes/Player.ts",
         // Main

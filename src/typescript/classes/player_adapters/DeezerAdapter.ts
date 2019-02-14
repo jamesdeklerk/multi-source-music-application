@@ -93,6 +93,8 @@ class DeezerAdapter implements IPlayerAdapter {
 
             let currentContext = this;
 
+            currentContext.unloaded = false;
+
             // Reset info.
             this.currentPosition = 0;
             this.currentDuration = 0;
@@ -125,8 +127,6 @@ class DeezerAdapter implements IPlayerAdapter {
                                 // try every 150 milliseconds.
                                 setTimeout(keepTrying, 150);
                             } else {
-
-                                currentContext.unloaded = false;
 
                                 // Set the current player.
                                 currentContext.currentPlayer = window.DZ.player;

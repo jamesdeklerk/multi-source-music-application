@@ -19,19 +19,29 @@ interface ITrack {
     duration: number;
 
     /**
-     * Artist object.
+     * Artist object uuid reference.
      */
-    artist: IArtist;
+    artist?: string;
 
     /**
-     * Album object.
+     * Album object uuid reference.
      */
-    album?: IAlbum;
+    album?: string;
 
     /**
      * Object containing the appropriate track properties
      * for each music service it's available on.
      */
     services: any;
+
+    /**
+     * A timestamp of when the track was added.
+     */
+    dateAdded: number;
+
+    /**
+     * The owner of the tracks uuid.
+     */
+    owner: string;
 
 }

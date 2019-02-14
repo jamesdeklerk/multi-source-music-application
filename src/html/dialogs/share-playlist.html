@@ -1,0 +1,34 @@
+<md-dialog class="share-playlist">
+    <form ng-cloak>
+
+        <!-- Toolbar -->
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Share "{{playlistName}}" playlist</h2>
+                <span flex></span>
+                <md-button type="button" class="md-icon-button" ng-click="cancel()">
+                    <md-icon md-svg-src="src/assets/svg/close.svg" aria-label="Close dialog"></md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <!-- Content -->
+        <md-dialog-content>
+            <div class="md-dialog-content">
+                <h3>Copy the link below and share it on any platform you like.</h3>
+                <!-- Share link container -->
+                <md-input-container class="md-block" flex-gt-sm>
+                    <textarea id="linkToShare" ng-model="playlistURL" rows="1" aria-label="link to share" md-select-on-focus></textarea>
+                </md-input-container>
+            </div>
+        </md-dialog-content>
+
+        <!-- Actions -->
+        <md-dialog-actions layout="row">
+            <md-button type="submit" class="md-raised md-primary" ng-click="copy()">
+                Copy link
+            </md-button>
+        </md-dialog-actions>
+
+    </form>
+</md-dialog>

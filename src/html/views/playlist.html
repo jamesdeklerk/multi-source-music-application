@@ -1,0 +1,98 @@
+<div class="fill-block playlist" ng-cloak>
+
+    <div ng-show="loading" class="loading">
+        <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+    </div>
+
+    <div ng-hide="loading" class="content-once-loaded">
+
+        <md-toolbar layout="row" md-whiteframe="4">
+
+            <div class="headings" layout="row">
+                <!--<md-button class="md-icon-button" aria-label="play playlist" ng-click="null">
+                    <md-icon md-svg-icon="src/assets/svg/play-playlist.svg"></md-icon>
+                </md-button>-->
+                <h3 class="playlist-name">{{playlist.name}}</h3>
+                <span ng-hide="thisUsersPlaylist" class="playlist-owner">Owner: {{owner}}</span>
+            </div>
+
+            <div class="share-playlist">
+                <md-button ng-show="thisUsersPlaylist" ng-click="addTrack($event)">Add track</md-button>
+                <md-button class="md-icon-button" aria-label="share playlist" ng-click="sharePlaylist($event, playlist.name, playlist.uuid)">
+                    <md-icon md-svg-icon="src/assets/svg/share.svg"></md-icon>
+                </md-button>
+            </div>
+
+        </md-toolbar>
+
+
+
+        <!-- Tracks -->
+        <md-content ondrop="tracksAreaDropHandler(event)" ondragover="tracksAreaDragOverHandler(event)" ondragleave="tracksAreaDragLeaveHandler(event)">
+
+            <!-- Drag over display -->
+            <div id="playlist-tracks-area-{{playlist.uuid}}" class="playlist-tracks-area"></div>
+
+            <!-- No tracks -->
+            <div ng-show="noTracks && thisUsersPlaylist" class="no-tracks" layout="column" flex>
+                <h2>This playlist has no tracks :(</h2>
+                <h4>But, you have two options :)</h4>
+                <h5>1.<br>To add a track from YouTube or SoundCloud, just drag and drop it here.</h5>
+                <h5>2.<br>Or, click "Add Track"" in the top right and do your thing.</h5>
+            </div>
+            <div ng-show="noTracks && !thisUsersPlaylist" class="no-tracks" layout="column" flex>
+                <h2>This playlist has no tracks,<br>only the owner can change that :(</h2>
+            </div>
+
+            <div ng-hide="noTracks" class="tracks" layout="column">
+
+                <md-list ng-cloak>
+                    <md-subheader class="md-no-sticky">
+                        <span class="number">#</span>
+                        <span class="title">Title</span>
+                        <span class="artist">Artist</span>
+                    </md-subheader>
+                    <md-list-item draggable="true" ng-repeat="track in playlist.tracks | filter: filter" ondragstart="trackDragStartHandler(event, this)"
+                        data-uuid="trackUUID={{track.uuid}}" ng-click="playTrack(track.index)">
+                        <span class="number">{{$index + 1}}</span>
+                        <span class="title">{{track.title}}</span>
+                        <span class="artist">{{track.artist}}</span>
+                        <!--<md-button class="md-secondary" ng-click="doSecondaryAction($event)">More Info</md-button>-->
+                        <md-menu class="md-secondary" ng-show="thisUsersPlaylist">
+                            <md-button class="md-icon-button" aria-label="track options" ng-click="$mdOpenMenu($event)">
+                                <md-icon md-svg-icon="src/assets/svg/more_vertical.svg"></md-icon>
+                            </md-button>
+                            <md-menu-content flex>
+                                <!--<md-menu-item>
+                                    <md-button ng-click="null">Share</md-button>
+                                </md-menu-item>-->
+                                <!--<md-menu-item>
+                                    <md-button ng-click="null">Add to playlist</md-button>
+                                </md-menu-item>-->
+                                <!--<md-menu-item>
+                                    <md-button ng-click="null">Add to queue</md-button>
+                                </md-menu-item>-->
+                                <!--<md-menu-item>
+                                    <md-button ng-click="null">Edit</md-button>
+                                </md-menu-item>-->
+                                <md-menu-item>
+                                    <md-button>Add to playlist (to be added)</md-button>
+                                </md-menu-item>
+                                <md-menu-item>
+                                    <md-button>Edit (to be added)</md-button>
+                                </md-menu-item>
+                                <md-menu-item>
+                                    <md-button ng-click="deleteTrack($event, track.title, track.uuidInPlaylist, track.index)">Delete</md-button>
+                                </md-menu-item>
+                            </md-menu-content>
+                        </md-menu>
+                    </md-list-item>
+                </md-list>
+
+            </div>
+
+        </md-content>
+
+    </div>
+
+</div>
