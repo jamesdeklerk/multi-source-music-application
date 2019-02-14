@@ -1,7 +1,7 @@
 # A Multi-Source Music Application
 
 
-### Try it out! https://jamesdeklerk.github.io/multi-source-music-application/ 
+#### Try it out! https://jamesdeklerk.github.io/multi-source-music-application/ 
 
 ---
 
@@ -10,6 +10,8 @@
 People tend to use a mixture of music services to share, manage and listen to music. The problem is, the experience of sharing, managing and listening to music from multiple music services is cumbersome. The goal of this project was to develop an easily extensible multi-source music application with improved usability relative to existing multi-source music systems.
 
 <img src="images/how_msm_app_works.png" width="100%"> <br>
+
+---
 
 ## Tablet and desktop view of a playlist
 
