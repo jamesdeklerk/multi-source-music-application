@@ -3062,7 +3062,7 @@ var Main = (function () {
             var controller = $scope;
             var currentURL = window.location.origin;
             controller.playlistName = playlistName;
-            controller.playlistURL = currentURL + "/#/playlist/" + playlistUUID;
+            controller.playlistURL = currentURL + "/multi-source-music-application/#/playlist/" + playlistUUID;
             controller.showToast = function (message) {
                 $mdToast.show($mdToast.simple()
                     .textContent(message)
