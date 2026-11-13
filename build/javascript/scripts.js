@@ -475,7 +475,7 @@ var DeezerAdapter = (function () {
 var SoundCloudAdapter = (function () {
     function SoundCloudAdapter() {
         this.name = "SoundCloud";
-        this.CLIENT_ID = "557c90822ab6395bc8da3b9f62d86ab8";
+        this.CLIENT_ID = "ignorance-of-youth-redacted";
         this.players = {};
     }
     SoundCloudAdapter.prototype.initialize = function () {
@@ -726,7 +726,7 @@ var Verification = (function () {
     };
     Verification.prototype.getYouTubeVideoTitle = function (videoId) {
         return new Promise(function (resolve, reject) {
-            var apiKey = "AIzaSyAN7vyNOXc_U-qWbxkLt6RPx-PAT2dl3qQ";
+            var apiKey = "ignorance-of-youth-redacted";
             $.ajax({
                 dataType: "jsonp",
                 error: function (jqXHR, textStatus, errorThrown) {

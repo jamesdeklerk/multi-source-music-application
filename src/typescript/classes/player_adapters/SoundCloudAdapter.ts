@@ -6,7 +6,7 @@ interface Window {
 class SoundCloudAdapter implements IPlayerAdapter {
 
     public name = `SoundCloud`;
-    private CLIENT_ID = `557c90822ab6395bc8da3b9f62d86ab8`;
+    private CLIENT_ID = `ignorance-of-youth-redacted`;
     // Because of the way SoundCloud works (creating a new player instance per track)
     // this is a hashmap of player objects where the key is the track id.
     private players: any = {};

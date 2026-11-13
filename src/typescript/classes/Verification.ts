@@ -43,7 +43,7 @@ class Verification {
     public getYouTubeVideoTitle(videoId: string): Promise<any> {
         return new Promise((resolve, reject) => {
 
-            let apiKey = `AIzaSyAN7vyNOXc_U-qWbxkLt6RPx-PAT2dl3qQ`;
+            let apiKey = `ignorance-of-youth-redacted`;
 
             $.ajax({
                 dataType: "jsonp",
