@@ -4,7 +4,7 @@
 **Try it out! https://jamesdeklerk.github.io/multi-source-music-application/** <br>
 *NOTE: There will be some SoundCloud and YouTube songs that won’t play due to external site playback restrictions*
 
-**Showcase mode:** the original Firebase backend no longer exists, so the app now runs entirely in your browser (data is saved in `localStorage`, see `build/javascript/local-backend.js`). Sign in with the demo account `demo@example.com` / `demo123`, or create your own. Track title lookup and SoundCloud no longer work.
+**Showcase mode:** the original Firebase backend no longer exists, so the app now runs entirely in your browser (data is saved in `localStorage`, see `build/javascript/local-backend.js`). Sign in with the demo account `demo@example.com` / `demo123`, or create your own. SoundCloud tracks no longer work.
 
 **Try it out on moble too, you can even "Add to Home screen" if you're using Chrome for Android**
 

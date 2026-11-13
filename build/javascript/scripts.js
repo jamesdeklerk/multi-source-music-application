@@ -726,31 +726,22 @@ var Verification = (function () {
     };
     Verification.prototype.getYouTubeVideoTitle = function (videoId) {
         return new Promise(function (resolve, reject) {
-            var apiKey = "ignorance-of-youth-redacted";
+            // The YouTube Data API key is gone, so use YouTube's public oEmbed
+            // endpoint (no key needed) to restore getting the title.
             $.ajax({
-                dataType: "jsonp",
+                dataType: "json",
                 error: function (jqXHR, textStatus, errorThrown) {
                     reject("Could not get title.");
                 },
                 success: function (data) {
-                    if (data) {
-                        if (data.items) {
-                            if (data.items[0]) {
-                                resolve(data.items[0].snippet.title);
-                            }
-                            else {
-                                reject("Could not get title.");
-                            }
-                        }
-                        else {
-                            reject("Could not get title.");
-                        }
+                    if (data && data.title) {
+                        resolve(data.title);
                     }
                     else {
                         reject("Could not get title.");
                     }
                 },
-                url: "https://www.googleapis.com/youtube/v3/videos?id=" + videoId + "&key=" + apiKey + "&fields=items(snippet(title))&part=snippet",
+                url: "https://www.youtube.com/oembed?format=json&url=" + encodeURIComponent("https://www.youtube.com/watch?v=" + videoId),
             });
         });
     };
