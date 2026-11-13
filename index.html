@@ -318,21 +318,8 @@
     <!-- Angular Material Library -->
     <script src="build/javascript/angular-material.min.js"></script>
 
-    <!-- Firebase dependencies -->
-    <script src="build/javascript/firebase.js"></script>
-    <script>
-        // Initialize Firebase
-        var config = {
-            apiKey: "ignorance-of-youth-redacted",
-            authDomain: "music-application-951ac.firebaseapp.com",
-            databaseURL: "https://music-application-951ac.firebaseio.com",
-            storageBucket: "",
-        };
-        firebase.initializeApp(config);
-    </script>
-
-    <!-- AngularFire -->
-    <script src="build/javascript/angularfire.min.js"></script>
+    <!-- Local backend: removes the Firebase/AngularFire dependency to restore the functionality of the original project -->
+    <script src="build/javascript/local-backend.js"></script>
 
     <!-- Adding SoundCloud -->
     <script src="https://connect.soundcloud.com/sdk/sdk-3.1.2.js"></script>
